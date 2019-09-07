@@ -1,0 +1,11 @@
+{
+  "name": "nigthmare",
+  "version": "1.0.0",
+  "dependencies": {
+    "svgo": "^1.2.2"
+  },
+  "devDependencies": {},
+  "author": "SeinopSys <seinopsys@gmail.com> (https://github.com/SeinopSys)",
+  "license": "MIT",
+  "private": true
+}

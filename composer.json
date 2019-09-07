@@ -12,7 +12,8 @@
         "ext-pdo": "*",
         "fideloper/proxy": "^4.0",
         "laravel/framework": "^6.0",
-        "laravel/tinker": "^1.0"
+        "laravel/tinker": "^1.0",
+        "zircote/swagger-php": "^3.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",
