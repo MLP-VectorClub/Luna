@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use function OpenApi\scan;
 
@@ -33,7 +34,8 @@ class GenerateApiSchema extends Command {
             $this->error("Invalid OpenAPI schema, could not generate $output_path");
             exit(1);
         }
-        Storage::disk('local')->put($output_path, $openapi->toJson());
+        $json = $openapi->toJson();
+        Storage::disk('local')->put($output_path, $json);
         $this->info('Written API schema to file');
     }
 }
