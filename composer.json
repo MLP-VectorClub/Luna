@@ -1,17 +1,13 @@
 {
     "name": "mlp-vectorclub/nightmare",
     "type": "project",
-    "description": "The Laravel Framework.",
-    "keywords": [
-        "framework",
-        "laravel"
-    ],
     "license": "MIT",
     "require": {
         "php": "^7.3",
         "ext-pdo": "*",
         "fideloper/proxy": "^4.0",
         "laravel/framework": "^6.0",
+        "laravel/passport": "^7.4",
         "laravel/tinker": "^1.0",
         "zircote/swagger-php": "^3.0"
     },
