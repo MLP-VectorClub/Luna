@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use function OpenApi\scan;
 
-class GenerateApiSchema extends Command {
+class GenerateApiSchema extends Command
+{
     /**
      * The name and signature of the console command.
      *
@@ -27,10 +28,11 @@ class GenerateApiSchema extends Command {
      *
      * @return mixed
      */
-    public function handle() {
+    public function handle()
+    {
         $output_path = 'public/api.json';
         $openapi = scan(app_path());
-        if (!$openapi->validate()){
+        if (!$openapi->validate()) {
             $this->error("Invalid OpenAPI schema, could not generate $output_path");
             exit(1);
         }

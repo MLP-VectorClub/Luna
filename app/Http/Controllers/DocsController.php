@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
-class DocsController extends Controller {
-  function index() {
-    return view('docs');
-  }
+class DocsController extends Controller
+{
+    public function index()
+    {
+        return view('docs');
+    }
 
-  function rtfm() {
-    return redirect('/docs');
-  }
+    public function rtfm()
+    {
+        return redirect('/docs');
+    }
 }
