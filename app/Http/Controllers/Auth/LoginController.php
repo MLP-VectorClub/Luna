@@ -3,37 +3,72 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use App\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
-    use AuthenticatesUsers;
-
     /**
-     * Where to redirect users after login.
+     * @OA\Post(
+     *     path="/users/login",
+     *     description="Used for obtaining an API access token",
+     *     tags={"authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 schema="LoginRequest",
+     *                 type="object",
+     *                 required={
+     *                     "email",
+     *                     "password"
+     *                 },
+     *                 additionalProperties=false,
+     *                 @OA\Property(
+     *                     property="email",
+     *                     type="string"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="password",
+     *                     type="string"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="204",
+     *         description="Authentication successful",
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Invalid credentials",
+     *     )
+     * )
      *
-     * @var string
+     * @param  Request  $request
+     * @return \Illuminate\Http\Response
      */
-    protected $redirectTo = '/home';
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function viaPassword(Request $request)
     {
-        $this->middleware('guest')->except('logout');
+        $data = Validator::make($request->only(['email', 'password']), [
+            'email' => 'required|string',
+            'password' => 'required|string',
+        ])->validate();
+
+        $user = User::whereEmail($data['email'])->first();
+        if (empty($user)) {
+            abort(401);
+        }
+
+        if (!Hash::check($user->password, Hash::make($data['password']))) {
+            abort(401);
+        }
+
+        $cookie = $user->createAuthCookie('Login');
+        return response()->noContent()->withCookie($cookie);
     }
 }

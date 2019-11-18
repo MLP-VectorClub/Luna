@@ -165,6 +165,7 @@ return [
         /*
          * Package Service Providers...
          */
+        Grohiro\LaravelCamelCaseJson\CamelCaseJsonResponseServiceProvider::class,
 
         /*
          * Application Service Providers...
