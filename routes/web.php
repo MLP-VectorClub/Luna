@@ -14,4 +14,4 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/docs', 'DocsController@index');
-Route::fallback('DocsController@rtfm');
+// Route::fallback('DocsController@rtfm');

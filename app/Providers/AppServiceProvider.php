@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Collection;
+use App\DoctrineExtensions\DBAL\Types\Citext;
+use Doctrine\DBAL\Types\Type;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 
@@ -13,10 +15,15 @@ class AppServiceProvider extends ServiceProvider
      * Register any application services.
      *
      * @return void
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function register()
     {
         Passport::ignoreMigrations();
+
+        Type::addType(Citext::CITEXT, Citext::class);
+        $conn = DB::connection(DB::getDefaultConnection());
+        $conn->getDoctrineConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('citext', Citext::CITEXT);
     }
 
     /**

@@ -2,71 +2,105 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Hash;
+use App\Rules\StrictEmail;
+use App\Rules\Username;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Foundation\Auth\RegistersUsers;
+use Valorin\Pwned\Pwned;
 
 class RegisterController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Register Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles the registration of new users as well as their
-    | validation and creation. By default this controller uses a trait to
-    | provide this functionality without requiring any additional code.
-    |
-    */
-
-    use RegistersUsers;
-
     /**
-     * Where to redirect users after registration.
+     * @OA\Schema(
+     *     schema="RegistrationRequest",
+     *     type="object",
+     *     required={
+     *         "name",
+     *         "email",
+     *         "password"
+     *     },
+     *     additionalProperties=false,
+     *     @OA\Property(
+     *         property="name",
+     *         type="string",
+     *         minLength=5,
+     *         maxLength=20,
+     *     ),
+     *     @OA\Property(
+     *         property="email",
+     *         type="string",
+     *         minLength=3,
+     *         maxLength=128,
+     *     ),
+     *     @OA\Property(
+     *         property="password",
+     *         type="string",
+     *         minLength=8,
+     *         maxLength=300,
+     *     )
+     * )
+     * @OA\Post(
+     *     path="/users",
+     *     description="Register an account on the site",
+     *     tags={"authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/RegistrationRequest")
+     *     ),
+     *     @OA\Response(
+     *         response="204",
+     *         description="Registration successful",
+     *     ),
+     *     @OA\Response(
+     *         response="400",
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             ref="#/components/schemas/ValidationErrorResponse"
+     *         )
+     *     )
+     * )
      *
-     * @var string
+     * @param  Request  $request
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Validation\ValidationException
      */
-    protected $redirectTo = '/home';
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function viaPassword(Request $request)
     {
-        $this->middleware('guest');
-    }
+        $data = Validator::make($request->only(['email', 'name', 'password']), [
+            'name' => [
+                'required',
+                'string',
+                'min:5',
+                'max:20',
+                'unique:users',
+                new Username(),
+            ],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'min:3',
+                'unique:users',
+                new StrictEmail(),
+            ],
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:300',
+                new Pwned,
+            ],
+        ])->validate();
 
-    /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function validator(array $data)
-    {
-        return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-    }
+        // First user will receive developer privileges
+        if (!User::any()) {
+            $data['role'] = 'developer';
+        }
 
-    /**
-     * Create a new user instance after a valid registration.
-     *
-     * @param  array  $data
-     * @return \App\User
-     */
-    protected function create(array $data)
-    {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        $user = User::create($data);
+        $cookie = $user->createAuthCookie('Post-registration');
+        return response()->noContent()->withCookie($cookie);
     }
 }

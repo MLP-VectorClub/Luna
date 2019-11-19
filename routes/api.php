@@ -20,7 +20,7 @@ Route::prefix('v0')->group(function () {
 
     Route::middleware('throttle:60,1')->group(function () {
         Route::prefix('users')->group(function () {
-            Route::post('/', 'UsersController@create');
+            Route::post('/', 'Auth\RegisterController@viaPassword');
 
             Route::middleware('auth:api')->group(function () {
                 Route::get('/me', 'UsersController@index');

@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Config;
@@ -78,6 +79,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $token = $this->createToken($name);
         $factory = new ApiTokenCookieFactory(app('config'), app('encrypter'));
-        return $factory->make($this->getKey(), null);
+        return encrypt($factory->make($this->getKey(), null));
     }
 }

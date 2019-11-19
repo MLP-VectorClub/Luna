@@ -24,9 +24,14 @@ use OpenApi\Annotations as OA;
  *     schema="ValidationErrorResponse",
  *     type="object",
  *     required={
+ *         "message",
  *         "errors"
  *     },
  *     additionalProperties=false,
+ *     @OA\Property(
+ *         property="message",
+ *         type="string"
+ *     ),
  *     @OA\Property(
  *         property="errors",
  *         type="object",
