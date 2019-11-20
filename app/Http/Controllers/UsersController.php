@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cookie;
@@ -59,7 +58,8 @@ class UsersController extends Controller
      *     @OA\Property(
      *         property="id",
      *         type="integer",
-     *         minimum=1
+     *         minimum=1,
+     *         example=1
      *     ),
      *     @OA\Property(
      *         property="name",
@@ -73,56 +73,58 @@ class UsersController extends Controller
      *     ),
      *     @OA\Property(
      *         property="role",
-     *         ref="#/components/schemas/UserRole",
+     *         example="user",
+     *         @OA\Schema(ref="#/components/schemas/UserRole")
      *     ),
      *     @OA\Property(
      *         property="avatarUrl",
      *         type="string",
      *         format="uri",
-     *         example="https://a.deviantart.net/avatars/e/x/example.png"
+     *         example="https://a.deviantart.net/avatars/e/x/example.png",
+     *         nullable=true,
      *     ),
      *     @OA\Property(
      *         property="avatarProvider",
      *         ref="#/components/schemas/AvatarProvider"
      *     )
      * )
+     * @OA\Schema(
+     *     schema="ValueOfUser",
+     *     type="object",
+     *     required={
+     *         "user"
+     *     },
+     *     additionalProperties=false,
+     *     @OA\Property(
+     *         property="user",
+     *         ref="#/components/schemas/User"
+     *     )
+     * ),
+     * @OA\Schema(
+     *   schema="SessionUpdating",
+     *   type="object",
+     *   required={
+     *     "sessionUpdating"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="sessionUpdating",
+     *     type="boolean",
+     *     description="If this value is true the DeviantArt access token expired and the backend is updating it in the background. Future requests should be made to the appropriate endpoint periodically (TODO) to check whether the session update was successful and the user should be logged out if it wasn't."
+     *   )
+     * )
      * @OA\Get(
      *     path="/users/me",
      *     description="Get information about the currently logged in user",
      *     tags={"authentication"},
-     *     security={"bearerAuth"},
+     *     security={"bearerAuth":{}},
      *     @OA\Response(
      *         response="200",
      *         description="Query successful",
      *         @OA\JsonContent(
      *             allOf={
-     *                 @OA\Schema(
-     *                     schema="ValueOfUser",
-     *                     type="object",
-     *                     description="A user's data under the user key",
-     *                     required={
-     *                         "user"
-     *                     },
-     *                     additionalProperties=false,
-     *                     @OA\Property(
-     *                         property="user",
-     *                         type="object",
-     *                         ref="#/components/schemas/User"
-     *                     )
-     *                 ),
-     *                 @OA\Schema(
-     *                   schema="SessionUpdating",
-     *                   type="object",
-     *                   required={
-     *                     "sessionUpdating"
-     *                   },
-     *                   additionalProperties=false,
-     *                   @OA\Property(
-     *                     property="sessionUpdating",
-     *                     type="boolean",
-     *                     description="If this value is true the DeviantArt access token expired and the backend is updating it in the background. Future requests should be made to the appropriate endpoint periodically (TODO) to check whether the session update was successful and the user should be logged out if it wasn't."
-     *                   )
-     *                 )
+     *                 @OA\Schema(ref="#/components/schemas/ValueOfUser"),
+     *                 @OA\Schema(ref="#/components/schemas/SessionUpdating")
      *             }
      *         )
      *     ),
@@ -149,7 +151,7 @@ class UsersController extends Controller
      *     path="/users/logout",
      *     description="Shortcut for calling the token DELETE endpoint with the current token",
      *     tags={"authentication"},
-     *     security={"bearerAuth"},
+     *     security={"bearerAuth":{}},
      *     @OA\Response(
      *         response="204",
      *         description="Logout successful"

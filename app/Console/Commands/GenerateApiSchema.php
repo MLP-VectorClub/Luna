@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\DocsController;
+use cebe\openapi\Reader;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -64,6 +65,15 @@ class GenerateApiSchema extends Command
             exit(1);
         }
         $json = $openapi->toJson();
+        $validator = Reader::readFromJson($json);
+        if (!$validator->validate()) {
+            $this->error("Generated OpenAPI JSON did not match schema, see errors below:\n");
+
+            foreach ($validator->getErrors() as $error) {
+                $this->error("\t$error");
+            }
+            exit(1);
+        }
         Storage::disk('local')->put($output_path, $json);
         $this->info('Written API schema to file');
     }

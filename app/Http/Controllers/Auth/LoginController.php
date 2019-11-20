@@ -14,7 +14,7 @@ use OpenApi\Annotations as OA;
  *     path="/users/tokens",
  *     description="Returns a list of access tokens that belong to the current user",
  *     tags={"authentication"},
- *     security={"bearerAuth"},
+ *     security={"bearerAuth":{}},
  *     @OA\Response(
  *         response="200",
  *         description="Sucess",
@@ -31,7 +31,7 @@ use OpenApi\Annotations as OA;
  *     path="/users/tokens/{id}",
  *     description="Deletes an access token that belongs to the current user",
  *     tags={"authentication"},
- *     security={"bearerAuth"},
+ *     security={"bearerAuth":{}},
  *     @OA\Parameter(
  *         in="path",
  *         name="id",
