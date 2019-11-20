@@ -12,8 +12,9 @@ class DocsController extends Controller
         /** @var Cloud $disk */
         $disk = Storage::disk('local');
         $file_path = 'api.json';
-        if ($disk->exists($file_path)) {
-            $file_url = $disk->url($file_path).'?t='.$disk->lastModified("public/$file_path");
+        $file_disk_path = "public/$file_path";
+        if ($disk->exists($file_disk_path)) {
+            $file_url = $disk->url($file_path).'?t='.$disk->lastModified($file_disk_path);
         }
         return view('docs', ['file_url' => $file_url ?? '']);
     }
