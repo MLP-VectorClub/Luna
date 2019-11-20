@@ -21,31 +21,46 @@ use OpenApi\Annotations as OA;
  *     @OA\Tag(name="authentication", description="Endpoints related to getting a user logged in or out, as well as checking logged in status"),
  * )
  * @OA\Schema(
- *     schema="ValidationErrorResponse",
+ *     schema="ErrorResponse",
  *     type="object",
  *     required={
- *         "message",
- *         "errors"
+ *         "message"
  *     },
  *     additionalProperties=false,
  *     @OA\Property(
  *         property="message",
- *         type="string"
- *     ),
- *     @OA\Property(
- *         property="errors",
- *         type="object",
- *         minProperties=1,
- *         @OA\AdditionalProperties(
- *             type="array",
- *             minItems=1,
- *             @OA\Items(type="string")
- *         ),
- *         example={
- *             "first_field": {"Validation error message"},
- *             "second_field": {"Validation error message"},
- *         }
+ *         type="string",
+ *         description="An error message describing what caused the request to fail",
+ *         example="The given data was invalid."
  *     )
+ * )
+ * @OA\Schema(
+ *     schema="ValidationErrorResponse",
+ *     allOf={
+ *         @OA\Schema(
+ *             type="object",
+ *             required={
+ *                 "errors"
+ *             },
+ *             additionalProperties=false,
+ *             @OA\Property(
+ *                 property="errors",
+ *                 type="object",
+ *                 description="A map containing error messages for each field that did not pass validation",
+ *                 minProperties=1,
+ *                 @OA\AdditionalProperties(
+ *                     type="array",
+ *                     minItems=1,
+ *                     @OA\Items(type="string")
+ *                 ),
+ *                 example={
+ *                     "username": {"The username must be at least 8 characters long", "The username is already taken"},
+ *                     "email": {"The email must be at least 3 characters long"},
+ *                 }
+ *             )
+ *         ),
+ *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
+ *     }
  * )
  */
 class Controller extends BaseController

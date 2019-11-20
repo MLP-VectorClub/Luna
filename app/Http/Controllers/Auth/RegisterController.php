@@ -61,6 +61,13 @@ class RegisterController extends Controller
      *         @OA\JsonContent(
      *             ref="#/components/schemas/ValidationErrorResponse"
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response="403",
+     *         description="Registrations are not possible at the moment",
+     *         @OA\JsonContent(
+     *             ref="#/components/schemas/ErrorResponse"
+     *         )
      *     )
      * )
      *
@@ -99,10 +106,7 @@ class RegisterController extends Controller
 
         // TODO remove when registration for the public is open
         if ($have_users) {
-            $validator->errors()->add(
-                null,
-                'Registrations are currently not accepted, thank you for your understanding.'
-            );
+            abort(403, 'Registrations are currently not accepted, thank you for your understanding.');
             throw new ValidationException($validator);
         }
 
