@@ -90,8 +90,6 @@ class User extends Authenticatable implements MustVerifyEmail
             $config['same_site'] ?? null
         );
 
-        return response()->json([
-            'access_token' => $token->accessToken,
-        ])->withCookie($cookie);
+        return response()->noContent()->withCookie($cookie);
     }
 }

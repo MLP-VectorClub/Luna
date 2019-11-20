@@ -52,9 +52,8 @@ class RegisterController extends Controller
      *         @OA\JsonContent(ref="#/components/schemas/RegistrationRequest")
      *     ),
      *     @OA\Response(
-     *         response="200",
-     *         description="Registration successful",
-     *         @OA\JsonContent(ref="#/components/schemas/AccessTokenResponse")
+     *         response="204",
+     *         description="Registration successful (access token is set as the `auth_token` cookie)"
      *     ),
      *     @OA\Response(
      *         response="400",

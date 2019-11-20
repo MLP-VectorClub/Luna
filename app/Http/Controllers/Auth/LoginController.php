@@ -62,20 +62,6 @@ use OpenApi\Annotations as OA;
 class LoginController extends Controller
 {
     /**
-     * @OA\Schema(
-     *     schema="AccessTokenResponse",
-     *     type="object",
-     *     required={
-     *         "access_token"
-     *     },
-     *     additionalProperties=false,
-     *     @OA\Property(
-     *         property="access_token",
-     *         description="Long-lived access token for the user (also sent inside a `auth_token` cookie)",
-     *         type="string",
-     *         format="JWT"
-     *     )
-     * )
      * @OA\Post(
      *     path="/users/login",
      *     description="Used for obtaining an API access token",
@@ -104,9 +90,8 @@ class LoginController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response="200",
-     *         description="Authentication successful",
-     *         @OA\JsonContent(ref="#/components/schemas/AccessTokenResponse")
+     *         response="204",
+     *         description="Authentication successful (access token is set as the `auth_token` cookie)"
      *     ),
      *     @OA\Response(
      *         response="401",
