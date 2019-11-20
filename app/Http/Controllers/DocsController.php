@@ -7,14 +7,15 @@ use Illuminate\Support\Facades\Storage;
 
 class DocsController extends Controller
 {
+    const FILE_PATH = 'api.json';
+    const FILE_DISK_PATH = 'public/'.self::FILE_PATH;
+
     public function index()
     {
         /** @var Cloud $disk */
         $disk = Storage::disk('local');
-        $file_path = 'api.json';
-        $file_disk_path = "public/$file_path";
-        if ($disk->exists($file_disk_path)) {
-            $file_url = $disk->url($file_path).'?t='.$disk->lastModified($file_disk_path);
+        if ($disk->exists(self::FILE_DISK_PATH)) {
+            $file_url = $disk->url(self::FILE_PATH).'?t='.$disk->lastModified(self::FILE_DISK_PATH);
         }
         return view('docs', ['file_url' => $file_url ?? '']);
     }

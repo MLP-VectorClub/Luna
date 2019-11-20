@@ -2,9 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\DocsController;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use OpenApi\Analysis;
+use OpenApi\Annotations\Operation;
 use function OpenApi\scan;
 
 class GenerateApiSchema extends Command
@@ -30,7 +33,31 @@ class GenerateApiSchema extends Command
      */
     public function handle()
     {
-        $output_path = 'public/api.json';
+        $output_path = DocsController::FILE_DISK_PATH;
+        // Generate reasonable looking operation IDs
+        Analysis::registerProcessor(function (Analysis $analysis) {
+            /** @var Operation[] $all_operations */
+            $all_operations = $analysis->getAnnotationsOfType(Operation::class);
+
+            foreach ($all_operations as $operation) {
+                $operation->operationId = ucfirst(
+                    Str::camel(
+                        trim(
+                            preg_replace(
+                                '~_{2,}~',
+                                '_',
+                                preg_replace(
+                                    '~[^a-z_]~i',
+                                    '_',
+                                    implode('_', [$operation->method, $operation->path])
+                                )
+                            ),
+                            '_'
+                        )
+                    )
+                );
+            }
+        });
         $openapi = scan(app_path());
         if (!$openapi->validate()) {
             $this->error("Invalid OpenAPI schema, could not generate $output_path");
