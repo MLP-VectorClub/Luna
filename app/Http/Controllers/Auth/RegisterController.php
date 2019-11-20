@@ -8,6 +8,7 @@ use App\Rules\Username;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations\JsonContent;
 use Valorin\Pwned\Pwned;
 
@@ -99,6 +100,11 @@ class RegisterController extends Controller
         // First user will receive developer privileges
         if (!User::any()) {
             $data['role'] = 'developer';
+        } else {
+            // We don't want any more users for now
+            $validator = Validator::make([], []);
+            $validator->errors()->add('name', 'Registrations are currently not accepted, thank you for your understanding.');
+            throw new ValidationException($validator);
         }
 
         $user = User::create($data);
