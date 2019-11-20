@@ -27,11 +27,6 @@
 <div class="notice">This API is still in development, everything is subject to change and the database may be wiped multiple times before a stable release. Use with caution.</div>
 <div id="swagger-ui"></div>
 <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
-@php
-/** @var Illuminate\Contracts\Filesystem\Cloud $disk */
-$disk = Storage::disk('local');
-$file_path = 'api.json';
-@endphp
 <script type="text/javascript">
   window.onload = function() {
     SwaggerUIBundle({
@@ -39,7 +34,7 @@ $file_path = 'api.json';
       dom_id: '#swagger-ui',
       showExtensions: true,
       showCommonExtensions: true,
-      url: '{{ $disk->url($file_path) }}?t={{ $disk->lastModified("public/$file_path") }}',
+      url: '{!! $file_url !!}',
     });
   };
 </script>
