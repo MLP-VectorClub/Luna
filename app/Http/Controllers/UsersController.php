@@ -2,16 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Rules\StrictEmail;
-use App\Rules\Username;
-use App\User;
+use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cookie;
+use Laravel\Passport\Passport;
+use Laravel\Passport\TokenRepository;
 use OpenApi\Annotations as OA;
-use Valorin\Pwned\Pwned;
 
 class UsersController extends Controller
 {
+    /**
+     * The token repository implementation.
+     *
+     * @var \Laravel\Passport\TokenRepository
+     */
+    protected $tokenRepository;
+
+    /**
+     * Create a controller instance.
+     *
+     * @param  \Laravel\Passport\TokenRepository  $tokenRepository
+     * @return void
+     */
+    public function __construct(TokenRepository $tokenRepository)
+    {
+        $this->tokenRepository = $tokenRepository;
+    }
 
     /**
      * @OA\Schema(
@@ -71,8 +88,9 @@ class UsersController extends Controller
      * )
      * @OA\Get(
      *     path="/users/me",
-     *   description="Get information about the currently logged in user",
+     *     description="Get information about the currently logged in user",
      *     tags={"authentication"},
+     *     security={"bearerAuth"},
      *     @OA\Response(
      *         response="200",
      *         description="Query successful",
@@ -124,5 +142,44 @@ class UsersController extends Controller
             // TODO Make dynamic
             'session_updating' => false,
         ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/users/logout",
+     *     description="Shortcut for calling the token DELETE endpoint with the current token",
+     *     tags={"authentication"},
+     *     security={"bearerAuth"},
+     *     @OA\Response(
+     *         response="204",
+     *         description="Logout successful"
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unathorized",
+     *     )
+     * )
+     *
+     * @param  Request  $request
+     * @return Response
+     */
+    public function logout(Request $request)
+    {
+        $token = $request->bearerToken();
+        $token_id = (new \Lcobucci\JWT\Parser())->parse($token)->getHeader('jti');
+        $token = $this->tokenRepository->findForUser(
+            $token_id,
+            $request->user()->getKey()
+        );
+
+        if ($token === null) {
+            abort(404);
+        }
+
+        $token->revoke();
+
+        $delete_cookie = Cookie::forget(Passport::cookie());
+
+        return response()->noContent()->withCookie($delete_cookie);
     }
 }

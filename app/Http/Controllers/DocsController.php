@@ -11,6 +11,6 @@ class DocsController extends Controller
 
     public function rtfm()
     {
-        return redirect('/docs');
+        return redirect('/');
     }
 }

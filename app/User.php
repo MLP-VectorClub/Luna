@@ -2,23 +2,19 @@
 
 namespace App;
 
+use Browser;
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Encryption\Encrypter;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Laravel\Passport\ApiTokenCookieFactory;
 use Laravel\Passport\HasApiTokens;
 use Laravel\Passport\Passport;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, Notifiable;
-
-    protected $dateFormat = 'Y-m-d H:i:sO';
 
     /**
      * The attributes that are mass assignable.
@@ -75,10 +71,27 @@ class User extends Authenticatable implements MustVerifyEmail
         return DB::selectOne('SELECT 1 FROM users LIMIT 1') !== null;
     }
 
-    public function createAuthCookie(string $name)
+    public function authResponse()
     {
-        $token = $this->createToken($name);
-        $factory = new ApiTokenCookieFactory(app('config'), app('encrypter'));
-        return encrypt($factory->make($this->getKey(), null));
+        $token = $this->createToken(sprintf('%s on %s', Browser::browserName(), Browser::platformName()));
+
+        $config = app('config')->get('session');
+        $expiration = Carbon::now()->add(Passport::tokensExpireIn());
+
+        $cookie = new Cookie(
+            Passport::cookie(),
+            $token->accessToken,
+            $expiration,
+            $config['path'],
+            $config['domain'],
+            $config['secure'],
+            true,
+            false,
+            $config['same_site'] ?? null
+        );
+
+        return response()->json([
+            'access_token' => $token->accessToken,
+        ])->withCookie($cookie);
     }
 }

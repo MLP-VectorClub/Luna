@@ -38,7 +38,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            \App\Http\Middleware\ForceJsonResponse::class,
+            \App\Http\Middleware\TransformApiHeaders::class,
             'bindings',
         ],
     ];

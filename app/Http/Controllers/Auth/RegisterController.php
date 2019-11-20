@@ -8,6 +8,7 @@ use App\Rules\Username;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Annotations\JsonContent;
 use Valorin\Pwned\Pwned;
 
 class RegisterController extends Controller
@@ -50,8 +51,9 @@ class RegisterController extends Controller
      *         @OA\JsonContent(ref="#/components/schemas/RegistrationRequest")
      *     ),
      *     @OA\Response(
-     *         response="204",
+     *         response="200",
      *         description="Registration successful",
+     *         @OA\JsonContent(ref="#/components/schemas/AccessTokenResponse")
      *     ),
      *     @OA\Response(
      *         response="400",
@@ -100,7 +102,6 @@ class RegisterController extends Controller
         }
 
         $user = User::create($data);
-        $cookie = $user->createAuthCookie('Post-registration');
-        return response()->noContent()->withCookie($cookie);
+        return $user->authResponse();
     }
 }

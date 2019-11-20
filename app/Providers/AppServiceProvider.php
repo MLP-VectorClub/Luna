@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\DoctrineExtensions\DBAL\Types\Citext;
 use Doctrine\DBAL\Types\Type;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -19,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        Passport::cookie('auth_token');
         Passport::ignoreMigrations();
 
         Type::addType(Citext::CITEXT, Citext::class);

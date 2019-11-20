@@ -14,7 +14,7 @@ class GenerateApiSchema extends Command
      *
      * @var string
      */
-    protected $signature = 'api:schema:generate';
+    protected $signature = 'api:schema';
 
     /**
      * The console command description.
