@@ -22,7 +22,9 @@ class AppServiceProvider extends ServiceProvider
         Passport::cookie('auth_token');
         Passport::ignoreMigrations();
 
-        Type::addType(Citext::CITEXT, Citext::class);
+        if (!Type::hasType(Citext::CITEXT)) {
+            Type::addType(Citext::CITEXT, Citext::class);
+        }
         $conn = DB::connection(DB::getDefaultConnection());
         $platform = $conn->getDoctrineConnection()->getDatabasePlatform();
         if (!$platform->hasDoctrineTypeMappingFor('citext')) {
