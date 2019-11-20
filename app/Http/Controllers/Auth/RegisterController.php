@@ -7,6 +7,7 @@ use App\Rules\StrictEmail;
 use App\Rules\Username;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Valorin\Pwned\Pwned;
@@ -115,6 +116,9 @@ class RegisterController extends Controller
         if (!$have_users) {
             $data['role'] = 'developer';
         }
+
+        // Hash password
+        $data['password'] = Hash::make($data['password']);
 
         $user = User::create($data);
         return $user->authResponse();

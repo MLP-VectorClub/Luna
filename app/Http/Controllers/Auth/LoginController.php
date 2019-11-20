@@ -130,7 +130,7 @@ class LoginController extends Controller
             abort(401);
         }
 
-        if (!Hash::check($user->password, Hash::make($data['password']))) {
+        if (!Hash::check($data['password'], $user->password)) {
             abort(401);
         }
 
