@@ -12,7 +12,7 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     CMD_MIGRATE="sudo -u www-data php artisan migrate --force"
     CMD_NPM="sudo -u www-data npm install --production --no-save"
     # CMD_REDIS_CLEAR="# TODO"
-    CMD_API_DOCS="sudo -u www-data php artisan api:schema:generate"
+    CMD_API_DOCS="sudo -u www-data php artisan api:schema"
     CMD_CACHE_CONFIG="sudo -u www-data php artisan config:cache"
     CMD_CACHE_ROUTES="sudo -u www-data php artisan route:cache"
 
