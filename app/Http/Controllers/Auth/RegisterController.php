@@ -9,7 +9,6 @@ use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations\JsonContent;
 use Valorin\Pwned\Pwned;
 
 class RegisterController extends Controller
@@ -71,7 +70,8 @@ class RegisterController extends Controller
      */
     public function viaPassword(Request $request)
     {
-        $data = Validator::make($request->only(['email', 'name', 'password']), [
+        $have_users = User::any();
+        $validator = Validator::make($request->only(['email', 'name', 'password']), [
             'name' => [
                 'required',
                 'string',
@@ -95,16 +95,21 @@ class RegisterController extends Controller
                 'max:300',
                 new Pwned,
             ],
-        ])->validate();
+        ]);
 
-        // First user will receive developer privileges
-        if (!User::any()) {
-            $data['role'] = 'developer';
-        } else {
-            // We don't want any more users for now
-            $validator = Validator::make([], []);
-            $validator->errors()->add('name', 'Registrations are currently not accepted, thank you for your understanding.');
+        // TODO remove when registration for the public is open
+        if ($have_users) {
+            $validator->errors()->add(
+                null,
+                'Registrations are currently not accepted, thank you for your understanding.'
+            );
             throw new ValidationException($validator);
+        }
+
+        $data = $validator->validate();
+        // First user will receive developer privileges
+        if (!$have_users) {
+            $data['role'] = 'developer';
         }
 
         $user = User::create($data);
