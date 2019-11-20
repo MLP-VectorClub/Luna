@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\DoctrineExtensions\DBAL\Types\Citext;
 use Doctrine\DBAL\Types\Type;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -25,7 +24,10 @@ class AppServiceProvider extends ServiceProvider
 
         Type::addType(Citext::CITEXT, Citext::class);
         $conn = DB::connection(DB::getDefaultConnection());
-        $conn->getDoctrineConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('citext', Citext::CITEXT);
+        $platform = $conn->getDoctrineConnection()->getDatabasePlatform();
+        if (!$platform->hasDoctrineTypeMappingFor('citext')) {
+            $platform->registerDoctrineTypeMapping('citext', Citext::CITEXT);
+        }
     }
 
     /**
