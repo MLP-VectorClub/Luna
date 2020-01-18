@@ -63,11 +63,19 @@ class RegisterController extends Controller
      *         )
      *     ),
      *     @OA\Response(
+     *         response="204",
+     *         description="Registration successful (authentication via cookies, no token is sent)"
+     *     ),
+     *     @OA\Response(
      *         response="400",
      *         description="Validation error",
      *         @OA\JsonContent(
      *             ref="#/components/schemas/ValidationErrorResponse"
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response="403",
+     *         description="Already logged in via session-based authentication",
      *     ),
      *     @OA\Response(
      *         response="403",
@@ -79,11 +87,16 @@ class RegisterController extends Controller
      * )
      *
      * @param  Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      * @throws \Illuminate\Validation\ValidationException
      */
     public function viaPassword(Request $request)
     {
+        $is_airlock = $request->attributes->get('airlock') === true;
+        if ($is_airlock && $request->user() !== null) {
+            abort(403);
+        }
+
         $have_users = User::any();
         $validator = Validator::make($request->only(['email', 'name', 'password']), [
             'name' => [
@@ -127,6 +140,12 @@ class RegisterController extends Controller
         $data['password'] = Hash::make($data['password']);
 
         $user = User::create($data);
+
+        if ($is_airlock) {
+            Auth::login($user, true);
+            return response()->noContent();
+        }
+
         return $user->authResponse();
     }
 }
