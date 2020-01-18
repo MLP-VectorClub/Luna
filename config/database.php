@@ -76,9 +76,6 @@ return [
             'prefix_indexes' => true,
             'schema' => 'public',
             'sslmode' => 'prefer',
-            'mapping_types' => [
-                'citext' => 'string',
-            ]
         ],
 
         'sqlsrv' => [

@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
-use App\DoctrineExtensions\DBAL\Types\Citext;
+use App\EloquentFixes\CustomDateGrammar;
+use App\EloquentFixes\DBAL\Types\Citext;
+use Carbon\Carbon;
 use Doctrine\DBAL\Types\Type;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Database\Query\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,9 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        Passport::cookie('auth_token');
-        Passport::ignoreMigrations();
-
         if (!Type::hasType(Citext::CITEXT)) {
             Type::addType(Citext::CITEXT, Citext::class);
         }
@@ -30,6 +29,19 @@ class AppServiceProvider extends ServiceProvider
         if (!$platform->hasDoctrineTypeMappingFor('citext')) {
             $platform->registerDoctrineTypeMapping('citext', Citext::CITEXT);
         }
+        $conn->setQueryGrammar(new class($platform->getDateTimeTzFormatString()) extends PostgresGrammar {
+            protected string $format_string;
+
+            public function __construct(string $format_string)
+            {
+                $this->format_string = $format_string;
+            }
+
+            public function getDateFormat()
+            {
+                return $this->format_string;
+            }
+        });
     }
 
     /**
@@ -47,6 +59,15 @@ class AppServiceProvider extends ServiceProvider
          */
         Date::macro('intervalInSeconds', function (\DateInterval $interval): int {
             return (new \DateTime())->setTimeStamp(0)->add($interval)->getTimeStamp();
+        });
+        /**
+         * Convert a potentially null Carbon timestamp to string
+         *
+         * @param  Carbon|null $date
+         * @return string|null
+         */
+        Date::macro('maybeToString', function (?Carbon $date): ?string {
+            return $date !== null ? $date->toISOString() : null;
         });
     }
 }

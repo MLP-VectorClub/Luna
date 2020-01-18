@@ -31,12 +31,22 @@
 <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
 <script type="text/javascript">
     window.onload = function () {
+        var cookieName = 'XSRF-TOKEN';
+        function getCookie(name) {
+            var value = "; " + document.cookie;
+            var parts = value.split("; " + name + "=");
+            if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
+        }
         SwaggerUIBundle({
             deepLinking: true,
             dom_id: '#swagger-ui',
             showExtensions: true,
             showCommonExtensions: true,
             url: '{!! $file_url !!}',
+            requestInterceptor: req => {
+                req.headers['X-' + cookieName] = getCookie(cookieName);
+                return req;
+            }
         });
     };
 </script>

@@ -8,13 +8,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
-use Laravel\Passport\HasApiTokens;
-use Laravel\Passport\Passport;
+use Laravel\Airlock\HasApiTokens;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, Notifiable;
+
+    protected $dateFormat = 'Y-m-d H:i:s.uO';
 
     /**
      * The attributes that are mass assignable.
@@ -75,21 +76,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $token = $this->createToken(sprintf('%s on %s', Browser::browserName(), Browser::platformName()));
 
-        $config = app('config')->get('session');
-        $expiration = Carbon::now()->add(Passport::tokensExpireIn());
-
-        $cookie = new Cookie(
-            Passport::cookie(),
-            $token->accessToken,
-            $expiration,
-            $config['path'],
-            $config['domain'],
-            $config['secure'],
-            true,
-            false,
-            $config['same_site'] ?? null
-        );
-
-        return response()->noContent()->withCookie($cookie);
+        return response()->json(['token' => $token->plainTextToken]);
     }
 }

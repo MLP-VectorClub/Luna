@@ -3,16 +3,21 @@
 namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Laravel\Passport\Passport;
-use Laravel\Passport\RouteRegistrar;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\SecurityScheme(
- *     securityScheme="bearerAuth",
+ *     securityScheme="BearerAuth",
  *     type="http",
  *     scheme="bearer",
- *     bearerFormat="JWT"
+ *     description="Can be used to authenticate using a token sent via HTTP headers"
+ * )
+ * @OA\SecurityScheme(
+ *     securityScheme="CookieAuth",
+ *     type="apiKey",
+ *     in="cookie",
+ *     name="mlp_vector_club_session",
+ *     description="Used for session-based authentication, the cookie is set by the backend on qualifying requests (i.e. browser requests originating from our domain)"
  * )
  */
 class AuthServiceProvider extends ServiceProvider
@@ -25,7 +30,5 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
-
-        Passport::ignoreCsrfToken(true);
     }
 }

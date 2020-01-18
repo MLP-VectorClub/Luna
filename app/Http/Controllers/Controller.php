@@ -15,7 +15,7 @@ use OpenApi\Annotations as OA;
  *         version="0.1",
  *         description="A work-in-progress API for the [MLP Vector Club](https://mlpvector.club/)'s website.",
  *         @OA\License(name="MIT"),
- *         @OA\Contact(name="David Joseph Guzsik", url="https://seinopsys.hu", email="seinopsys@gmail.com"),
+ *         @OA\Contact(name="David Joseph Guzsik", url="https://seinopsys.dev", email="seinopsys@gmail.com"),
  *     ),
  *     @OA\Server(url="/v0", description="Unstable API"),
  *     @OA\Tag(name="authentication", description="Endpoints related to getting a user logged in or out, as well as checking logged in status"),
@@ -61,6 +61,15 @@ use OpenApi\Annotations as OA;
  *         ),
  *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
  *     }
+ * )
+ * @OA\Get(
+ *     path="/../airlock/csrf-cookie",
+ *     description="Initialize CSRF protection by sending a dummy request through the web middleware. Used only for session-based authentication.",
+ *     tags={"authentication"},
+ *     @OA\Response(
+ *         response="204",
+ *         description="Sucess"
+ *     )
  * )
  */
 class Controller extends BaseController

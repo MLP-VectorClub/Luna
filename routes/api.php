@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Laravel\Passport\Http\Controllers\PersonalAccessTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,11 +22,11 @@ Route::prefix('v0')->group(function () {
         Route::prefix('users')->group(function () {
             Route::post('/', 'Auth\RegisterController@viaPassword');
 
-            Route::middleware('auth:api')->group(function () {
+            Route::middleware('auth:airlock')->group(function () {
                 Route::get('/me', 'UsersController@index');
                 Route::post('/logout', 'UsersController@logout');
-                Route::get('/tokens', [PersonalAccessTokenController::class, 'forUser']);
-                Route::delete('/tokens/{token_id}', [PersonalAccessTokenController::class, 'destroy']);
+                Route::get('/tokens', 'UsersController@tokens');
+                Route::delete('/tokens/{token_id}', 'UsersController@deleteToken');
             });
         });
     });

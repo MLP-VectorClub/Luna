@@ -52,8 +52,15 @@ class RegisterController extends Controller
      *         @OA\JsonContent(ref="#/components/schemas/RegistrationRequest")
      *     ),
      *     @OA\Response(
-     *         response="204",
-     *         description="Registration successful (access token is set as the `auth_token` cookie)"
+     *         response="200",
+     *         description="Registration successful",
+     *         @OA\JsonContent(
+     *             additionalProperties=false,
+     *             @OA\Property(
+     *                 property="token",
+     *                 type="string"
+     *             )
+     *         )
      *     ),
      *     @OA\Response(
      *         response="400",
@@ -72,7 +79,7 @@ class RegisterController extends Controller
      * )
      *
      * @param  Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      * @throws \Illuminate\Validation\ValidationException
      */
     public function viaPassword(Request $request)

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DoctrineExtensions\DBAL\Types;
+namespace App\EloquentFixes\DBAL\Types;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\TextType;

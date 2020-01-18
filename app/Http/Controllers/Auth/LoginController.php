@@ -5,60 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Get(
- *     path="/users/tokens",
- *     description="Returns a list of access tokens that belong to the current user",
- *     tags={"authentication"},
- *     security={"bearerAuth":{}},
- *     @OA\Response(
- *         response="200",
- *         description="Sucess",
- *         @OA\JsonContent(
- *             additionalProperties=false,
- *         )
- *     ),
- *     @OA\Response(
- *         response="401",
- *         description="Unathorized",
- *     )
- * )
- * @OA\Delete(
- *     path="/users/tokens/{id}",
- *     description="Deletes an access token that belongs to the current user",
- *     tags={"authentication"},
- *     security={"bearerAuth":{}},
- *     @OA\Parameter(
- *         in="path",
- *         name="id",
- *         required=true,
- *         @OA\Schema(
- *             type="string",
- *             format="hex"
- *         ),
- *         description="The ID of the token to delete"
- *     ),
- *     @OA\Response(
- *         response="200",
- *         description="Sucess",
- *         @OA\JsonContent(
- *             additionalProperties=false,
- *         )
- *     ),
- *     @OA\Response(
- *         response="404",
- *         description="Token not found",
- *     ),
- *     @OA\Response(
- *         response="401",
- *         description="Unathorized",
- *     )
- * )
- */
 class LoginController extends Controller
 {
     /**
@@ -90,8 +41,23 @@ class LoginController extends Controller
      *         )
      *     ),
      *     @OA\Response(
+     *         response="200",
+     *         description="Authentication successful",
+     *         @OA\JsonContent(
+     *             additionalProperties=false,
+     *             @OA\Property(
+     *                 property="token",
+     *                 type="string"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response="204",
-     *         description="Authentication successful (access token is set as the `auth_token` cookie)"
+     *         description="Session-based authentication successful (authentication via cookies, no token is sent)"
+     *     ),
+     *     @OA\Response(
+     *         response="403",
+     *         description="Already logged in via session-based authentication",
      *     ),
      *     @OA\Response(
      *         response="401",
@@ -100,11 +66,16 @@ class LoginController extends Controller
      * )
      *
      * @param  Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      * @throws \Illuminate\Validation\ValidationException
      */
     public function viaPassword(Request $request)
     {
+        $is_airlock = $request->attributes->get('airlock') === true;
+        if ($is_airlock && $request->user() !== null) {
+            abort(403);
+        }
+
         $data = Validator::make($request->only(['email', 'password']), [
             'email' => 'required|string',
             'password' => 'required|string',
@@ -117,6 +88,11 @@ class LoginController extends Controller
 
         if (!Hash::check($data['password'], $user->password)) {
             abort(401);
+        }
+
+        if ($is_airlock) {
+            Auth::login($user, true);
+            return response()->noContent();
         }
 
         return $user->authResponse();

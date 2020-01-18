@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Laravel\Passport\Passport;
 
 class TransformApiHeaders
 {
@@ -16,14 +15,7 @@ class TransformApiHeaders
      */
     public function handle($request, Closure $next)
     {
-        $cookie_name = Passport::cookie();
-        $token_cookie = $request->cookie($cookie_name);
-        $request->cookies->remove($cookie_name);
-        $headers = ['Accept' => 'application/json'];
-        if ($token_cookie !== null) {
-            $headers['Authorization'] = "Bearer $token_cookie";
-        }
-        $request->headers->add($headers);
+        $request->headers->set('Accept', 'application/json');
         return $next($request);
     }
 }
