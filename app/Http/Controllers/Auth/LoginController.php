@@ -13,31 +13,31 @@ use OpenApi\Annotations as OA;
 class LoginController extends Controller
 {
     /**
+     * @OA\Schema(
+     *     schema="LoginRequest",
+     *     type="object",
+     *     required={
+     *         "email",
+     *         "password"
+     *     },
+     *     additionalProperties=false,
+     *     @OA\Property(
+     *         property="email",
+     *         type="string"
+     *     ),
+     *     @OA\Property(
+     *         property="password",
+     *         type="string"
+     *     )
+     * )
      * @OA\Post(
      *     path="/users/login",
      *     description="Used for obtaining an API access token",
      *     tags={"authentication"},
      *     @OA\RequestBody(
-     *         required=true,
      *         @OA\MediaType(
      *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 schema="LoginRequest",
-     *                 type="object",
-     *                 required={
-     *                     "email",
-     *                     "password"
-     *                 },
-     *                 additionalProperties=false,
-     *                 @OA\Property(
-     *                     property="email",
-     *                     type="string"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="password",
-     *                     type="string"
-     *                 )
-     *             )
+     *             @OA\Schema(ref="#/components/schemas/LoginRequest")
      *         )
      *     ),
      *     @OA\Response(
