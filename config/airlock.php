@@ -14,6 +14,7 @@ return [
     */
 
     'stateful' => [
+        'localhost',
         rtrim(preg_replace('~^.*//~', '', env('APP_URL', 'http://localhost')), '/'),
     ],
 
