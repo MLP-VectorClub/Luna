@@ -78,7 +78,7 @@ class RegisterController extends Controller
      *         description="Already logged in via session-based authentication",
      *     ),
      *     @OA\Response(
-     *         response="403",
+     *         response="503",
      *         description="Registrations are not possible at the moment",
      *         @OA\JsonContent(
      *             ref="#/components/schemas/ErrorResponse"
@@ -126,7 +126,7 @@ class RegisterController extends Controller
 
         // TODO remove when registration for the public is open
         if ($have_users) {
-            abort(403, 'Registrations are currently not accepted, thank you for your understanding.');
+            abort(503, 'Registrations are currently not accepted, thank you for your understanding.');
             throw new ValidationException($validator);
         }
 
