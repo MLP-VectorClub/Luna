@@ -18,7 +18,8 @@ class UsersController extends Controller
      *     schema="UserRole",
      *     type="string",
      *     description="List of roles a user can have",
-     *     enum={"guest","user","member","assistant","staff","admin","developer"}
+     *     enum={"guest","user","member","assistant","staff","admin","developer"},
+     *     example="user",
      * )
      * @OA\Schema(
      *     schema="AvatarProvider",
@@ -35,30 +36,36 @@ class UsersController extends Controller
      *         "name",
      *         "displayName",
      *         "role",
+     *         "email",
      *         "avatarUrl",
-     *         "avatarProvider"
+     *         "avatarProvider",
      *     },
      *     additionalProperties=false,
      *     @OA\Property(
      *         property="id",
      *         type="integer",
      *         minimum=1,
-     *         example=1
+     *         example=1,
      *     ),
      *     @OA\Property(
      *         property="name",
      *         type="string",
-     *         example="example"
+     *         example="example",
      *     ),
      *     @OA\Property(
      *         property="displayName",
      *         type="string",
-     *         example="example"
+     *         example="example",
+     *     ),
+     *     @OA\Property(
+     *         property="email",
+     *         type="string",
+     *         example="user@example.com",
+     *         nullable=true,
      *     ),
      *     @OA\Property(
      *         property="role",
-     *         example="user",
-     *         @OA\Schema(ref="#/components/schemas/UserRole")
+     *         ref="#/components/schemas/UserRole",
      *     ),
      *     @OA\Property(
      *         property="avatarUrl",
@@ -84,19 +91,6 @@ class UsersController extends Controller
      *         ref="#/components/schemas/User"
      *     )
      * ),
-     * @OA\Schema(
-     *   schema="SessionUpdating",
-     *   type="object",
-     *   required={
-     *     "sessionUpdating"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="sessionUpdating",
-     *     type="boolean",
-     *     description="If this value is true the DeviantArt access token expired and the backend is updating it in the background. Future requests should be made to the appropriate endpoint periodically (TODO) to check whether the session update was successful and the user should be logged out if it wasn't."
-     *   )
-     * )
      * @OA\Get(
      *     path="/users/me",
      *     description="Get information about the currently logged in user",
@@ -108,7 +102,6 @@ class UsersController extends Controller
      *         @OA\JsonContent(
      *             allOf={
      *                 @OA\Schema(ref="#/components/schemas/ValueOfUser"),
-     *                 @OA\Schema(ref="#/components/schemas/SessionUpdating")
      *             }
      *         )
      *     ),
@@ -125,8 +118,6 @@ class UsersController extends Controller
     {
         return response()->json([
             'user' => $request->user(),
-            // TODO Make dynamic
-            'session_updating' => false,
         ]);
     }
 

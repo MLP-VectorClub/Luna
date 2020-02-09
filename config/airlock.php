@@ -15,7 +15,9 @@ return [
 
     'stateful' => [
         'localhost',
-        rtrim(preg_replace('~^.*//~', '', env('APP_URL', 'http://localhost')), '/'),
+        'mlpvector.lc',
+        'mlpvector.lc:4200',
+        'new.mlpvector.club',
     ],
 
     /*

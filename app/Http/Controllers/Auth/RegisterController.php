@@ -21,7 +21,8 @@ class RegisterController extends Controller
      *     required={
      *         "name",
      *         "email",
-     *         "password"
+     *         "password",
+     *         "password_confirmation",
      *     },
      *     additionalProperties=false,
      *     @OA\Property(
@@ -120,13 +121,14 @@ class RegisterController extends Controller
                 'string',
                 'min:8',
                 'max:300',
+                'confirmed',
                 new Pwned,
             ],
         ]);
 
         // TODO remove when registration for the public is open
         if ($have_users) {
-            abort(503, 'Registrations are currently not accepted, thank you for your understanding.');
+            abort(503, 'New registrations are currently not accepted, thank you for your understanding.');
             throw new ValidationException($validator);
         }
 

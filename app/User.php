@@ -15,8 +15,6 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, Notifiable;
 
-    protected $dateFormat = 'Y-m-d H:i:s.uO';
-
     /**
      * The attributes that are mass assignable.
      *
