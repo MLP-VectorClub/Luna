@@ -73,7 +73,7 @@ class LoginController extends Controller
     {
         $is_airlock = $request->attributes->get('airlock') === true;
         if ($is_airlock && $request->user() !== null) {
-            abort(403);
+            return response()->noContent();
         }
 
         $data = Validator::make($request->only(['email', 'password']), [

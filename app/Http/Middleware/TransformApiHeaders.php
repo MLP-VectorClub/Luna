@@ -18,7 +18,7 @@ class TransformApiHeaders
         $request->headers->set('Accept', 'application/json');
         $referer = $request->headers->get('referer');
         if ($referer === null) {
-            $origin = $request->headers->get('origin');
+            $origin = $request->headers->get('x-app-origin');
             if ($origin) {
                 $request->headers->set('referer', $origin);
             }
