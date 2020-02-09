@@ -121,7 +121,6 @@ class RegisterController extends Controller
                 'string',
                 'min:8',
                 'max:300',
-                'confirmed',
                 new Pwned,
             ],
         ]);
