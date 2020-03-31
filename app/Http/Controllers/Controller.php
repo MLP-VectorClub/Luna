@@ -63,7 +63,7 @@ use OpenApi\Annotations as OA;
  *     }
  * )
  * @OA\Get(
- *     path="/../airlock/csrf-cookie",
+ *     path="/../sanctum/csrf-cookie",
  *     description="Initialize CSRF protection by sending a dummy request through the web middleware. Used only for session-based authentication.",
  *     tags={"authentication"},
  *     @OA\Response(

@@ -5,7 +5,7 @@ Work-in-progress backend for the [MLP Vector Club](https://github.com/MLP-Vector
 ## Built with
 
  - [Laravel](https://laravel.com)
- - [Laravel Airlock](https://github.com/laravel/airlock)
+ - [Laravel Sanctum](https://github.com/laravel/sanctum)
 
 ## Commands
 

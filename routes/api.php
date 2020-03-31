@@ -22,7 +22,7 @@ Route::prefix('v0')->group(function () {
         Route::prefix('users')->group(function () {
             Route::post('/', 'Auth\RegisterController@viaPassword');
 
-            Route::middleware('auth:airlock')->group(function () {
+            Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/me', 'UsersController@index');
                 Route::post('/logout', 'UsersController@logout');
                 Route::get('/tokens', 'UsersController@tokens');

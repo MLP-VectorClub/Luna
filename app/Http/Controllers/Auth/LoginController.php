@@ -71,8 +71,8 @@ class LoginController extends Controller
      */
     public function viaPassword(Request $request)
     {
-        $is_airlock = $request->attributes->get('airlock') === true;
-        if ($is_airlock && $request->user() !== null) {
+        $is_sanctum = $request->attributes->get('sanctum') === true;
+        if ($is_sanctum && $request->user() !== null) {
             return response()->noContent();
         }
 
@@ -90,7 +90,7 @@ class LoginController extends Controller
             abort(401);
         }
 
-        if ($is_airlock) {
+        if ($is_sanctum) {
             Auth::login($user, true);
             return response()->noContent();
         }

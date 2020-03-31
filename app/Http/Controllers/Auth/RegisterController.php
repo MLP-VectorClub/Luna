@@ -94,8 +94,8 @@ class RegisterController extends Controller
      */
     public function viaPassword(Request $request)
     {
-        $is_airlock = $request->attributes->get('airlock') === true;
-        if ($is_airlock && $request->user() !== null) {
+        $is_sanctum = $request->attributes->get('sanctum') === true;
+        if ($is_sanctum && $request->user() !== null) {
             abort(403);
         }
 
@@ -143,7 +143,7 @@ class RegisterController extends Controller
 
         $user = User::create($data);
 
-        if ($is_airlock) {
+        if ($is_sanctum) {
             Auth::login($user, true);
             return response()->noContent();
         }

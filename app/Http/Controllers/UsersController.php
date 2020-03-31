@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
-use Laravel\Airlock\PersonalAccessToken;
-use Laravel\Airlock\TransientToken;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 use OpenApi\Annotations as OA;
 
 class UsersController extends Controller
