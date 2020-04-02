@@ -3,6 +3,12 @@
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 
+$stack_channels = ['daily'];
+$discord_webhook_url = env('LOG_DISCORD_WEBHOOK_URL');
+if ($discord_webhook_url) {
+    $stack_channels[] = 'discord';
+}
+
 return [
 
     /*
@@ -36,7 +42,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['daily'],
+            'channels' => $stack_channels,
             'ignore_exceptions' => false,
         ],
 
@@ -53,12 +59,11 @@ return [
             'days' => 14,
         ],
 
-        'slack' => [
-            'driver' => 'slack',
-            'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => 'Laravel Log',
-            'emoji' => ':boom:',
-            'level' => 'critical',
+        'discord' => [
+            'driver' => 'custom',
+            'via'    => MarvinLabs\DiscordLogger\Logger::class,
+            'level'  => 'debug',
+            'url'    => $discord_webhook_url,
         ],
 
         'papertrail' => [

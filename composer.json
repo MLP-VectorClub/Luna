@@ -15,6 +15,7 @@
         "laravel/sanctum": "^2.0",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^2.0",
+        "marvinlabs/laravel-discord-logger": "^1.1",
         "nojacko/email-validator": "^1.1",
         "stechstudio/laravel-php-cs-fixer": "^2.0",
         "valorin/pwned-validator": "^1.3",
