@@ -5,6 +5,9 @@ namespace App\Providers;
 use App\EloquentFixes\CustomDateGrammar;
 use App\EloquentFixes\DBAL\Types\Citext;
 use Carbon\Carbon;
+use DateInterval;
+use DateTime;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Types\Type;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Query\Grammars\PostgresGrammar;
@@ -17,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      * Register any application services.
      *
      * @return void
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     public function register()
     {
@@ -29,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
         if (!$platform->hasDoctrineTypeMappingFor('citext')) {
             $platform->registerDoctrineTypeMapping('citext', Citext::CITEXT);
         }
-        $conn->setQueryGrammar(new class($platform->getDateTimeTzFormatString()) extends PostgresGrammar {
+        $grammar = new class($platform->getDateTimeTzFormatString()) extends PostgresGrammar {
             protected string $format_string;
 
             public function __construct(string $format_string)
@@ -41,7 +44,9 @@ class AppServiceProvider extends ServiceProvider
             {
                 return $this->format_string;
             }
-        });
+        };
+        $grammar::macro('typeCitext', fn() => 'citext');
+        $conn->setQueryGrammar($grammar);
     }
 
     /**
@@ -54,12 +59,13 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Get total number of seconds contained in a DateInterval
          *
-         * @param  \DateInterval  $interval
+         * @param  DateInterval  $interval
          * @return int
          */
-        Date::macro('intervalInSeconds', function (\DateInterval $interval): int {
-            return (new \DateTime())->setTimeStamp(0)->add($interval)->getTimeStamp();
+        Date::macro('intervalInSeconds', function (DateInterval $interval): int {
+            return (new DateTime())->setTimeStamp(0)->add($interval)->getTimeStamp();
         });
+
         /**
          * Convert a potentially null Carbon timestamp to string
          *

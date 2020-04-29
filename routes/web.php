@@ -13,4 +13,4 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', 'DocsController@index');
+Route::get('/', 'DocsController@rtfm');

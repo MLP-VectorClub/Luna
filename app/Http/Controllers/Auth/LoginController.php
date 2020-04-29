@@ -8,63 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
 
 class LoginController extends Controller
 {
     /**
-     * @OA\Schema(
-     *     schema="LoginRequest",
-     *     type="object",
-     *     required={
-     *         "email",
-     *         "password"
-     *     },
-     *     additionalProperties=false,
-     *     @OA\Property(
-     *         property="email",
-     *         type="string"
-     *     ),
-     *     @OA\Property(
-     *         property="password",
-     *         type="string"
-     *     )
-     * )
-     * @OA\Post(
-     *     path="/users/login",
-     *     description="Used for obtaining an API access token",
-     *     tags={"authentication"},
-     *     @OA\RequestBody(
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(ref="#/components/schemas/LoginRequest")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="Authentication successful",
-     *         @OA\JsonContent(
-     *             additionalProperties=false,
-     *             @OA\Property(
-     *                 property="token",
-     *                 type="string"
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response="204",
-     *         description="Session-based authentication successful (authentication via cookies, no token is sent)"
-     *     ),
-     *     @OA\Response(
-     *         response="403",
-     *         description="Already logged in via session-based authentication",
-     *     ),
-     *     @OA\Response(
-     *         response="401",
-     *         description="Invalid credentials",
-     *     )
-     * )
-     *
      * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      * @throws \Illuminate\Validation\ValidationException
@@ -82,11 +29,10 @@ class LoginController extends Controller
         ])->validate();
 
         $user = User::whereEmail($data['email'])->first();
-        if (empty($user)) {
-            abort(401);
-        }
 
-        if (!Hash::check($data['password'], $user->password)) {
+        $password = empty($user) ? '' : $user->password;
+
+        if (!Hash::check($data['password'], $password)) {
             abort(401);
         }
 

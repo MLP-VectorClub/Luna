@@ -3,13 +3,11 @@
 namespace App;
 
 use Browser;
-use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
