@@ -14,7 +14,6 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     # CMD_REDIS_CLEAR="# TODO"
     CMD_CACHE_CONFIG="sudo -u www-data php artisan config:cache"
     CMD_CACHE_ROUTES="sudo -u www-data php artisan route:cache"
-    CMD_API_DOCS="sudo -u www-data php artisan api:schema"
 
     echo "$ $CMD_CD"
     eval ${CMD_CD}
@@ -22,6 +21,13 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     eval ${CMD_FETCH}
     echo "$ $CMD_COMPOSER"
     eval ${CMD_COMPOSER}
+
+    echo "$ $CMD_CACHE_CONFIG"
+    eval ${CMD_CACHE_CONFIG}
+
+    echo "$ $CMD_CACHE_ROUTES"
+    eval ${CMD_CACHE_ROUTES}
+
     echo "$ $CMD_MIGRATE"
     eval ${CMD_MIGRATE}
 
@@ -37,19 +43,6 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
         eval $CMD_BUILD
     else
         echo "# Skipping asset rebuild, no changes in assets folder"
-    fi
-
-    echo "$ $CMD_CACHE_CONFIG"
-    eval ${CMD_CACHE_CONFIG}
-
-    echo "$ $CMD_CACHE_ROUTES"
-    eval ${CMD_CACHE_ROUTES}
-
-    if $GIT diff --name-only $oldrev $newrev | grep "^app"; then
-        echo "$ $CMD_API_DOCS"
-        eval $CMD_API_DOCS
-    else
-        echo "# Skipping API schema generation, no changes in app folder"
     fi
 
     # echo "$ $CMD_REDIS_CLEAR"
