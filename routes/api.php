@@ -13,21 +13,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('v0')->group(function () {
-    Route::middleware('throttle:12,1')->group(function () {
-        Route::post('/users/login', 'Auth\LoginController@viaPassword');
-    });
+Route::middleware('throttle:12,1')->group(function () {
+    Route::post('/users/login', 'Auth\LoginController@viaPassword');
+});
 
-    Route::middleware('throttle:60,1')->group(function () {
-        Route::prefix('users')->group(function () {
-            Route::post('/', 'Auth\RegisterController@viaPassword');
+Route::middleware('throttle:60,1')->group(function () {
+    Route::prefix('users')->group(function () {
+        Route::post('/', 'Auth\RegisterController@viaPassword');
 
-            Route::middleware('auth:sanctum')->group(function () {
-                Route::get('/me', 'UsersController@index');
-                Route::post('/logout', 'UsersController@logout');
-                Route::get('/tokens', 'UsersController@tokens');
-                Route::delete('/tokens/{token_id}', 'UsersController@deleteToken');
-            });
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('me', 'UsersController@me');
+            Route::post('logout', 'UsersController@logout');
+            Route::get('tokens', 'UsersController@tokens');
+            Route::delete('tokens/{token_id}', 'UsersController@deleteToken');
         });
+
+        Route::get('{username}', 'UsersController@getByName');
     });
 });

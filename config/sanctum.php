@@ -14,9 +14,9 @@ return [
     */
 
     'stateful' => [
-        'localhost',
+        'localhost:3000',
         'mlpvector.lc',
-        'mlpvector.lc:4200',
+        'mlpvector.lc:3000',
         'new.mlpvector.club',
     ],
 

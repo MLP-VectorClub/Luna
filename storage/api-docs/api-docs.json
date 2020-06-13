@@ -1,0 +1,547 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "MLP Vector Club API",
+        "description": "A work-in-progress API for the [MLP Vector Club](https://mlpvector.club/)'s website.",
+        "contact": {
+            "name": "David Joseph Guzsik",
+            "url": "https://seinopsys.dev",
+            "email": "david@seinopsys.dev"
+        },
+        "license": {
+            "name": "MIT"
+        },
+        "version": "0.1"
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "Current Host"
+        }
+    ],
+    "paths": {
+        "/users/login": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Used for obtaining an API access token",
+                "operationId": "PostUsersLogin",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Session-based authentication successful (authentication via cookies, no token is sent)"
+                    },
+                    "403": {
+                        "description": "Already logged in via session-based authentication"
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/users": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Register an account on the site",
+                "operationId": "PostUsers",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegistrationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Registration successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Registration successful (authentication via cookies, no token is sent)"
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Already logged in via session-based authentication"
+                    },
+                    "503": {
+                        "description": "Registrations are not possible at the moment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sanctum/csrf-cookie": {
+            "get": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Initialize CSRF protection by sending a dummy request through the web middleware. Used only for session-based authentication.",
+                "operationId": "GetSanctumCsrfCookie",
+                "responses": {
+                    "204": {
+                        "description": "Sucess"
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "tags": [
+                    "authentication",
+                    "users"
+                ],
+                "description": "Get information about the currently logged in user",
+                "operationId": "GetUsersMe",
+                "responses": {
+                    "200": {
+                        "description": "Query successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unathorized"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{username}": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get information about the specified user",
+                "operationId": "GetUsersUsername",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "description": "The DeviantArt username to look for",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Query successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicUser"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No user found by this name"
+                    },
+                    "401": {
+                        "description": "Unathorized"
+                    }
+                }
+            }
+        },
+        "/users/logout": {
+            "post": {
+                "tags": [
+                    "authentication",
+                    "users"
+                ],
+                "description": "Shortcut for calling the token DELETE endpoint with the current token",
+                "operationId": "PostUsersLogout",
+                "responses": {
+                    "204": {
+                        "description": "Logout successful"
+                    },
+                    "401": {
+                        "description": "Unathorized"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/tokens": {
+            "get": {
+                "tags": [
+                    "authentication",
+                    "users"
+                ],
+                "description": "Returns a list of access tokens that belong to the current user",
+                "operationId": "GetUsersTokens",
+                "responses": {
+                    "200": {
+                        "description": "Sucess",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unathorized"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/tokens/{id}": {
+            "delete": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Deletes an access token that belongs to the current user",
+                "operationId": "DeleteUsersTokensId",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the token to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Sucess"
+                    },
+                    "404": {
+                        "description": "Token not found"
+                    },
+                    "401": {
+                        "description": "Unathorized"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "LoginRequest": {
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "RegistrationRequest": {
+                "required": [
+                    "name",
+                    "email",
+                    "password",
+                    "password_confirmation"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "minLength": 5
+                    },
+                    "email": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "minLength": 3
+                    },
+                    "password": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 8
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ErrorResponse": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "description": "An error message describing what caused the request to fail",
+                        "type": "string",
+                        "example": "The given data was invalid."
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ValidationErrorResponse": {
+                "allOf": [
+                    {
+                        "required": [
+                            "errors"
+                        ],
+                        "properties": {
+                            "errors": {
+                                "description": "A map containing error messages for each field that did not pass validation",
+                                "minProperties": 1,
+                                "type": "object",
+                                "example": {
+                                    "username": [
+                                        "The username must be at least 8 characters long",
+                                        "The username is already taken"
+                                    ],
+                                    "email": [
+                                        "The email must be at least 3 characters long"
+                                    ]
+                                },
+                                "additionalProperties": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "minItems": 1
+                                }
+                            }
+                        },
+                        "type": "object",
+                        "additionalProperties": false
+                    },
+                    {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                ]
+            },
+            "PublicUser": {
+                "description": "Represents an publicly accessible representation of a user",
+                "required": [
+                    "id",
+                    "displayName",
+                    "role",
+                    "avatarUrl",
+                    "avatarProvider"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 1
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "example": "example"
+                    },
+                    "role": {
+                        "description": "The publicly visible role for the user",
+                        "$ref": "#/components/schemas/Role"
+                    },
+                    "avatarUrl": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "https://a.deviantart.net/avatars/e/x/example.png",
+                        "nullable": true
+                    },
+                    "avatarProvider": {
+                        "$ref": "#/components/schemas/AvatarProvider"
+                    },
+                    "emailHash": {
+                        "description": "Hashed version of the e-mail address used in case there is no available avatarUrl to allow loading the Gravatar fallback",
+                        "type": "string",
+                        "format": "MD5",
+                        "example": "e64c7d89f26bd1972efa854d13d7dd61"
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "User": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PublicUser"
+                    },
+                    {
+                        "description": "Represents an authenticated user",
+                        "required": [
+                            "name",
+                            "email",
+                            "role"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "example": "example"
+                            },
+                            "email": {
+                                "type": "string",
+                                "example": "user@example.com",
+                                "nullable": true
+                            },
+                            "role": {
+                                "description": "The database-level role for the user",
+                                "$ref": "#/components/schemas/DatabaseRole"
+                            }
+                        },
+                        "type": "object",
+                        "additionalProperties": false
+                    }
+                ]
+            },
+            "AvatarProvider": {
+                "description": "List of supported avatar providers",
+                "type": "string",
+                "enum": [
+                    "gravatar"
+                ]
+            },
+            "DatabaseRole": {
+                "description": "List of roles values that can be stored by the backend",
+                "type": "string",
+                "enum": [
+                    "user",
+                    "member",
+                    "assistant",
+                    "staff",
+                    "admin",
+                    "developer"
+                ],
+                "example": "developer"
+            },
+            "Role": {
+                "description": "List of roles values that can be publicly displayed",
+                "type": "string",
+                "enum": [
+                    "user",
+                    "member",
+                    "assistant",
+                    "staff",
+                    "admin"
+                ],
+                "example": "user"
+            },
+            "AppSettings": {
+                "description": "List of supported application-wide settings",
+                "type": "string",
+                "enum": [
+                    "dev_role_label"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "description": "Can be used to authenticate using a token sent via HTTP headers",
+                "scheme": "bearer"
+            },
+            "CookieAuth": {
+                "type": "apiKey",
+                "description": "Used for session-based authentication, the cookie is set by the backend on qualifying requests (i.e. browser requests originating from our domain)",
+                "name": "mlp_vector_club_session",
+                "in": "cookie"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "authentication",
+            "description": "Endpoints related to getting a user logged in or out, as well as checking logged in status"
+        }
+    ]
+}

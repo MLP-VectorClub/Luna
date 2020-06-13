@@ -27,7 +27,7 @@ class ImportOldSchema extends Migration
             $table->string('label', 70)->index();
             $table->text('notes_src')->nullable();
             $table->text('notes_rend')->nullable();
-            $table->boolean('ishuman')->nullable()->index();
+            $table->string('guide', 4)->nullable()->index();
             $table->boolean('private')->default(false);
             $table->uuid('owner_id')->nullable()->index();
             $table->timestampTz('last_cleared')->nullable();
@@ -52,7 +52,6 @@ class ImportOldSchema extends Migration
             $table->integer('order');
             $table->string('label', 255);
             $table->char('hex', 7)->nullable();
-            $table->foreignId('linked_to')->index()->nullable()->constrained('colors')->onDelete('restrict')->onUpdate('cascade');
         });
 
         Schema::create('cutiemarks', function (Blueprint $table) {

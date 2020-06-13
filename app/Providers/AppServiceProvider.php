@@ -9,10 +9,14 @@ use DateInterval;
 use DateTime;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Types\Type;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Query\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+use OpenApi\Analysis;
+use OpenApi\Annotations\Operation;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,8 +49,33 @@ class AppServiceProvider extends ServiceProvider
                 return $this->format_string;
             }
         };
-        $grammar::macro('typeCitext', fn() => 'citext');
+        $grammar::macro('typeCitext', fn () => 'citext');
         $conn->setQueryGrammar($grammar);
+
+        // Generate reasonable looking operation IDs in OpenAPI documentation
+        Analysis::registerProcessor(function (Analysis $analysis) {
+            /** @var Operation[] $all_operations */
+            $all_operations = $analysis->getAnnotationsOfType(Operation::class);
+
+            foreach ($all_operations as $operation) {
+                $operation->operationId = ucfirst(
+                    Str::camel(
+                        trim(
+                            preg_replace(
+                                '~_{2,}~',
+                                '_',
+                                preg_replace(
+                                    '~[^a-z_]~i',
+                                    '_',
+                                    implode('_', [$operation->method, $operation->path])
+                                )
+                            ),
+                            '_'
+                        )
+                    )
+                );
+            }
+        });
     }
 
     /**

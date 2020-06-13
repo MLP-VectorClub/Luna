@@ -2,26 +2,102 @@
 
 namespace App\Http\Controllers;
 
+use App\DeviantartUser;
 use App\User;
+use App\Utils\SettingsHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\TransientToken;
+use OpenApi\Annotations as OA;
 
 class UsersController extends Controller
 {
     /**
+     * @OA\Get(
+     *     path="/users/me",
+     *     description="Get information about the currently logged in user",
+     *     tags={"authentication","users"},
+     *     security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *     @OA\Response(
+     *         response="200",
+     *         description="Query successful",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unathorized",
+     *     )
+     * )
+     *
      * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index(Request $request)
+    public function me(Request $request)
     {
-        return response()->json($request->user());
+        /** @var User $user */
+        $user = $request->user();
+        return response()->json($user->toArrayWithProtected());
     }
 
     /**
+     * @OA\Get(
+     *     path="/users/{username}",
+     *     description="Get information about the specified user",
+     *     tags={"users"},
+     *     @OA\Parameter(
+     *         in="path",
+     *         name="username",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="string"
+     *         ),
+     *         description="The DeviantArt username to look for"
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Query successful",
+     *         @OA\JsonContent(ref="#/components/schemas/PublicUser")
+     *     ),
+     *     @OA\Response(
+     *         response="404",
+     *         description="No user found by this name"
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unathorized",
+     *     )
+     * )
+     *
+     * @param  Request  $request
+     * @param  string   $username
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getByName(Request $request, string $username)
+    {
+        /** @var User $user */
+        $user = User::where('name', $username)->firstOrFail();
+        return response()->json($user->publicResponse());
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/users/logout",
+     *     description="Shortcut for calling the token DELETE endpoint with the current token",
+     *     tags={"authentication","users"},
+     *     security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *     @OA\Response(
+     *         response="204",
+     *         description="Logout successful"
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unathorized",
+     *     )
+     * )
+     *
      * @param  Request  $request
      * @return Response
      */
@@ -42,6 +118,23 @@ class UsersController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/users/tokens",
+     *     description="Returns a list of access tokens that belong to the current user",
+     *     tags={"authentication","users"},
+     *     security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *     @OA\Response(
+     *         response="200",
+     *         description="Sucess",
+     *         @OA\JsonContent(
+     *             additionalProperties=false,
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unathorized",
+     *     )
+     * )
      * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -67,6 +160,35 @@ class UsersController extends Controller
     }
 
     /**
+     * @OA\Delete(
+     *     path="/users/tokens/{id}",
+     *     description="Deletes an access token that belongs to the current user",
+     *     tags={"authentication"},
+     *     security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *     @OA\Parameter(
+     *         in="path",
+     *         name="id",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="integer",
+     *             minimum=1,
+     *             example=1
+     *         ),
+     *         description="The ID of the token to delete"
+     *     ),
+     *     @OA\Response(
+     *         response="204",
+     *         description="Sucess"
+     *     ),
+     *     @OA\Response(
+     *         response="404",
+     *         description="Token not found",
+     *     ),
+     *     @OA\Response(
+     *         response="401",
+     *         description="Unathorized",
+     *     )
+     * )
      * @param  int  $token_id
      * @param  Request  $request
      * @return Response

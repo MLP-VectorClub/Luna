@@ -14,6 +14,7 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     # CMD_REDIS_CLEAR="# TODO"
     CMD_CACHE_CONFIG="sudo -u www-data php artisan config:cache"
     CMD_CACHE_ROUTES="sudo -u www-data php artisan route:cache"
+    CMD_GEN_API_DOCS="sudo -u www-data php artisan l5-swagger:generate"
 
     echo "$ $CMD_CD"
     eval ${CMD_CD}
@@ -47,6 +48,9 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
 
     # echo "$ $CMD_REDIS_CLEAR"
     # eval ${CMD_REDIS_CLEAR}
+
+    echo "$ $CMD_GEN_API_DOCS"
+    eval ${CMD_GEN_API_DOCS}
 else
     echo "Ref does not match $RUN_FOR_REF, exiting."
 fi
