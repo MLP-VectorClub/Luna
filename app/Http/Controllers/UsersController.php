@@ -118,6 +118,39 @@ class UsersController extends Controller
     }
 
     /**
+     * @OA\Schema(
+     *     schema="Token",
+     *     type="object",
+     *     required={
+     *         "id",
+     *         "name",
+     *         "lastUsedAt",
+     *         "createdAt"
+     *     },
+     *     additionalProperties=false,
+     *     @OA\Property(
+     *         property="id",
+     *         type="integer",
+     *         minimum=1,
+     *         example=1,
+     *     ),
+     *     @OA\Property(
+     *         property="name",
+     *         type="string",
+     *         description="Name of the token, either generated (from OS and browser version) or user-supplied if renamed",
+     *     ),
+     *     @OA\Property(
+     *         property="lastUsedAt",
+     *         type="string",
+     *         format="date-time",
+     *     ),
+     *     @OA\Property(
+     *         property="createdAt",
+     *         type="string",
+     *         format="date-time",
+     *     ),
+     * )
+     *
      * @OA\Get(
      *     path="/users/tokens",
      *     description="Returns a list of access tokens that belong to the current user",
@@ -127,7 +160,26 @@ class UsersController extends Controller
      *         response="200",
      *         description="Sucess",
      *         @OA\JsonContent(
+     *             required={
+     *                 "currentTokenId",
+     *                 "tokens",
+     *             },
      *             additionalProperties=false,
+     *             @OA\Property(
+     *                 property="currentTokenId",
+     *                 description="ID of the token used to make this request. Will be null if the request is authenticated through CookieAuth",
+     *                 type="integer",
+     *                 minimum=1,
+     *                 example=1,
+     *                 nullable=true,
+     *             ),
+     *             @OA\Property(
+     *                 property="tokens",
+     *                 description="A list of tokens that belong to the user",
+     *                 type="array",
+     *                 minItems=1,
+     *                 @OA\Items(ref="#/components/schemas/Token")
+     *             )
      *         )
      *     ),
      *     @OA\Response(

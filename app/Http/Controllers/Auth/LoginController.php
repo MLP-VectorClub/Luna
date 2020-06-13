@@ -35,10 +35,8 @@ class LoginController extends Controller
      *     description="Used for obtaining an API access token",
      *     tags={"authentication"},
      *     @OA\RequestBody(
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(ref="#/components/schemas/LoginRequest")
-     *         )
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/LoginRequest")
      *     ),
      *     @OA\Response(
      *         response="200",
@@ -57,7 +55,8 @@ class LoginController extends Controller
      *     ),
      *     @OA\Response(
      *         response="403",
-     *         description="Already logged in via session-based authentication",
+     *         description="Could not sign in, check the error message for details",
+     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
      *     ),
      *     @OA\Response(
      *         response="401",
@@ -84,6 +83,10 @@ class LoginController extends Controller
         $user = User::whereEmail($data['email'])->first();
 
         $password = empty($user) ? '' : $user->password;
+
+        if ($password === null) {
+            return response()->json(['message' => trans('errors.auth.no_password_set')], 403);
+        }
 
         if (!Hash::check($data['password'], $password)) {
             abort(401);

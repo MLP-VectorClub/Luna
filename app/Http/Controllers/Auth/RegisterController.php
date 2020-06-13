@@ -24,7 +24,6 @@ class RegisterController extends Controller
      *         "name",
      *         "email",
      *         "password",
-     *         "password_confirmation",
      *     },
      *     additionalProperties=false,
      *     @OA\Property(
