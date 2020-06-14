@@ -19,7 +19,7 @@ use OpenApi\Annotations as OA;
  *     description="Represents an publicly accessible representation of a user",
  *     required={
  *         "id",
- *         "displayName",
+ *         "name",
  *         "role",
  *         "avatarUrl",
  *         "avatarProvider",
@@ -32,7 +32,7 @@ use OpenApi\Annotations as OA;
  *         example=1,
  *     ),
  *     @OA\Property(
- *         property="displayName",
+ *         property="name",
  *         type="string",
  *         example="example",
  *     ),
@@ -103,7 +103,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array
      */
     protected $fillable = [
-        'name', 'display_name', 'email', 'password', 'role', 'avatar_url'
+        'name', 'email', 'password', 'role', 'avatar_url'
     ];
 
     /**
@@ -133,10 +133,6 @@ class User extends Authenticatable implements MustVerifyEmail
     protected static function boot()
     {
         parent::boot();
-
-        self::creating(function (self $user) {
-            $user->display_name = $user->name;
-        });
     }
 
     public function isStaff(): bool
