@@ -11,7 +11,7 @@ return [
         |--------------------------------------------------------------------------
         */
 
-        'title' => 'MLP Vector Club API',
+        'title' => 'OpenAPI Documentation - MLP Vector Club',
     ],
 
     'routes' => [
