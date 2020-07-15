@@ -14,14 +14,16 @@ class CreateUsersTable extends Migration
     public function up()
     {
         Schema::create('users', function (Blueprint $table) {
+            $ts_precision = config('app.timestamp_precision');
+
             $table->bigIncrements('id');
             $table->string('name')->unique();
             $table->string('email')->unique()->nullable();
             $table->string('role', 10)->default('user');
-            $table->timestampTz('email_verified_at')->nullable();
+            $table->timestampTz('email_verified_at', $ts_precision)->nullable();
             $table->string('password')->nullable();
             $table->rememberToken();
-            $table->timestampsTz();
+            $table->timestampsTz($ts_precision);
         });
     }
 

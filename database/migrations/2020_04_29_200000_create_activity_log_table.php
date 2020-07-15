@@ -12,6 +12,8 @@ class CreateActivityLogTable extends Migration
     public function up()
     {
         Schema::connection(config('activitylog.database_connection'))->create(config('activitylog.table_name'), function (Blueprint $table) {
+            $ts_precision = config('app.timestamp_precision');
+
             $table->bigIncrements('id');
             $table->string('log_name')->nullable();
             $table->text('description');
@@ -20,7 +22,7 @@ class CreateActivityLogTable extends Migration
             $table->unsignedBigInteger('causer_id')->nullable();
             $table->string('causer_type')->nullable();
             $table->json('properties')->nullable();
-            $table->timestamps();
+            $table->timestampsTz($ts_precision);
 
             $table->index('log_name');
             $table->index(['subject_id', 'subject_type'], 'subject');

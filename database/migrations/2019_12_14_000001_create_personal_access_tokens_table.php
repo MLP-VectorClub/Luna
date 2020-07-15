@@ -14,13 +14,15 @@ class CreatePersonalAccessTokensTable extends Migration
     public function up()
     {
         Schema::create('personal_access_tokens', function (Blueprint $table) {
+            $ts_precision = config('app.timestamp_precision');
+
             $table->bigIncrements('id');
             $table->morphs('tokenable');
             $table->string('name');
             $table->string('token', 64)->unique();
             $table->text('abilities')->nullable();
-            $table->timestampTz('last_used_at')->nullable();
-            $table->timestampsTz();
+            $table->timestampTz('last_used_at', $ts_precision)->nullable();
+            $table->timestampsTz($ts_precision);
         });
     }
 

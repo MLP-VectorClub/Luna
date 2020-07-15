@@ -7,7 +7,7 @@ namespace App\EloquentFixes\DBAL\Types;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\TextType;
 
-final class Citext extends TextType
+final class CitextType extends TextType
 {
     const CITEXT = 'citext';
 

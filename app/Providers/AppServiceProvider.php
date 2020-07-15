@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use App\EloquentFixes\CustomDateGrammar;
-use App\EloquentFixes\DBAL\Types\Citext;
+use App\EloquentFixes\DBAL\Types\CitextType;
+use App\EloquentFixes\DBAL\Types\MlpGenerationType;
 use Carbon\Carbon;
 use DateInterval;
 use DateTime;
@@ -28,13 +29,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        if (!Type::hasType(Citext::CITEXT)) {
-            Type::addType(Citext::CITEXT, Citext::class);
+        if (!Type::hasType(CitextType::CITEXT)) {
+            Type::addType(CitextType::CITEXT, CitextType::class);
+        }
+        if (!Type::hasType(MlpGenerationType::MLP_GENERATION)) {
+            Type::addType(MlpGenerationType::MLP_GENERATION, MlpGenerationType::class);
         }
         $conn = DB::connection(DB::getDefaultConnection());
         $platform = $conn->getDoctrineConnection()->getDatabasePlatform();
-        if (!$platform->hasDoctrineTypeMappingFor('citext')) {
-            $platform->registerDoctrineTypeMapping('citext', Citext::CITEXT);
+        if (!$platform->hasDoctrineTypeMappingFor(CitextType::CITEXT)) {
+            $platform->registerDoctrineTypeMapping(CitextType::CITEXT, CitextType::CITEXT);
+        }
+        if (!$platform->hasDoctrineTypeMappingFor(MlpGenerationType::MLP_GENERATION)) {
+            $platform->registerDoctrineTypeMapping(MlpGenerationType::MLP_GENERATION, MlpGenerationType::MLP_GENERATION);
         }
         $grammar = new class($platform->getDateTimeTzFormatString()) extends PostgresGrammar {
             protected string $format_string;
@@ -49,7 +56,8 @@ class AppServiceProvider extends ServiceProvider
                 return $this->format_string;
             }
         };
-        $grammar::macro('typeCitext', fn () => 'citext');
+        $grammar::macro('typeCitext', fn () => CitextType::CITEXT);
+        $grammar::macro('typeMlp_generation', fn () => MlpGenerationType::MLP_GENERATION);
         $conn->setQueryGrammar($grammar);
 
         // Generate reasonable looking operation IDs in OpenAPI documentation
