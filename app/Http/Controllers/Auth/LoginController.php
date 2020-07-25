@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\User;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 
 class LoginController extends Controller
@@ -93,7 +94,9 @@ class LoginController extends Controller
         }
 
         if ($is_sanctum) {
-            Auth::login($user, true);
+            // Disable remembering users while a read-only DB user isu sed to avoid errors when writing remember_token
+            $remember = !Str::endsWith(config('database.connections.mysql.username'), '_ro');
+            Auth::login($user, $remember);
             return response()->noContent();
         }
 

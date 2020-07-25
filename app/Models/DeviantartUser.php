@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
@@ -10,8 +10,6 @@ use Laravel\Sanctum\HasApiTokens;
 
 class DeviantartUser extends Model
 {
-    use Uuids;
-
     /**
      * The attributes that are mass assignable.
      *

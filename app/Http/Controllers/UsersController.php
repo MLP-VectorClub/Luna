@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DeviantartUser;
-use App\User;
+use App\Models\User;
 use App\Utils\SettingsHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
