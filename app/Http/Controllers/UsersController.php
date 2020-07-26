@@ -61,6 +61,8 @@ use OpenApi\Annotations as OA;
  *         format="MD5",
  *     ),
  * )
+ */
+/**
  * @OA\Schema(
  *     schema="User",
  *     allOf={

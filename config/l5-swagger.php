@@ -8,8 +8,9 @@ use App\Enums\ShowType;
 use App\Enums\TagType;
 use App\Utils\SettingsHelper;
 
-$database_roles = array_keys(Role::getValues());
-$client_roles = array_filter($database_roles, fn ($role) => $role !== 'developer');
+$database_roles = Role::getValues();
+$dev_role = Role::Developer();
+$client_roles = array_filter($database_roles, fn ($role) => $role !== $dev_role->value);
 
 return [
     'api' => [
