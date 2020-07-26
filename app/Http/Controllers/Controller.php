@@ -71,6 +71,40 @@ use OpenApi\Annotations as OA;
  *         description="Sucess"
  *     )
  * )
+ * @OA\Schema(
+ *   schema="PageNumber",
+ *   type="integer",
+ *   minimum=1,
+ *   default=1,
+ *   description="A query parameter used for specifying which page is currently being displayed"
+ * )
+ * @OA\Schema(
+ *   schema="File",
+ *   type="string",
+ *   format="binary",
+ * )
+ * @OA\Schema(
+ *   schema="SVGFile",
+ *   type="string",
+ *   format="svg",
+ * )
+ * @OA\Schema(
+ *   schema="QueryString",
+ *   type="string",
+ *   default=""
+ * )
+ * @OA\Schema(
+ *   schema="OneBasedId",
+ *   type="integer",
+ *   minimum=1,
+ *   example=1
+ * )
+ * @OA\Schema(
+ *   schema="ZeroBasedId",
+ *   type="integer",
+ *   minimum=0,
+ *   example=1
+ * )
  */
 class Controller extends BaseController
 {

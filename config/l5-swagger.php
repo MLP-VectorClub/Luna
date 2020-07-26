@@ -1,6 +1,14 @@
 <?php
 
-$database_roles = array_keys(\App\Utils\Permission::ROLES);
+use App\Enums\AvatarProvider;
+use App\Enums\GuideName;
+use App\Enums\MlpGeneration;
+use App\Enums\Role;
+use App\Enums\ShowType;
+use App\Enums\TagType;
+use App\Utils\SettingsHelper;
+
+$database_roles = array_keys(Role::getValues());
 $client_roles = array_filter($database_roles, fn ($role) => $role !== 'developer');
 
 return [
@@ -249,7 +257,11 @@ return [
     'constants' => [
         'DATABASE_ROLES' => $database_roles,
         'CLIENT_ROLES' => $client_roles,
-        'AVATAR_PROVIDERS' => \App\Utils\Constants::AVATAR_PROVIDERS,
-        'APP_SETTINGS' => array_keys(\App\Utils\SettingsHelper::DEFAULT_SETTINGS),
+        'AVATAR_PROVIDERS' => AvatarProvider::getValues(),
+        'GUIDE_NAMES' => GuideName::getValues(),
+        'SHOW_TYPES' => ShowType::getValues(),
+        'MLP_GENERATIONS' => MlpGeneration::getValues(),
+        'TAG_TYPES' => TagType::getValues(),
+        'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
     ],
 ];

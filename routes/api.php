@@ -30,4 +30,11 @@ Route::middleware('throttle:60,1')->group(function () {
 
         Route::get('{username}', 'UsersController@getByName');
     });
+
+    Route::prefix('appearances')->group(function () {
+        Route::get('/', 'AppearancesController@queryPublic');
+        Route::get('all', 'AppearancesController@queryAll')->name('appearances_all')->middleware('cacheResponse:300');
+        Route::get('{appearance}/sprite', 'AppearancesController@sprite');
+        Route::get('{appearance}/color-groups', 'AppearancesController@getColorGroups');
+    });
 });

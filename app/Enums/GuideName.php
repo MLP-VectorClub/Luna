@@ -7,21 +7,23 @@ use OpenApi\Annotations as OA;
 
 /**
  * @OA\Schema(
- *     schema="MlpGeneration",
+ *     schema="GuideName",
  *     type="string",
- *     description="List of recognized MLP generations",
- *     enum=MLP_GENERATIONS,
+ *     description="List of available color guides",
+ *     enum=GUIDE_NAMES,
  *     example="pony"
  * )
  * @method static self FriendshipIsMagic()
+ * @method static self EquestriaGirls()
  * @method static self PonyLife()
  */
-final class MlpGeneration extends EnumWrapper
+final class GuideName extends EnumWrapper
 {
     protected static function values(): array
     {
         return [
             'FriendshipIsMagic' => 'pony',
+            'EquestriaGirls' => 'eqg',
             'PonyLife' => 'pl',
         ];
     }

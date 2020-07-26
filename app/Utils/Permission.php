@@ -4,20 +4,35 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
+use App\Enums\Role;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 use RuntimeException;
 use function array_key_exists;
 
 class Permission
 {
-    public const ROLES = [
-        'user' => 1,
-        'member' => 2,
-        'assistant' => 3,
-        'staff' => 3,
-        'admin' => 3,
-        'developer' => 255,
-    ];
+    protected static function getRoleLevel(Role $role): int {
+        static $value_map;
+
+        if (!$value_map) {
+            $value_map = [
+                Role::User()->value => 1,
+                Role::Member()->value => 2,
+                Role::Assistant()->value => 3,
+                Role::Staff()->value => 3,
+                Role::Admin()->value => 3,
+                Role::Developer()->value => 255,
+            ];
+        }
+
+        if (!isset($value_map[$role->value])) {
+            throw new \RuntimeException("Missing value for role {$role->value}");
+        }
+
+        return $value_map[$role->value];
+    }
 
     /**
      * Permission checking function
@@ -27,29 +42,14 @@ class Permission
      * If user isn't logged in, and $compareAgainst is missing, returns false
      * If $compareAgainst is set then $role is used as the current user's role
      *
-     * @OA\Schema(
-     *     schema="DatabaseRole",
-     *     type="string",
-     *     description="List of roles values that can be stored by the backend",
-     *     enum=DATABASE_ROLES,
-     *     example="developer",
-     * )
-     * @OA\Schema(
-     *     schema="Role",
-     *     type="string",
-     *     description="List of roles values that can be publicly displayed",
-     *     enum=CLIENT_ROLES,
-     *     example="user",
-     * )
-     *
-     * @param  string  $role
-     * @param  string|null  $compareAgainst
+     * @param  Role      $role
+     * @param  Role|null $compareAgainst
      *
      * @return bool
      */
-    public static function sufficient(string $role, ?string $compareAgainst = null): bool
+    public static function sufficient(Role $role, ?Role $compareAgainst = null): bool
     {
-        if (!isset(self::ROLES[$role])) {
+        if (!Role::hasValue($role)) {
             throw new RuntimeException("Invalid role: $role");
         }
 
@@ -58,26 +58,28 @@ class Permission
         if ($comparison) {
             $check_role = $compareAgainst;
         } else {
-            if (!Auth::$signed_in) {
+            /** @var User $user */
+            $user = Auth::user();
+            if (!$user) {
                 return false;
             }
-            $check_role = Auth::$user->role;
+            $check_role = $user->role;
         }
 
-        return self::ROLES[$check_role] >= self::ROLES[$role];
+        return self::getRoleLevel($check_role) >= self::getRoleLevel($role);
     }
 
     /**
      * Same as above, except the return value is inverted
      * Added for better code readability
      *
-     * @param  string  $role
-     * @param  string|null  $compareAgainst
+     * @param  Role  $role
+     * @param  Role|null  $compare_against
      *
      * @return bool
      */
-    public static function insufficient(string $role, ?string $compareAgainst = null)
+    public static function insufficient(Role $role, ?Role $compare_against = null)
     {
-        return !self::sufficient($role, $compareAgainst);
+        return !self::sufficient($role, $compare_against);
     }
 }
