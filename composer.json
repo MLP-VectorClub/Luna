@@ -23,6 +23,7 @@
         "ongr/elasticsearch-dsl": "^7.2",
         "qcod/laravel-settings": "^1.0",
         "spatie/eloquent-sortable": "^3.8",
+        "spatie/enum": "^3.0",
         "spatie/laravel-activitylog": "^3.14",
         "spatie/laravel-responsecache": "^6.6",
         "stechstudio/laravel-php-cs-fixer": "^2.0",
