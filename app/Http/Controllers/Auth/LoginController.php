@@ -29,6 +29,11 @@ class LoginController extends Controller
      *     @OA\Property(
      *         property="password",
      *         type="string"
+     *     ),
+     *     @OA\Property(
+     *         property="remember",
+     *         type="boolean",
+     *         description="When using session-based auth set to true for persistent cookies, omit or use false for session cookies"
      *     )
      * )
      * @OA\Post(
@@ -76,9 +81,10 @@ class LoginController extends Controller
             return response()->noContent();
         }
 
-        $data = Validator::make($request->only(['email', 'password']), [
+        $data = Validator::make($request->only(['email', 'password', 'remember']), [
             'email' => 'required|string',
             'password' => 'required|string',
+            'remember' => 'sometimes|required|boolean',
         ])->validate();
 
         $user = User::whereEmail($data['email'])->first();
@@ -94,9 +100,7 @@ class LoginController extends Controller
         }
 
         if ($is_sanctum) {
-            // Disable remembering users while a read-only DB user isu sed to avoid errors when writing remember_token
-            $remember = !Str::endsWith(config('database.connections.mysql.username'), '_ro');
-            Auth::login($user, $remember);
+            Auth::login($user, $data['remember'] ?? false);
             return response()->noContent();
         }
 

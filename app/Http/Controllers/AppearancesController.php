@@ -10,6 +10,7 @@ use App\Models\Appearance;
 use App\Models\Color;
 use App\Models\ColorGroup;
 use App\Models\Tag;
+use App\Models\UserUpload;
 use App\Rules\EnumValue;
 use App\Utils\Caching;
 use App\Utils\ColorGuideHelper;
@@ -24,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
@@ -258,13 +260,14 @@ class AppearancesController extends Controller
      *   type="object",
      *   description="Data related to an appearance's sprite file. The actual file is available from a different endpoint.",
      *   required={
-     *     "hash",
+     *     "path",
      *   },
      *   additionalProperties=false,
      *   @OA\Property(
-     *     property="hash",
-     *     description="MD5 hash of the current sprite image",
-     *     ref="#/components/schemas/SpriteHash"
+     *     property="path",
+     *     type="string",
+     *     format="URL",
+     *     description="The full URL of the current sprite image"
      *   ),
      *   @OA\Property(
      *     property="preview",
@@ -285,7 +288,9 @@ class AppearancesController extends Controller
             return null;
         }
 
-        $value = ['hash' => $a->sprite_hash];
+        /** @var UserUpload $sprite_file */
+        $sprite_file = $a->spriteFile()->first();
+        $value = ['path' => Storage::url(str_replace('public/', '', $sprite_file->path))];
 
         if ($with_preview) {
             // TODO Include base64 preview using the aspect ratio & LCD algorithm
@@ -616,16 +621,14 @@ class AppearancesController extends Controller
      *   default=300
      * )
      * @OA\Schema(
-     *   schema="SpriteHash",
-     *   type="string",
-     *   format="md5",
-     *   minLength=32,
-     *   maxLength=32
-     * )
-     * @OA\Schema(
      *   schema="AppearanceToken",
      *   type="string",
      *   format="uuid"
+     * )
+     * @OA\Schema(
+     *   schema="LocationHeader",
+     *   type="string",
+     *   format="URL"
      * )
      * @OA\Get(
      *   path="/appearances/{id}/sprite",
@@ -647,19 +650,10 @@ class AppearancesController extends Controller
      *     name="token",
      *     @OA\Schema(ref="#/components/schemas/AppearanceToken")
      *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="hash",
-     *     description="Used for cache busting. The latest value is provided by the appearance resource.",
-     *     @OA\Schema(ref="#/components/schemas/SpriteHash")
-     *   ),
      *   @OA\Response(
-     *     response="200",
-     *     description="The sprite image at the specified size",
-     *     @OA\MediaType(
-     *       mediaType="image/png",
-     *       @OA\Schema(ref="#/components/schemas/File")
-     *     )
+     *     response="302",
+     *     description="Redirect to the current sprite image URL",
+     *     @OA\Header(header="Location", ref="#/components/schemas/LocationHeader")
      *   ),
      *   @OA\Response(
      *     response="404",

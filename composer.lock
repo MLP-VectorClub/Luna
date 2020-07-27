@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0ac0c4b6b62810dc6eae0d3352ffc8c9",
+    "content-hash": "1abdb500e229c359a049d94d08502f20",
     "packages": [
         {
             "name": "beyondcode/laravel-websockets",
@@ -2796,6 +2796,76 @@
                 "php mobile detect"
             ],
             "time": "2019-09-18T18:44:20+00:00"
+        },
+        {
+            "name": "monicahq/laravel-cloudflare",
+            "version": "1.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/monicahq/laravel-cloudflare.git",
+                "reference": "40a94665c387a6cccef80d49c267d700787d4450"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/monicahq/laravel-cloudflare/zipball/40a94665c387a6cccef80d49c267d700787d4450",
+                "reference": "40a94665c387a6cccef80d49c267d700787d4450",
+                "shasum": ""
+            },
+            "require": {
+                "fideloper/proxy": "~4.0",
+                "guzzlehttp/guzzle": "^6.3",
+                "illuminate/console": "^5.5 || ^6.0 || ^7.0",
+                "illuminate/http": "^5.5 || ^6.0 || ^7.0",
+                "illuminate/support": "^5.5 || ^6.0 || ^7.0",
+                "php": ">= 7.2.0"
+            },
+            "require-dev": {
+                "laravel/framework": "^5.6 || ^6.0 || ^7.0",
+                "mockery/mockery": "^1.2",
+                "nunomaduro/larastan": "^0.5",
+                "ocramius/package-versions": "1.5.1",
+                "orchestra/testbench": "^5.0",
+                "phpunit/phpunit": "^9.0",
+                "thecodingmachine/phpstan-safe-rule": "^1.0",
+                "vimeo/psalm": "^3.9"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Monicahq\\Cloudflare\\TrustedProxyServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Monicahq\\Cloudflare\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alexis Saettler",
+                    "email": "alexis@saettler.org"
+                }
+            ],
+            "description": "Add Cloudflare ip addresses to trusted proxies for Laravel.",
+            "keywords": [
+                "cloudflare",
+                "laravel",
+                "php",
+                "proxies"
+            ],
+            "funding": [
+                {
+                    "url": "https://github.com/asbiin",
+                    "type": "github"
+                }
+            ],
+            "time": "2020-05-09T20:54:46+00:00"
         },
         {
             "name": "monolog/monolog",

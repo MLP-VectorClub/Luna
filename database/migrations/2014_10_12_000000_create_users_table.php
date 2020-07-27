@@ -16,7 +16,7 @@ class CreateUsersTable extends Migration
         Schema::create('users', function (Blueprint $table) {
             $ts_precision = config('app.timestamp_precision');
 
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('name')->unique();
             $table->string('email')->unique()->nullable();
             $table->string('role', 10)->default('user');

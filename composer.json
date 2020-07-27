@@ -19,6 +19,7 @@
         "laravel/tinker": "^2.0",
         "laravel/ui": "^2.0",
         "marvinlabs/laravel-discord-logger": "^1.1",
+        "monicahq/laravel-cloudflare": "^1.6",
         "nojacko/email-validator": "^1.1",
         "ongr/elasticsearch-dsl": "^7.2",
         "qcod/laravel-settings": "^1.0",

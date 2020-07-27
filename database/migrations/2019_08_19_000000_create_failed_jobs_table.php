@@ -16,7 +16,7 @@ class CreateFailedJobsTable extends Migration
         Schema::create('failed_jobs', function (Blueprint $table) {
             $ts_precision = config('app.timestamp_precision');
 
-            $table->bigIncrements('id');
+            $table->id();
             $table->text('connection');
             $table->text('queue');
             $table->longText('payload');

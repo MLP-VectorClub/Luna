@@ -10,66 +10,69 @@ use OpenApi\Annotations as OA;
 
 /**
  * @OA\OpenApi(
- *     @OA\Info(
- *         title="MLP Vector Club API",
- *         version="0.1",
- *         description="A work-in-progress API for the [MLP Vector Club](https://mlpvector.club/)'s website.",
- *         @OA\License(name="MIT"),
- *         @OA\Contact(name="David Joseph Guzsik", url="https://seinopsys.dev", email="david@seinopsys.dev"),
- *     ),
- *     @OA\Server(url="/", description="Current Host"),
- *     @OA\Tag(name="authentication", description="Endpoints related to getting a user logged in or out, as well as checking logged in status"),
+ *   @OA\Info(
+ *     title="MLP Vector Club API",
+ *     version="0.2",
+ *     description="A work-in-progress API for the [MLP Vector Club](https://mlpvector.club/)'s website.",
+ *     @OA\License(name="MIT"),
+ *     @OA\Contact(name="David Joseph Guzsik", url="https://seinopsys.dev", email="david@seinopsys.dev"),
+ *   ),
+ *   @OA\Server(url="/", description="Current Host"),
+ *   @OA\Tag(name="authentication", description="Endpoints related to getting a user logged in or out, as well as checking logged in status"),
+ *   @OA\Tag(name="color guide", description="Endpoints related to the color guide section of the site"),
+ *   @OA\Tag(name="appearances", description="Working with entries in the color guide"),
+ *   @OA\Tag(name="server info", description="For diagnostic or informational data")
  * )
  * @OA\Schema(
- *     schema="ErrorResponse",
- *     type="object",
- *     required={
- *         "message"
- *     },
- *     additionalProperties=false,
- *     @OA\Property(
- *         property="message",
- *         type="string",
- *         description="An error message describing what caused the request to fail",
- *         example="The given data was invalid."
- *     )
+ *   schema="ErrorResponse",
+ *   type="object",
+ *   required={
+ *     "message"
+ *   },
+ *   additionalProperties=false,
+ *   @OA\Property(
+ *     property="message",
+ *     type="string",
+ *     description="An error message describing what caused the request to fail",
+ *     example="The given data was invalid."
+ *   )
  * )
  * @OA\Schema(
- *     schema="ValidationErrorResponse",
- *     allOf={
- *         @OA\Schema(
- *             type="object",
- *             required={
- *                 "errors"
- *             },
- *             additionalProperties=false,
- *             @OA\Property(
- *                 property="errors",
- *                 type="object",
- *                 description="A map containing error messages for each field that did not pass validation",
- *                 minProperties=1,
- *                 @OA\AdditionalProperties(
- *                     type="array",
- *                     minItems=1,
- *                     @OA\Items(type="string")
- *                 ),
- *                 example={
- *                     "username": {"The username must be at least 8 characters long", "The username is already taken"},
- *                     "email": {"The email must be at least 3 characters long"},
- *                 }
- *             )
+ *   schema="ValidationErrorResponse",
+ *   allOf={
+ *     @OA\Schema(
+ *       type="object",
+ *       required={
+ *         "errors"
+ *       },
+ *       additionalProperties=false,
+ *       @OA\Property(
+ *         property="errors",
+ *         type="object",
+ *         description="A map containing error messages for each field that did not pass validation",
+ *         minProperties=1,
+ *         @OA\AdditionalProperties(
+ *           type="array",
+ *           minItems=1,
+ *           @OA\Items(type="string")
  *         ),
- *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
- *     }
+ *         example={
+ *           "username": {"The username must be at least 8 characters long", "The username is already taken"},
+ *           "email": {"The email must be at least 3 characters long"},
+ *         }
+ *       )
+ *     ),
+ *     @OA\Schema(ref="#/components/schemas/ErrorResponse")
+ *   }
  * )
  * @OA\Get(
- *     path="/sanctum/csrf-cookie",
- *     description="Initialize CSRF protection by sending a dummy request through the web middleware. Used only for session-based authentication.",
- *     tags={"authentication"},
- *     @OA\Response(
- *         response="204",
- *         description="Sucess"
- *     )
+ *   path="/sanctum/csrf-cookie",
+ *   description="Initialize CSRF protection by sending a dummy request through the web middleware. Used only for session-based authentication.",
+ *   tags={"authentication"},
+ *   @OA\Response(
+ *     response="204",
+ *     description="Sucess"
+ *   )
  * )
  * @OA\Schema(
  *   schema="PageNumber",

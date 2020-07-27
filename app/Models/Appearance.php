@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\GuideName;
+use App\Interfaces\HasStoredFiles;
 use App\Traits\SortableTrait;
 use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Spatie\EloquentSortable\Sortable;
 /**
  * @property GuideName $guide
  */
-class Appearance extends Model implements Sortable
+class Appearance extends Model implements Sortable, HasStoredFiles
 {
     use SortableTrait;
 
@@ -64,6 +65,11 @@ class Appearance extends Model implements Sortable
         return $this->belongsToMany(Tag::class, 'tagged');
     }
 
+    public function spriteFile()
+    {
+        return $this->morphOne(UserUpload::class, 'fileable');
+    }
+
     public function setNotesSrcAttribute(string $notes_src): string
     {
         # TODO Process notes
@@ -74,7 +80,11 @@ class Appearance extends Model implements Sortable
 
     public function hasSprite(): bool
     {
-        // TODO Implement
-        return false;
+        return $this->spriteFile()->exists();
+    }
+
+    public function getRelativeOutputPath(): string
+    {
+        return 'sprites';
     }
 }

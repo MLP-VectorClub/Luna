@@ -33,7 +33,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('appearances', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->integer('order')->nullable()->index();
             $table->string('label', 70)->index();
             $table->text('notes_src')->nullable();
@@ -48,7 +48,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('color_groups', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('appearance_id')->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->string('label', 255);
             $table->integer('order');
@@ -57,7 +57,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('colors', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('group_id')->index()->constrained('color_groups')->onDelete('cascade')->onUpdate('cascade');
             $table->integer('order');
             $table->string('label', 255);
@@ -65,7 +65,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('major_changes', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('appearance_id')->index()->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->string('reason', 255);
             $table->foreignId('user_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
@@ -73,7 +73,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('cutiemarks', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('appearance_id')->index()->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->string('facing', 10)->nullable();
             $table->string('favme', 7)->nullable();
@@ -98,7 +98,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('events', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('name', 64);
             $table->string('type', 10);
             $table->string('entry_role', 15);
@@ -116,7 +116,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('event_entries', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('event_id')->index()->constrained('events')->onDelete('cascade')->onUpdate('cascade');
             $table->string('prev_src', 255)->nullable();
             $table->string('prev_full', 255)->nullable();
@@ -130,7 +130,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('event_entry_votes', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('entry_id')->constrained('event_entries')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->smallInteger('value');
@@ -140,7 +140,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('notices', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('message_html', 500);
             $table->string('type', 16);
             $table->foreignId('posted_by')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
@@ -149,7 +149,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('notifications', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('recipient_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->string('type', 15)->index();
             $table->jsonb('data');
@@ -159,7 +159,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('pcg_point_grants', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('receiver_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->foreignId('sender_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->integer('amount');
@@ -168,7 +168,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('pcg_slot_history', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('user_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->string('change_type', 15);
             $table->jsonb('change_data')->nullable();
@@ -178,10 +178,10 @@ class ImportOldSchema extends Migration
 
 
         DB::statement(sprintf(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS %s", MlpGenerationType::MLP_GENERATION));
-        DB::statement(sprintf(/** @lang PostgreSQL */ "CREATE TYPE %s AS ENUM ('%s', '%s')", MlpGenerationType::MLP_GENERATION, MlpGeneration::FriendshipIsMagic, MlpGeneration::PonyLife));
+        DB::statement(sprintf(/** @lang PostgreSQL */ "CREATE TYPE %s AS ENUM ('%s', '%s')", MlpGenerationType::MLP_GENERATION, MlpGeneration::FriendshipIsMagic(), MlpGeneration::PonyLife()));
 
         Schema::create('show', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('type', 10);
             $table->integer('season')->nullable();
             $table->integer('episode')->nullable();
@@ -200,7 +200,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('posts', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('type', 3)->nullable();
             $table->string('preview', 1024)->nullable();
             $table->string('fullsize', 1024)->nullable();
@@ -218,7 +218,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('legacy_post_mappings', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('post_id')->constrained('posts')->onDelete('cascade')->onUpdate('cascade');
             $table->unsignedBigInteger('old_id');
             $table->string('type', 11);
@@ -228,7 +228,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('broken_posts', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('post_id')->index()->constrained('posts')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('reserved_by')->nullable();
             $table->integer('response_code')->nullable();
@@ -237,28 +237,28 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('locked_posts', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('post_id')->index()->constrained('posts')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('user_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->timestampsTz($this->ts_precision);
         });
 
         Schema::create('related_appearances', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('source_id')->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('target_id')->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->unique(['source_id', 'target_id']);
         });
 
         Schema::create('show_appearances', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('show_id')->constrained('show')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('appearance_id')->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->unique(['show_id', 'appearance_id']);
         });
 
         Schema::create('show_videos', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->char('provider_abbr', 2);
             $table->string('provider_id', 64);
             $table->integer('part')->default(1);
@@ -270,7 +270,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('show_votes', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->smallInteger('vote');
             $table->foreignId('show_id')->constrained('show')->onDelete('cascade')->onUpdate('cascade');
@@ -278,7 +278,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('tags', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('name', 30)->index();
             $table->string('title', 255)->nullable();
             $table->string('type', 4)->nullable();
@@ -288,7 +288,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('tag_changes', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('tag_id')->nullable()->index()->constrained('tags')->onDelete('set null')->onUpdate('cascade');
             $table->foreignId('appearance_id')->index()->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('user_id')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
@@ -298,14 +298,14 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('tagged', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('tag_id')->constrained('tags')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('appearance_id')->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
             $table->unique(['tag_id', 'appearance_id']);
         });
 
         Schema::create('useful_links', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('url', 255);
             $table->string('label', 40);
             $table->string('title', 255);
@@ -314,7 +314,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('user_prefs', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->onUpdate('cascade');
             $table->string('key', 50);
             $table->text('value')->nullable();
@@ -323,20 +323,20 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('previous_usernames', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignUuid('user_id')->index()->constrained('deviantart_users')->onDelete('restrict')->onUpdate('cascade');
             $table->addColumn(CitextType::CITEXT, 'username');
         });
 
         Schema::create('failed_auth_attempts', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('user_agent', 255)->nullable();
             $table->ipAddress('ip')->nullable();
             $table->timestampsTz($this->ts_precision);
         });
 
         Schema::create('logs', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('entry_type', 20);
             $table->foreignId('initiator')->nullable()->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->ipAddress('ip');
@@ -345,7 +345,7 @@ class ImportOldSchema extends Migration
         });
 
         Schema::create('sessions', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->foreignId('user_id')->nullable()->index()->constrained('users')->onDelete('cascade')->onUpdate('cascade');
             $table->string('platform', 50);
             $table->string('browser_name', 50)->nullable();
@@ -413,7 +413,7 @@ class ImportOldSchema extends Migration
         Schema::dropIfExists('logs');
         Schema::dropIfExists('previous_usernames');
 
-        DB::statement(sprintf(/** @lang PostgreSQL */ "DROP TYPE %s", MlpGenerationType::MLP_GENERATION));
+        DB::statement(sprintf(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS %s", MlpGenerationType::MLP_GENERATION));
         DB::statement(/** @lang PostgreSQL */ 'DROP VIEW unread_notifications');
     }
 }

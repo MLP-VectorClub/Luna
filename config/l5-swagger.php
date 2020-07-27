@@ -6,6 +6,7 @@ use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\ShowType;
 use App\Enums\TagType;
+use App\Enums\UserPrefKey;
 use App\Utils\SettingsHelper;
 
 $database_roles = Role::getValues();
@@ -263,6 +264,7 @@ return [
         'SHOW_TYPES' => ShowType::getValues(),
         'MLP_GENERATIONS' => MlpGeneration::getValues(),
         'TAG_TYPES' => TagType::getValues(),
+        'USER_PREF_KEYS' => UserPrefKey::getValues(),
         'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
     ],
 ];
