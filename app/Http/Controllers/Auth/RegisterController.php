@@ -100,6 +100,12 @@ class RegisterController extends Controller
         }
 
         $have_users = User::any();
+
+        // TODO remove when registration for the public is open
+        if ($have_users) {
+            abort(503, 'New registrations are currently not accepted, thank you for your understanding.');
+        }
+
         $validator = Validator::make($request->only(['email', 'name', 'password']), [
             'name' => [
                 'required',
@@ -125,12 +131,6 @@ class RegisterController extends Controller
                 new Pwned,
             ],
         ]);
-
-        // TODO remove when registration for the public is open
-        if ($have_users) {
-            abort(503, 'New registrations are currently not accepted, thank you for your understanding.');
-            throw new ValidationException($validator);
-        }
 
         $data = $validator->validate();
         // First user will receive developer privileges
