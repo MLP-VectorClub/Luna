@@ -2,8 +2,14 @@
 
 use App\Utils\Media\ConversionFileNamer;
 use App\Utils\Media\PathGenerator;
+use Spatie\ImageOptimizer\Optimizers;
+use Spatie\MediaLibrary\Conversions\ImageGenerators;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\ResponsiveImages\Jobs\GenerateResponsiveImagesJob;
+use Spatie\MediaLibrary\ResponsiveImages\TinyPlaceholderGenerator\Blurred;
+use Spatie\MediaLibrary\ResponsiveImages\WidthCalculator\FileSizeOptimizedWidthCalculator;
+use Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator;
 
 return [
 
@@ -28,7 +34,7 @@ return [
     /*
      * The fully qualified class name of the media model.
      */
-    'media_model' => Spatie\MediaLibrary\MediaCollections\Models\Media::class,
+    'media_model' => Media::class,
 
     'remote' => [
         /*
@@ -53,7 +59,7 @@ return [
          *
          * https://docs.spatie.be/laravel-medialibrary/v8/advanced-usage/generating-responsive-images
          */
-        'width_calculator' => Spatie\MediaLibrary\ResponsiveImages\WidthCalculator\FileSizeOptimizedWidthCalculator::class,
+        'width_calculator' => FileSizeOptimizedWidthCalculator::class,
 
         /*
          * By default rendering media to a responsive image will add some javascript and a tiny placeholder.
@@ -65,7 +71,7 @@ return [
          * This class will generate the tiny placeholder used for progressive image loading. By default
          * the medialibrary will use a tiny blurred jpg image.
          */
-        'tiny_placeholder_generator' => Spatie\MediaLibrary\ResponsiveImages\TinyPlaceholderGenerator\Blurred::class,
+        'tiny_placeholder_generator' => Blurred::class,
     ],
 
     /*
@@ -94,7 +100,7 @@ return [
      * When urls to files get generated, this class will be called. Use the default
      * if your files are stored locally above the site root or on s3.
      */
-    'url_generator' => Spatie\MediaLibrary\Support\UrlGenerator\DefaultUrlGenerator::class,
+    'url_generator' => DefaultUrlGenerator::class,
 
     /*
      * Whether to activate versioning when urls to files get generated.
@@ -108,22 +114,22 @@ return [
      * the optimizers that will be used by default.
      */
     'image_optimizers' => [
-        Spatie\ImageOptimizer\Optimizers\Jpegoptim::class => [
+        Optimizers\Jpegoptim::class => [
             '--strip-all', // this strips out all text information such as comments and EXIF data
             '--all-progressive', // this will make sure the resulting image is a progressive one
         ],
-        Spatie\ImageOptimizer\Optimizers\Pngquant::class => [
+        Optimizers\Pngquant::class => [
             '--force', // required parameter for this package
         ],
-        Spatie\ImageOptimizer\Optimizers\Optipng::class => [
+        Optimizers\Optipng::class => [
             '-i0', // this will result in a non-interlaced, progressive scanned image
             '-o2', // this set the optimization level to two (multiple IDAT compression trials)
             '-quiet', // required parameter for this package
         ],
-        Spatie\ImageOptimizer\Optimizers\Svgo::class => [
+        Optimizers\Svgo::class => [
             '--disable=cleanupIDs', // disabling because it is known to cause troubles
         ],
-        Spatie\ImageOptimizer\Optimizers\Gifsicle::class => [
+        Optimizers\Gifsicle::class => [
             '-b', // required parameter for this package
             '-O3', // this produces the slowest but best results
         ],
@@ -133,11 +139,11 @@ return [
      * These generators will be used to create an image of media files.
      */
     'image_generators' => [
-        Spatie\MediaLibrary\Conversions\ImageGenerators\Image::class,
-        Spatie\MediaLibrary\Conversions\ImageGenerators\Webp::class,
-        Spatie\MediaLibrary\Conversions\ImageGenerators\Pdf::class,
-        Spatie\MediaLibrary\Conversions\ImageGenerators\Svg::class,
-        Spatie\MediaLibrary\Conversions\ImageGenerators\Video::class,
+        ImageGenerators\Image::class,
+        ImageGenerators\Webp::class,
+        ImageGenerators\Pdf::class,
+        ImageGenerators\Svg::class,
+        ImageGenerators\Video::class,
     ],
 
     /*
