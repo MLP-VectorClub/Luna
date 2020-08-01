@@ -3,6 +3,7 @@
 namespace App\Utils;
 
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 use function gettype;
 
@@ -79,5 +80,21 @@ class Core
                     return str_replace(' ', '_', $arg);
             }
         }, $args));
+    }
+
+    public static function generateRandomFilename(int $length = 40): string
+    {
+        return Str::random($length);
+    }
+
+    public static function generateHashFilename(string $file_path): string
+    {
+        $extension = pathinfo($file_path, PATHINFO_EXTENSION);
+        return hash_file('sha512', $file_path).'.'.$extension;
+    }
+
+    public static function fileToDataUri(string $path): string
+    {
+        return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
     }
 }

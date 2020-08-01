@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Appearance;
 use App\Models\Cutiemark;
-use App\Models\UserUpload;
 use App\Models\User;
+use App\Utils\Core;
 use Illuminate\Console\Command;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -158,30 +158,6 @@ class MigrateFilesystem extends Command
      */
     private function importCutiemarks(array $fileinfo): void
     {
-        $existing_files = UserUpload::whereHasMorph('fileable', Cutiemark::class)->count();
-        if ($existing_files > 0) {
-            if (!$this->wipe) {
-                $continue = $this->confirm("Found $existing_files ".Str::plural('files')." belonging to cutiemarks. These records will need to be wiped before the import to avoid duplicate entries. Continue import?");
-                if (!$continue) {
-                    return;
-                }
-            }
-
-            $this->line("Deleting existing cutiemark records…");
-            $this->output->progressStart($existing_files);
-
-            UserUpload::whereHasMorph('fileable', Cutiemark::class)->each(function (UserUpload $file) {
-                $file->delete();
-                $this->output->progressAdvance();
-            });
-
-            $this->output->progressFinish();
-            $this->info("$existing_files existing cutiemark ".Str::plural(
-                'records',
-                $existing_files
-            )." deleted successfully");
-        }
-
         $cm_file_count = count($fileinfo);
         $this->line("Importing $cm_file_count cutie mark ".Str::plural('file', $cm_file_count)."…");
         $this->output->progressStart($cm_file_count);
@@ -205,33 +181,21 @@ class MigrateFilesystem extends Command
         });
 
         foreach ($fileinfo as $k => $info) {
-            $file = new UploadedFile(
-                $info->getRealPath(),
-                $info->getFilename(),
-                mimetype_from_filename($info->getRealPath())
-            );
-
-            DB::transaction(function () use ($k, $file, $records_mapped) {
+            DB::transaction(function () use ($k, $info, $records_mapped) {
                 $cutiemark = $records_mapped[$k];
-                $stored_filename = $file->store($cutiemark->getRelativeOutputPath());
-                if ($stored_filename === false) {
-                    throw new RuntimeException("Failed to save file {$file->getRealPath()} into application directory");
-                }
-                /** @var UserUpload $db_file */
-                $db_file = $cutiemark->vectorFile()->make();
-                $db_file->uploader_id = $this->uploader_id;
-                $db_file->name = $file->getFilename();
-                $db_file->path = $stored_filename;
-                $db_file->size = $file->getSize();
-                $db_file->save();
+                $file_path = $info->getRealPath();
+                $cutiemark
+                    ->addMedia($file_path)
+                    ->usingFileName(Core::generateHashFilename($file_path))
+                    ->preservingOriginal()
+                    ->withCustomProperties(['user_id' => $this->uploader_id])
+                    ->toMediaCollection(Cutiemark::CUTIEMARKS_COLLECTION);
             });
 
             $this->output->progressAdvance();
         }
 
         $this->output->progressFinish();
-
-        // TODO Generate intermediary files on model level / via a job
 
         $this->info("$cm_file_count cutiemark ".Str::plural('vectors', $cm_file_count)." imported successfully");
     }
@@ -243,27 +207,6 @@ class MigrateFilesystem extends Command
      */
     private function importSprites(array $fileinfo): void
     {
-        $existing_files = UserUpload::whereHasMorph('fileable', Appearance::class)->count();
-        if ($existing_files > 0) {
-            if (!$this->wipe) {
-                $continue = $this->confirm("Found $existing_files ".Str::plural('files')." belonging to appearances. These records will need to be wiped before the import to avoid duplicate entries. Continue import?");
-                if (!$continue) {
-                    return;
-                }
-            }
-
-            $this->line("Deleting existing sprite records…");
-            $this->output->progressStart($existing_files);
-
-            UserUpload::whereHasMorph('fileable', Appearance::class)->each(function (UserUpload $file) {
-                $file->delete();
-                $this->output->progressAdvance();
-            });
-
-            $this->output->progressFinish();
-            $this->info("$existing_files existing sprite ".Str::plural('records', $existing_files)." deleted successfully");
-        }
-
         $sprite_file_count = count($fileinfo);
         $this->line("Importing $sprite_file_count sprite ".Str::plural('file', $sprite_file_count)."…");
         $this->output->progressStart($sprite_file_count);
@@ -287,33 +230,21 @@ class MigrateFilesystem extends Command
         });
 
         foreach ($fileinfo as $k => $info) {
-            $file = new UploadedFile(
-                $info->getRealPath(),
-                $info->getFilename(),
-                mimetype_from_filename($info->getRealPath())
-            );
-
-            DB::transaction(function () use ($k, $file, $records_mapped) {
+            DB::transaction(function () use ($k, $info, $records_mapped) {
                 $appearance = $records_mapped[$k];
-                $stored_filename = $file->store($appearance->getRelativeOutputPath());
-                if ($stored_filename === false) {
-                    throw new RuntimeException("Failed to save file {$file->getRealPath()} into application directory");
-                }
-                /** @var UserUpload $db_file */
-                $db_file = $appearance->spriteFile()->make();
-                $db_file->uploader_id = $this->uploader_id;
-                $db_file->name = $file->getFilename();
-                $db_file->path = $stored_filename;
-                $db_file->size = $file->getSize();
-                $db_file->save();
+                $file_path = $info->getRealPath();
+                $appearance
+                    ->addMedia($file_path)
+                    ->usingFileName(Core::generateHashFilename($file_path))
+                    ->preservingOriginal()
+                    ->withCustomProperties(['user_id' => $this->uploader_id])
+                    ->toMediaCollection(Appearance::SPRITES_COLLECTION);
             });
 
             $this->output->progressAdvance();
         }
 
         $this->output->progressFinish();
-
-        // TODO Generate intermediary files on model level / via a job
 
         $this->info("$sprite_file_count sprite ".Str::plural('file', $sprite_file_count)." imported successfully");
     }

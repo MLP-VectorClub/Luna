@@ -85,6 +85,7 @@ use OpenApi\Annotations as OA;
  *   schema="File",
  *   type="string",
  *   format="binary",
+ *   example=""
  * )
  * @OA\Schema(
  *   schema="SVGFile",

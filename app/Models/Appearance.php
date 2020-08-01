@@ -3,20 +3,31 @@
 namespace App\Models;
 
 use App\Enums\GuideName;
-use App\Interfaces\HasStoredFiles;
 use App\Traits\SortableTrait;
 use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
 use phpDocumentor\Reflection\Types\Boolean;
 use Ramsey\Uuid\Uuid;
 use Spatie\EloquentSortable\Sortable;
+use Spatie\Image\Manipulations;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * @property GuideName $guide
  */
-class Appearance extends Model implements Sortable, HasStoredFiles
+class Appearance extends Model implements Sortable, HasMedia
 {
+    use InteractsWithMedia;
     use SortableTrait;
+
+    const SPRITES_COLLECTION = 'sprites';
+    const SPRITE_PREVIEW_CONVERSION = 'sprite-preview';
+    const DOUBLE_SIZE_CONVERSION = '2x';
+    const SPRITE_SIZES = [300, 600];
+
+    public $registerMediaConversionsUsingModelInstance = true;
 
     protected $fillable = [
         'order',
@@ -45,6 +56,26 @@ class Appearance extends Model implements Sortable, HasStoredFiles
         });
     }
 
+    public function registerMediaCollections(): void
+    {
+        $disk = $this->owner_id === null ? 'public' : 'local';
+        $this->addMediaCollection(self::SPRITES_COLLECTION)
+            ->singleFile()
+            ->acceptsMimeTypes(['image/png'])
+            ->useDisk($disk);
+
+        $preview_convert = $this->addMediaConversion(self::SPRITE_PREVIEW_CONVERSION)
+              ->keepOriginalImageFormat()
+              ->fit(Manipulations::FIT_MAX, 28, 12)
+              ->setManipulations(new Manipulations())
+              ->performOnCollections(self::SPRITES_COLLECTION);
+
+        $double_convert = $this->addMediaConversion(self::DOUBLE_SIZE_CONVERSION)
+              ->keepOriginalImageFormat()
+              ->fit(Manipulations::FIT_CONTAIN, 1400, 600)
+              ->performOnCollections(self::SPRITES_COLLECTION);
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -65,9 +96,9 @@ class Appearance extends Model implements Sortable, HasStoredFiles
         return $this->belongsToMany(Tag::class, 'tagged');
     }
 
-    public function spriteFile()
+    public function spriteFile(): ?Media
     {
-        return $this->morphOne(UserUpload::class, 'fileable');
+        return $this->getFirstMedia(self::SPRITES_COLLECTION);
     }
 
     public function setNotesSrcAttribute(string $notes_src): string
@@ -80,7 +111,7 @@ class Appearance extends Model implements Sortable, HasStoredFiles
 
     public function hasSprite(): bool
     {
-        return $this->spriteFile()->exists();
+        return (bool) $this->spriteFile();
     }
 
     public function getRelativeOutputPath(): string

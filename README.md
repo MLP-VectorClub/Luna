@@ -11,4 +11,8 @@ Work-in-progress backend for the [MLP Vector Club](https://github.com/MLP-Vector
  
 ## Commands
 
+…that I will inevitably forget, so I'm going to write down here
+
  - `php artisan fixer:fix` - Fix code style issues 
+ - `php artisan media-library:regenerate` - [Reference](https://docs.spatie.be/laravel-medialibrary/v8/converting-images/regenerating-images/)
+ - `php artisan l5-swagger:generate` - Manually (re)generate Swagger API docs

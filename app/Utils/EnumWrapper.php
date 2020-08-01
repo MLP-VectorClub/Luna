@@ -12,6 +12,7 @@ use Spatie\Enum\Enum;
 use Spatie\Enum\EnumDefinition;
 use TypeError;
 use function get_class;
+use function in_array;
 use function is_object;
 
 abstract class EnumWrapper extends Enum implements CastsInboundAttributes

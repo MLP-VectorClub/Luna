@@ -42,7 +42,7 @@ class ImportOldSchema extends Migration
             $table->boolean('private')->default(false);
             $table->foreignId('owner_id')->nullable()->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->timestampTz('last_cleared', $this->ts_precision)->nullable();
-            $table->uuid('token'); // TODO Generate this on the model layer
+            $table->uuid('token');
             $table->string('sprite_hash', 32)->nullable();
             $table->timestampsTz($this->ts_precision);
         });
@@ -380,6 +380,8 @@ class ImportOldSchema extends Migration
      */
     public function down()
     {
+        DB::statement(/** @lang PostgreSQL */ 'DROP VIEW unread_notifications');
+
         Schema::dropIfExists('colors');
         Schema::dropIfExists('color_groups');
         Schema::dropIfExists('cutiemarks');
@@ -408,12 +410,11 @@ class ImportOldSchema extends Migration
         Schema::dropIfExists('major_changes');
         Schema::dropIfExists('appearances');
         Schema::dropIfExists('name_changes');
+        Schema::dropIfExists('previous_usernames');
         Schema::dropIfExists('deviantart_users');
         Schema::dropIfExists('failed_auth_attempts');
         Schema::dropIfExists('logs');
-        Schema::dropIfExists('previous_usernames');
 
         DB::statement(sprintf(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS %s", MlpGenerationType::MLP_GENERATION));
-        DB::statement(/** @lang PostgreSQL */ 'DROP VIEW unread_notifications');
     }
 }

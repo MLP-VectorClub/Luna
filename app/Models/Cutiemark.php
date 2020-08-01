@@ -2,14 +2,21 @@
 
 namespace App\Models;
 
-use App\Interfaces\HasStoredFiles;
 use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Cutiemark extends Model implements HasStoredFiles
+class Cutiemark extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
+    const CUTIEMARKS_COLLECTION = 'cutiemarks';
+
+    public $registerMediaConversionsUsingModelInstance = true;
+
     protected $fillable = [
         'appearance_id',
         'facing',
@@ -18,6 +25,18 @@ class Cutiemark extends Model implements HasStoredFiles
         'contributor_id',
         'label',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $disk = $this->appearance()->first()->owner_id === null ? 'public' : 'local';
+        $this->addMediaCollection(self::CUTIEMARKS_COLLECTION)
+            ->singleFile()
+            ->acceptsMimeTypes(['image/svg','image/svg+xml'])
+            ->useDisk($disk);
+
+        // TODO Use an event for further transformations
+        // https://docs.spatie.be/laravel-medialibrary/v8/advanced-usage/consuming-events/
+    }
 
     public function appearance(): BelongsTo
     {
@@ -29,13 +48,8 @@ class Cutiemark extends Model implements HasStoredFiles
         return $this->belongsTo(DeviantartUser::class, 'contributor_id');
     }
 
-    public function vectorFile(): MorphOne
+    public function vectorFile(): ?Media
     {
-        return $this->morphOne(UserUpload::class, 'fileable');
-    }
-
-    public function getRelativeOutputPath(): string
-    {
-        return 'cutiemarks';
+        return $this->getFirstMedia(self::CUTIEMARKS_COLLECTION);
     }
 }

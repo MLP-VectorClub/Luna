@@ -33,4 +33,9 @@ class Math
 
         return [$width / $divisor, $height / $divisor];
     }
+
+    public static function rebase(int $number, int $base = 36): string
+    {
+        return base_convert($number, 10, $base);
+    }
 }

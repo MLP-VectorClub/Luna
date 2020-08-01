@@ -5,6 +5,7 @@ use App\Enums\GuideName;
 use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\ShowType;
+use App\Enums\SpriteSize;
 use App\Enums\TagType;
 use App\Enums\UserPrefKey;
 use App\Utils\SettingsHelper;
@@ -265,6 +266,7 @@ return [
         'MLP_GENERATIONS' => MlpGeneration::getValues(),
         'TAG_TYPES' => TagType::getValues(),
         'USER_PREF_KEYS' => UserPrefKey::getValues(),
+        'SPRITE_SIZES' => SpriteSize::getValues(),
         'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
     ],
 ];

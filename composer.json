@@ -26,6 +26,7 @@
         "spatie/eloquent-sortable": "^3.8",
         "spatie/enum": "^3.0",
         "spatie/laravel-activitylog": "^3.14",
+        "spatie/laravel-medialibrary": "^8.0.0",
         "spatie/laravel-responsecache": "^6.6",
         "stechstudio/laravel-php-cs-fixer": "^2.0",
         "valorin/pwned-validator": "^1.3",

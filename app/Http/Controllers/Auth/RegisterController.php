@@ -41,6 +41,7 @@ class RegisterController extends Controller
      *     @OA\Property(
      *         property="password",
      *         type="string",
+     *         format="password",
      *         minLength=8,
      *         maxLength=300,
      *     )

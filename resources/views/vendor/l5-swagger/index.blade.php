@@ -90,7 +90,8 @@ window.onload = function() {
       SwaggerUIBundle.plugins.DownloadUrl
     ],
 
-    layout: "StandaloneLayout"
+    layout: "BaseLayout",
+    deepLinking: true
   });
 }
 </script>

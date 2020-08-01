@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\Errors\ColorGuideErrors;
 use App\Enums\GuideName;
 use App\Enums\Role;
+use App\Enums\SpriteSize;
 use App\Enums\TagType;
 use App\Models\Appearance;
 use App\Models\Color;
 use App\Models\ColorGroup;
 use App\Models\Tag;
-use App\Models\UserUpload;
+use App\Models\User;
 use App\Rules\EnumValue;
 use App\Utils\Caching;
 use App\Utils\ColorGuideHelper;
@@ -21,12 +22,16 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
 use function count;
@@ -272,7 +277,7 @@ class AppearancesController extends Controller
      *   @OA\Property(
      *     property="preview",
      *     type="string",
-     *     format="data-uri",
+     *     format="byte",
      *     example="data:image/png;base64,<image data>",
      *     description="Data URI for a small preview image with matching proportions to the actual image, suitable for displaying as a preview while the full image loads. May not be sent based on the request parameters."
      *   ),
@@ -284,17 +289,16 @@ class AppearancesController extends Controller
      */
     public static function mapSprite(Appearance $a, $with_preview = false): ?array
     {
-        if (!$a->hasSprite()) {
+        $sprite_file = $a->spriteFile();
+        if (!$sprite_file) {
             return null;
         }
 
-        /** @var UserUpload $sprite_file */
-        $sprite_file = $a->spriteFile()->first();
-        $value = ['path' => Storage::url(str_replace('public/', '', $sprite_file->path))];
+        $sprite_file = $a->spriteFile();
+        $value = ['path' => $sprite_file->getFullUrl()];
 
         if ($with_preview) {
-            // TODO Include base64 preview using the aspect ratio & LCD algorithm
-            $value['preview'] = null;
+            $value['preview'] = Core::fileToDataUri($sprite_file->getPath(Appearance::SPRITE_PREVIEW_CONVERSION));
         }
 
         return $value;
@@ -486,7 +490,7 @@ class AppearancesController extends Controller
             'guide' => ['required', new EnumValue(GuideName::class)],
             'size' => 'sometimes|required|numeric|between:7,20',
             'q' => 'sometimes|required|string',
-            // 'previews' => 'sometimes|required|boolean',
+            'previews' => 'sometimes|required|accepted',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
@@ -538,7 +542,7 @@ class AppearancesController extends Controller
     {
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new EnumValue(GuideName::class)],
-            // 'previews' => 'sometimes|required|boolean',
+            'previews' => 'sometimes|required|accepted',
         ])->validate();
 
         $guide_name = $valid['guide'];
@@ -567,13 +571,15 @@ class AppearancesController extends Controller
     private static function _handlePrivateAppearanceCheck(Request $request, Appearance $appearance): ?JsonResponse
     {
         if ($appearance->private && Permission::insufficient(Role::Staff())) {
-            if (Auth::$signed_in && $appearance->owner_id === Auth::$user->id) {
+            /** @var User $user */
+            $user = Auth::user();
+            if ($user && $appearance->owner_id === $user->id) {
                 return null;
             }
 
             // TODO Check token parameter and allow if matches
 
-            return response(403)->json(['message' => trans('errors.color_guide.appearance_private')]);
+            return response()->json(['message' => trans('errors.color_guide.appearance_private')], 403);
         }
 
         return null;
@@ -615,18 +621,13 @@ class AppearancesController extends Controller
 
     /**
      * @OA\Schema(
-     *   schema="SpriteSize",
-     *   type="integer",
-     *   enum={300, 600},
-     *   default=300
-     * )
-     * @OA\Schema(
      *   schema="AppearanceToken",
      *   type="string",
      *   format="uuid"
      * )
      * @OA\Schema(
      *   schema="LocationHeader",
+     *   description="Contains a URL that most clients will automatically redirect to for 301 and 302 responses",
      *   type="string",
      *   format="URL"
      * )
@@ -651,8 +652,16 @@ class AppearancesController extends Controller
      *     @OA\Schema(ref="#/components/schemas/AppearanceToken")
      *   ),
      *   @OA\Response(
+     *     response="200",
+     *     description="The sprite image data (if the appearance is private)",
+     *     @OA\MediaType(
+     *       mediaType="image/png",
+     *       @OA\Schema(ref="#/components/schemas/File")
+     *     )
+     *   ),
+     *   @OA\Response(
      *     response="302",
-     *     description="Redirect to the current sprite image URL",
+     *     description="Redirect to the current sprite image URL (if the appearance is public).",
      *     @OA\Header(header="Location", ref="#/components/schemas/LocationHeader")
      *   ),
      *   @OA\Response(
@@ -676,7 +685,6 @@ class AppearancesController extends Controller
      * )
      * @param  Request  $request
      * @param  Appearance  $appearance
-     * @return JsonResponse|Response
      */
     public function sprite(Request $request, Appearance $appearance)
     {
@@ -684,8 +692,24 @@ class AppearancesController extends Controller
             return $error;
         }
 
-        // TODO CGUtils::renderSpritePNG($appearance, $_GET['size'] ?? null);
-        return response()->noContent(404);
+        $sprite_file = $appearance->spriteFile();
+        if ($sprite_file === null) {
+            return response()->noContent(404);
+        }
+
+        $params = Validator::make($request->only('size'), [
+            'size' => ['required', 'integer', new EnumValue(SpriteSize::class)],
+        ])->valid();
+        $double_size = isset($params['size']) && $params['size'] === SpriteSize::Double();
+
+        if ($appearance->owner_id === null) {
+            $url = $sprite_file->getUrl($double_size ? Appearance::DOUBLE_SIZE_CONVERSION : '');
+            return redirect($url);
+        }
+
+        $sprite_path = $sprite_file->getPath($double_size ? Appearance::DOUBLE_SIZE_CONVERSION : '');
+
+        return response()->file($sprite_path, ['cache-control' => 'private, must-revalidate']);
     }
 
     /**

@@ -49,10 +49,6 @@ class Permission
      */
     public static function sufficient(Role $role, ?Role $compareAgainst = null): bool
     {
-        if (!Role::hasValue($role)) {
-            throw new RuntimeException("Invalid role: $role");
-        }
-
         $comparison = $compareAgainst !== null;
 
         if ($comparison) {
