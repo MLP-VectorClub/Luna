@@ -16,7 +16,7 @@ class PathGenerator extends DefaultPathGenerator
      */
     protected function getBasePath(Media $media): string
     {
-        $sub_folder = $media->collection_name ?: 'media';
+        $sub_folder = empty($media->collection_name) ? 'media' : $media->collection_name;
         return $sub_folder.DIRECTORY_SEPARATOR.Math::rebase(self::STARTING_VALUE + $media->getKey());
     }
 }
