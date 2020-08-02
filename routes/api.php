@@ -28,7 +28,8 @@ Route::middleware('throttle:60,1')->group(function () {
             Route::delete('tokens/{token_id}', 'UsersController@deleteToken');
         });
 
-        Route::get('{username}', 'UsersController@getByName');
+        Route::get('{user}', 'UsersController@get');
+        Route::get('da/{username}', 'UsersController@getByName');
     });
 
     Route::prefix('appearances')->group(function () {

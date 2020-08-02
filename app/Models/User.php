@@ -38,7 +38,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password', 'remember_token', 'email_verified_at', 'created_at', 'updated_at'
     ];
 
-    protected array $protected_fields = ['name', 'email'];
+    protected array $protected_fields = ['email'];
 
     /**
      * The attributes that should be cast to native types.
@@ -53,6 +53,11 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $appends = [
         'avatar_provider',
     ];
+
+    public function daUser()
+    {
+        return $this->belongsTo(DeviantartUser::class);
+    }
 
     public function isStaff(): bool
     {
