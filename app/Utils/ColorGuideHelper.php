@@ -127,7 +127,6 @@ class ColorGuideHelper
             $appearances = Appearance::ordered()
                 ->whereIn('id', array_keys($ids))
                 ->where('guide', $guide)
-                ->forPage($page, $perPage)
                 ->get();
         } else {
             $appearances = [];

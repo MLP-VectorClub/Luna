@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -69,7 +70,7 @@ use function count;
  *   schema="PreviewsIndicator",
  *   type="boolean",
  *   enum={true},
- *   description="Optional parameter that indicates whether you would like to get preview image data with the request. Typically unneccessary unless you want to display a temporary image while the larger image loads."
+ *   description="Optional parameter that indicates whether you would like to get preview image data with the request. Typically unnecessary unless you want to display a temporary image while the larger image loads."
  * )
  * @OA\Schema(
  *   schema="Order",
@@ -78,26 +79,26 @@ use function count;
  *   minimum="0",
  *   description="Used for displaying items in a specific order. The API guarantees that array return values are sorted in ascending order based on this property."
  * )
+ * @OA\Schema(
+ *   schema="ListOfColorGroups",
+ *   type="object",
+ *   description="Array of color groups under the `colorGroups` key",
+ *   required={
+ *     "colorGroups"
+ *   },
+ *   additionalProperties=false,
+ *   @OA\Property(
+ *     property="colorGroups",
+ *     type="array",
+ *     minItems=0,
+ *     @OA\Items(ref="#/components/schemas/ColorGroup"),
+ *    description="Array of color groups belonging to an appearance (may be an empty array)."
+ *   )
+ * )
  */
 class AppearancesController extends Controller
 {
     /**
-     * @OA\Schema(
-     *   schema="ListOfColorGroups",
-     *   type="object",
-     *   description="Array of color groups under the `colorGroups` key",
-     *   required={
-     *     "colorGroups"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="colorGroups",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(ref="#/components/schemas/ColorGroup"),
-     *    description="Array of color groups belonging to an appearance (may be an empty array)."
-     *   )
-     * )
      * @OA\Schema(
      *   schema="CommonAppearance",
      *   type="object",
@@ -137,9 +138,9 @@ class AppearancesController extends Controller
      *   )
      * )
      * @OA\Schema(
-     *   schema="SlimAppearance",
+     *   schema="SlimAppearanceOnly",
      *   type="object",
-     *   description="A less heavy version of the regular Appearance schema",
+     *   description="Represents properties that belong to the slim appearance object only",
      *   required={
      *     "characterTagNames",
      *   },
@@ -157,9 +158,22 @@ class AppearancesController extends Controller
      *   }
      * )
      * @OA\Schema(
-     *   schema="Appearance",
+     *   schema="SlimAppearance",
      *   type="object",
-     *   description="Represents an entry in the color guide",
+     *   description="A less heavy version of the regular Appearance schema",
+     *   required={
+     *     "characterTagNames",
+     *   },
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
+     *     @OA\Schema(ref="#/components/schemas/SlimAppearanceOnly")
+     *   }
+     * )
+     * @OA\Schema(
+     *   schema="AppearanceOnly",
+     *   type="object",
+     *   description="Represents properties that belong to the full appearance object only",
      *   required={
      *     "created_at",
      *     "tags",
@@ -167,10 +181,6 @@ class AppearancesController extends Controller
      *     "colorGroups"
      *   },
      *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
-     *     @OA\Schema(ref="#/components/schemas/ListOfColorGroups")
-     *   },
      *   @OA\Property(
      *     property="created_at",
      *     type="string",
@@ -189,6 +199,17 @@ class AppearancesController extends Controller
      *     minItems=0,
      *     @OA\Items(ref="#/components/schemas/SlimGuideTag")
      *   )
+     * )
+     * @OA\Schema(
+     *   schema="Appearance",
+     *   type="object",
+     *   description="Represents an entry in the color guide",
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
+     *     @OA\Schema(ref="#/components/schemas/AppearanceOnly"),
+     *     @OA\Schema(ref="#/components/schemas/ListOfColorGroups")
+     *   }
      * )
      * @param  Appearance  $a
      * @param  bool  $with_previews
@@ -488,17 +509,17 @@ class AppearancesController extends Controller
 
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new EnumValue(GuideName::class)],
-            'size' => 'sometimes|required|numeric|between:7,20',
-            'q' => 'sometimes|required|string',
+            'size' => 'sometimes|numeric|between:7,20',
+            'q' => 'sometimes|string',
             'previews' => 'sometimes|required|accepted',
-            'page' => 'sometimes|required|int|min:1',
+            'page' => 'sometimes|required|int',
         ])->validate();
 
         $appearances_per_page = $valid['size'] ?? 7;
         $searching = !empty($valid['q']) && $valid['q'] !== '';
         $guide_name = new GuideName($valid['guide']);
         $with_previews = $valid['previews'] ?? false;
-        $pagination = ColorGuideHelper::searchGuide($valid['page'], $valid['size'], $guide_name, $valid['q'] ?? null);
+        $pagination = ColorGuideHelper::searchGuide(max($valid['page'], 1), $appearances_per_page, $guide_name, $valid['q'] ?? null);
         $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAppearance($a, $with_previews));
         return response()->json([
             'appearances' => $results,

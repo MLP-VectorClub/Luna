@@ -71,16 +71,10 @@ use OpenApi\Annotations as OA;
  *       type="object",
  *       description="Represents an authenticated user",
  *       required={
- *         "name",
  *         "email",
  *         "role",
  *       },
  *       additionalProperties=false,
- *       @OA\Property(
- *         property="name",
- *         type="string",
- *         example="example",
- *       ),
  *       @OA\Property(
  *         property="email",
  *         type="string",

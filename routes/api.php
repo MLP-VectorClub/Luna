@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\App;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +16,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:12,1')->group(function () {
     Route::post('/users/login', 'Auth\LoginController@viaPassword');
+});
+
+Route::prefix('about')->group(function () {
+    if (!App::isProduction()) {
+        Route::get('sleep', 'AboutController@sleep');
+    }
 });
 
 Route::middleware('throttle:60,1')->group(function () {
