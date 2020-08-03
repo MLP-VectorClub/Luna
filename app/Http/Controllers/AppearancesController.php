@@ -512,14 +512,15 @@ class AppearancesController extends Controller
             'size' => 'sometimes|numeric|between:7,20',
             'q' => 'sometimes|string',
             'previews' => 'sometimes|required|accepted',
-            'page' => 'sometimes|required|int',
+            'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
-        $appearances_per_page = $valid['size'] ?? 7;
-        $searching = !empty($valid['q']) && $valid['q'] !== '';
         $guide_name = new GuideName($valid['guide']);
+        $appearances_per_page = $valid['size'] ?? 7;
+        $query = !empty($valid['q']) ? $valid['q'] : null;
         $with_previews = $valid['previews'] ?? false;
-        $pagination = ColorGuideHelper::searchGuide(max($valid['page'], 1), $appearances_per_page, $guide_name, $valid['q'] ?? null);
+        $page = $valid['page'] ?? 1;
+        $pagination = ColorGuideHelper::searchGuide($page, $appearances_per_page, $guide_name, $query);
         $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAppearance($a, $with_previews));
         return response()->json([
             'appearances' => $results,
