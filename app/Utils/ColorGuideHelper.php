@@ -54,7 +54,7 @@ class ColorGuideHelper
 
     /**
      * @param  int  $page
-     * @param  int  $perPage
+     * @param  int  $per_page
      * @param  GuideName  $guide
      * @param  string|null  $search_for
      * @return LengthAwarePaginator
@@ -63,11 +63,11 @@ class ColorGuideHelper
      */
     public static function searchGuide(
         int $page,
-        int $perPage,
+        int $per_page,
         GuideName $guide,
         ?string $search_for = null
     ): LengthAwarePaginator {
-        $paginator = new LengthAwarePaginator([], 0, $perPage, $page);
+        $paginator = new LengthAwarePaginator([], 0, $per_page, $page);
         $search_query = new ElasticsearchDSL\Search();
 
         // Search query exists
@@ -117,6 +117,11 @@ class ColorGuideHelper
             $total_hits = $total_hits['value'];
         }
 
+        $max_pages = ceil($total_hits / $per_page);
+        if ($page > $max_pages) {
+            return self::searchGuide($max_pages, $per_page, $guide, $search_for);
+        }
+
         if (!empty($search_results['hits']['hits'])) {
             $ids = [];
             foreach ($search_results['hits']['hits'] as $i => $hit) {
@@ -132,7 +137,7 @@ class ColorGuideHelper
             $appearances = [];
         }
 
-        return new LengthAwarePaginator($appearances, $total_hits, $perPage, $page);
+        return new LengthAwarePaginator($appearances, $total_hits, $per_page, $page);
     }
 
     /**
