@@ -7,16 +7,15 @@ use OpenApi\Annotations as OA;
 
 /**
  * @OA\Schema(
- *   schema="AvatarProvider",
+ *   schema="SocialProvider",
  *   type="string",
- *   description="List of supported avatar providers",
- *   enum=AVATAR_PROVIDERS,
+ *   description="List of available social signin providers",
+ *   enum=SOCIAL_PROVIDERS,
  *   example="deviantart"
  * )
  */
-final class AvatarProvider extends Enum
+final class SocialProvider extends Enum
 {
     const DeviantArt = 'deviantart';
     const Discord = 'discord';
-    const Gravatar = 'gravatar';
 }

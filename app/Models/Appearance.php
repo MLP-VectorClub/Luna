@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\GuideName;
+use App\Traits\HasEnumCasts;
 use App\Traits\SortableTrait;
 use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
@@ -19,8 +20,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Appearance extends Model implements Sortable, HasMedia
 {
-    use InteractsWithMedia;
-    use SortableTrait;
+    use InteractsWithMedia, SortableTrait, HasEnumCasts;
 
     const SPRITES_COLLECTION = 'sprites';
     const SPRITE_PREVIEW_CONVERSION = 'sprite-preview';

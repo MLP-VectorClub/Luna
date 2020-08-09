@@ -88,7 +88,7 @@ class ColorGuideHelper
         $search_query->addSort($sort);
 
         $bool_query = new BoolQuery();
-        $bool_query->add(new TermQuery('guide', $guide), BoolQuery::MUST);
+        $bool_query->add(new TermQuery('guide', $guide->value), BoolQuery::MUST);
         $search_query->addQuery($bool_query);
 
         $search_query->setSource(false);

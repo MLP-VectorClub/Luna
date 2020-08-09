@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Errors\ColorGuideErrors;
 use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Enums\SpriteSize;
@@ -12,12 +11,12 @@ use App\Models\Color;
 use App\Models\ColorGroup;
 use App\Models\Tag;
 use App\Models\User;
-use App\Rules\EnumValue;
 use App\Utils\Caching;
 use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
 use App\Utils\Permission;
 use App\Utils\TagHelper;
+use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

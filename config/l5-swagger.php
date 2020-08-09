@@ -5,9 +5,11 @@ use App\Enums\GuideName;
 use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\ShowType;
+use App\Enums\SocialProvider;
 use App\Enums\SpriteSize;
 use App\Enums\TagType;
 use App\Enums\UserPrefKey;
+use App\Enums\VectorApp;
 use App\Utils\SettingsHelper;
 
 $database_roles = Role::getValues();
@@ -268,5 +270,7 @@ return [
         'USER_PREF_KEYS' => UserPrefKey::getValues(),
         'SPRITE_SIZES' => SpriteSize::getValues(),
         'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
+        'SOCIAL_PROVIDERS' => SocialProvider::getValues(),
+        'VECTOR_APPS' => VectorApp::getValues(),
     ],
 ];

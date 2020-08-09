@@ -2,19 +2,33 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\AvatarProvider;
+use App\Enums\Role;
+use App\Enums\SocialProvider;
+use App\Enums\UserPrefKey;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SocialAuthRequest;
+use App\Models\DeviantartUser;
+use App\Models\DiscordMember;
+use App\Models\User;
 use App\Rules\StrictEmail;
 use App\Rules\Username;
-use App\Models\User;
+use App\Utils\AccountHelper;
+use App\Utils\UserPrefHelper;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Facades\Socialite;
 use OpenApi\Annotations as OA;
 use Valorin\Pwned\Pwned;
 
-class RegisterController extends Controller
+class SignupController extends Controller
 {
     /**
      * @OA\Schema(
@@ -90,65 +104,17 @@ class RegisterController extends Controller
      * )
      *
      * @param  Request  $request
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
-     * @throws \Illuminate\Validation\ValidationException
+     * @return JsonResponse|Response
      */
     public function viaPassword(Request $request)
     {
-        $is_sanctum = $request->attributes->get('sanctum') === true;
-        if ($is_sanctum && $request->user() !== null) {
+        if (AccountHelper::isSanctum($request) && $request->user() !== null) {
             abort(403);
         }
 
-        $have_users = User::any();
+        AccountHelper::validator($request->all())->validate();
 
-        // TODO remove when registration for the public is open
-        if ($have_users) {
-            abort(503, 'New registrations are currently not accepted, thank you for your understanding.');
-        }
-
-        $validator = Validator::make($request->only(['email', 'name', 'password']), [
-            'name' => [
-                'required',
-                'string',
-                'min:5',
-                'max:20',
-                'unique:users',
-                new Username(),
-            ],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'min:3',
-                'unique:users',
-                new StrictEmail(),
-            ],
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'max:300',
-                new Pwned,
-            ],
-        ]);
-
-        $data = $validator->validate();
-        // First user will receive developer privileges
-        if (!$have_users) {
-            $data['role'] = 'developer';
-        }
-
-        // Hash password
-        $data['password'] = Hash::make($data['password']);
-
-        $user = User::create($data);
-
-        if ($is_sanctum) {
-            Auth::login($user, true);
-            return response()->noContent();
-        }
-
-        return $user->authResponse();
+        $user = AccountHelper::create($request->all());
+        return AccountHelper::authResponse($request, $user, true);
     }
 }

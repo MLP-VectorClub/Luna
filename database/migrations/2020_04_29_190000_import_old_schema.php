@@ -85,9 +85,9 @@ class ImportOldSchema extends Migration
         Schema::create('discord_members', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->foreignId('user_id')->nullable()->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
-            $table->string('username', 255);
+            $table->string('username');
             $table->char('discriminator', 4);
-            $table->string('nick', 255)->nullable();
+            $table->string('nick')->nullable();
             $table->string('avatar_hash', 255)->nullable();
             $table->timestampTz('joined_at', $this->ts_precision)->nullable();
             $table->string('access', 30)->nullable();

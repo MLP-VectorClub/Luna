@@ -76,9 +76,14 @@ window.onload = function() {
     validatorUrl: {!! isset($validatorUrl) ? '"' . $validatorUrl . '"' : 'null' !!},
     oauth2RedirectUrl: "{{ route('l5-swagger.oauth2_callback') }}",
 
-    requestInterceptor: function() {
-      this.headers['X-CSRF-TOKEN'] = '{{ csrf_token() }}';
-      return this;
+    requestInterceptor: function(req) {
+      req.headers['X-CSRF-TOKEN'] = '{{ csrf_token() }}';
+      if (req.method === 'GET' && /\/users\/oauth\/sign(?:in|up)\/[a-z_]+$/.test(req.url)) {
+        var message = 'The ' + req.url + ' request cannot be tried from the browser';
+        console.warn(message);
+        throw new Error(message);
+      }
+      return req;
     },
 
     presets: [
@@ -91,7 +96,9 @@ window.onload = function() {
     ],
 
     layout: "BaseLayout",
-    deepLinking: true
+    deepLinking: true,
+    displayRequestDuration: true,
+    showCommonExtensions: true,
   });
 }
 </script>

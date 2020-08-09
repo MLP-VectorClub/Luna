@@ -53,13 +53,6 @@ use OpenApi\Annotations as OA;
  *     property="avatarProvider",
  *     ref="#/components/schemas/AvatarProvider"
  *   ),
- *   @OA\Property(
- *     property="emailHash",
- *     type="string",
- *     description="Hashed version of the e-mail address used in case there is no available avatarUrl to allow loading the Gravatar fallback",
- *     example="e64c7d89f26bd1972efa854d13d7dd61",
- *     format="MD5",
- *   ),
  * )
  */
 /**
@@ -198,13 +191,13 @@ class UsersController extends Controller
 
     /**
      * @OA\Post(
-     *   path="/users/logout",
+     *   path="/users/signout",
      *   description="Shortcut for calling the token DELETE endpoint with the current token",
      *   tags={"authentication","users"},
      *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
      *   @OA\Response(
      *     response="204",
-     *     description="Logout successful"
+     *     description="Signout successful"
      *   ),
      *   @OA\Response(
      *     response="401",
@@ -215,7 +208,7 @@ class UsersController extends Controller
      * @param  Request  $request
      * @return Response
      */
-    public function logout(Request $request)
+    public function signout(Request $request)
     {
         /** @var User $user */
         $user = $request->user();

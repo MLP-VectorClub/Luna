@@ -2,19 +2,10 @@
 
 namespace App\Enums\Errors;
 
-use App\Utils\EnumWrapper;
+use BenSampo\Enum\Enum;
 
-/**
- * @method static self ElasticDown()
- * @method static self AppearancePrivate()
- */
-final class ColorGuideErrors extends EnumWrapper
+final class ColorGuideErrors extends Enum
 {
-    protected static function values(): array
-    {
-        return [
-            'ElasticDown' => 'colorGuide.elasticDown',
-            'AppearancePrivate' => 'colorGuide.appearancePrivate',
-        ];
-    }
+    const ElasticDown = 'colorGuide.elasticDown';
+    const AppearancePrivate = 'colorGuide.appearancePrivate';
 }

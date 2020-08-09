@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\SocialProvider;
+
 return [
 
     /*
@@ -28,6 +30,18 @@ return [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'deviantart' => [
+        'client_id' => env('DEVIANTART_CLIENT_ID'),
+        'client_secret' => env('DEVIANTART_CLIENT_SECRET'),
+        'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::DeviantArt())
+    ],
+
+    'discord' => [
+        'client_id' => env('DISCORD_CLIENT_ID'),
+        'client_secret' => env('DISCORD_CLIENT_SECRET'),
+        'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord())
     ],
 
 ];

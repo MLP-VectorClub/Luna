@@ -19,7 +19,6 @@ use OpenApi\Annotations as OA;
  *   ),
  *   @OA\Server(url="/", description="Current Host"),
  *   @OA\Tag(name="authentication", description="Endpoints related to getting a user logged in or out, as well as checking logged in status"),
- *   @OA\Tag(name="color guide", description="Endpoints related to the color guide section of the site"),
  *   @OA\Tag(name="appearances", description="Working with entries in the color guide"),
  *   @OA\Tag(name="server info", description="For diagnostic or informational data")
  * )
@@ -57,8 +56,8 @@ use OpenApi\Annotations as OA;
  *           @OA\Items(type="string")
  *         ),
  *         example={
- *           "username": {"The username must be at least 8 characters long", "The username is already taken"},
- *           "email": {"The email must be at least 3 characters long"},
+ *           "field1": {"The field1 field must be a string", "The field1 field must be at least 5 characters long"},
+ *           "field2": {"The field2 field does not exist in one / two / three"},
  *         }
  *       )
  *     ),

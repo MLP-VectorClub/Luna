@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-use App\Utils\EnumWrapper;
+use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -13,24 +13,13 @@ use OpenApi\Annotations as OA;
  *     enum=TAG_TYPES,
  *     example="spec"
  * )
- * @method static self Clothing()
- * @method static self Category()
- * @method static self Gender()
- * @method static self Species()
- * @method static self Character()
- * @method static self Warning()
  */
-final class TagType extends EnumWrapper
+final class TagType extends Enum
 {
-    protected static function values(): array
-    {
-        return [
-            'Clothing' => 'app',
-            'Category' => 'cat',
-            'Gender' => 'gen',
-            'Species' => 'spec',
-            'Character' => 'char',
-            'Warning' => 'warn',
-        ];
-    }
+    const Clothing = 'app';
+    const Category = 'cat';
+    const Gender = 'gen';
+    const Species = 'spec';
+    const Character = 'char';
+    const Warning = 'warn';
 }

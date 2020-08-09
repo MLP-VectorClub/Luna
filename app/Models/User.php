@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\AvatarProvider;
 use App\Enums\Role;
+use App\Enums\UserPrefKey;
+use App\Traits\HasEnumCasts;
 use App\Traits\HasProtectedFields;
 use App\Utils\SettingsHelper;
+use App\Utils\UserPrefHelper;
 use Browser;
+use Creativeorange\Gravatar\Facades\Gravatar;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,12 +18,9 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use OpenApi\Annotations as OA;
 
-/**
- * @property Role $role
- */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable, HasProtectedFields;
+    use HasApiTokens, Notifiable, HasProtectedFields, HasEnumCasts;
 
     /**
      * The attributes that are mass assignable.
@@ -52,11 +54,31 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $appends = [
         'avatar_provider',
+        'avatar_url',
     ];
 
     public function daUser()
     {
-        return $this->belongsTo(DeviantartUser::class);
+        return $this->hasOne(DeviantartUser::class);
+    }
+
+    public function discordMember()
+    {
+        return $this->hasOne(DiscordMember::class);
+    }
+
+    public function prefs()
+    {
+        return $this->hasMany(UserPref::class);
+    }
+
+    public function sendEmailVerificationNotification()
+    {
+        if ($this->email === null) {
+            return;
+        }
+
+        parent::sendEmailVerificationNotification();
     }
 
     public function isStaff(): bool
@@ -64,9 +86,33 @@ class User extends Authenticatable implements MustVerifyEmail
         return perm(Role::Staff(), $this->role);
     }
 
-    public function getAvatarProviderAttribute()
+    public function getAvatarProviderAttribute(): AvatarProvider
     {
-        return 'gravatar';
+        return UserPrefHelper::get($this, UserPrefKey::Personal_AvatarProvider());
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        switch ($this->avatar_provider) {
+            case AvatarProvider::DeviantArt:
+                /** @var DeviantartUser $da_user */
+                $da_user = $this->daUser()->first();
+                if ($da_user === null) {
+                    return null;
+                }
+                return $da_user->avatar_url ?: null;
+            case AvatarProvider::Discord:
+                /** @var DiscordMember $discord_member */
+                $discord_member = $this->discordMember()->first();
+                if ($discord_member === null) {
+                    return null;
+                }
+                return $discord_member->avatar_url;
+            case AvatarProvider::Gravatar:
+                return Gravatar::get($this->email);
+        }
+
+        return null;
     }
 
     public static function any(): bool
@@ -84,11 +130,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function publicResponse(): array
     {
         $data = $this->toArray();
-        if ($data['role'] === 'developer') {
+        if ($data['role'] === Role::Developer) {
             $data['role'] = SettingsHelper::get('dev_role_label');
-        }
-        if ($this->avatar_provider === 'gravatar') {
-            $data['email_hash'] = md5($this->email);
         }
         return $data;
     }

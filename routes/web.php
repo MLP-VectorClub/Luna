@@ -13,3 +13,5 @@
 
 use Illuminate\Support\Facades\Route;
 
+// TODO Utilize
+Route::get('/about/server-info', 'AboutController@serverInfo');

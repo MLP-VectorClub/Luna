@@ -2,31 +2,22 @@
 
 namespace App\Enums;
 
-use App\Utils\EnumWrapper;
+use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
  * @OA\Schema(
- *     schema="ShowType",
- *     type="string",
- *     description="List of types that can be used for show entries",
- *     enum=SHOW_TYPES,
- *     example="episode",
+ *   schema="ShowType",
+ *   type="string",
+ *   description="List of types that can be used for show entries",
+ *   enum=SHOW_TYPES,
+ *   example="episode",
  * )
- * @method static self Episode()
- * @method static self Movie()
- * @method static self Short()
- * @method static self Special()
  */
-final class ShowType extends EnumWrapper
+final class ShowType extends Enum
 {
-    protected static function values(): array
-    {
-        return [
-            'Episode' => 'episode',
-            'Movie' => 'movie',
-            'Short' => 'short',
-            'Special' => 'special',
-        ];
-    }
+    const Episode = 'episode';
+    const Movie = 'movie';
+    const Short = 'short';
+    const Special = 'special';
 }

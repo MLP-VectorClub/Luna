@@ -15,7 +15,12 @@ use Illuminate\Support\Facades\App;
 */
 
 Route::middleware('throttle:12,1')->group(function () {
-    Route::post('/users/login', 'Auth\LoginController@viaPassword');
+    Route::prefix('users')->group(function () {
+        Route::post('signin', 'Auth\SigninController@viaPassword')->name('signin_password');
+        Route::post('/', 'Auth\SignupController@viaPassword')->name('signup_password');
+        Route::post('/oauth/signup/{provider}', 'Auth\SignupController@viaSocialite');
+        Route::post('/oauth/signin/{provider}', 'Auth\SigninController@viaSocialite');
+    });
 });
 
 Route::prefix('about')->group(function () {
@@ -26,11 +31,15 @@ Route::prefix('about')->group(function () {
 
 Route::middleware('throttle:60,1')->group(function () {
     Route::prefix('users')->group(function () {
-        Route::post('/', 'Auth\RegisterController@viaPassword');
+        Route::get('oauth/signup/{provider}', 'Auth\SignupController@socialiteRedirect');
+        Route::get('oauth/signin/{provider}', 'Auth\SigninController@socialiteRedirect');
+
+        Route::get('email/verify/{id}/{hash}', 'Auth\VerificationController@verify')->name('verification.verify');
+        Route::post('email/resend', 'Auth\VerificationController@resend')->name('verification.resend');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('me', 'UsersController@me');
-            Route::post('logout', 'UsersController@logout');
+            Route::post('signout', 'UsersController@signout');
             Route::get('tokens', 'UsersController@tokens');
             Route::delete('tokens/{token_id}', 'UsersController@deleteToken');
         });
