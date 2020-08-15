@@ -27,6 +27,8 @@ Route::prefix('about')->group(function () {
     if (!App::isProduction()) {
         Route::get('sleep', 'AboutController@sleep');
     }
+
+    Route::get('connection', 'AboutController@serverInfo');
 });
 
 Route::middleware('throttle:60,1')->group(function () {

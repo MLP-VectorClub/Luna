@@ -10,7 +10,9 @@ use App\Enums\SpriteSize;
 use App\Enums\TagType;
 use App\Enums\UserPrefKey;
 use App\Enums\VectorApp;
+use App\Utils\Core;
 use App\Utils\SettingsHelper;
+use Carbon\Carbon;
 
 $database_roles = Role::getValues();
 $dev_role = Role::Developer();
@@ -272,5 +274,6 @@ return [
         'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
         'SOCIAL_PROVIDERS' => SocialProvider::getValues(),
         'VECTOR_APPS' => VectorApp::getValues(),
+        'ISO_STANDARD_DATE' => Core::carbonToIso(new Carbon()),
     ],
 ];

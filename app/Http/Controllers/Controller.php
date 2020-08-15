@@ -37,6 +37,12 @@ use OpenApi\Annotations as OA;
  *   )
  * )
  * @OA\Schema(
+ *   schema="IsoStandardDate",
+ *   type="string",
+ *   format="date-time",
+ *   description="An ISO 8601 standard compliant date as a string"
+ * )
+ * @OA\Schema(
  *   schema="ValidationErrorResponse",
  *   allOf={
  *     @OA\Schema(

@@ -182,8 +182,7 @@ class AppearancesController extends Controller
      *   additionalProperties=false,
      *   @OA\Property(
      *     property="created_at",
-     *     type="string",
-     *     format="date-time"
+     *     ref="#/components/schemas/IsoStandardDate"
      *   ),
      *   @OA\Property(
      *     property="notes",
@@ -378,7 +377,8 @@ class AppearancesController extends Controller
      * @OA\Schema(
      *   schema="Color",
      *   type="object",
-     *   description="A color entry. Colors may link to other colors, in which case `linkedTo` will be set to the link target, but `hex` will always point to the value that should be displayed.", required={
+     *   description="A color entry. Colors may link to other colors, in which case `linkedTo` will be set to the link target, but `hex` will always point to the value that should be displayed.",
+     *   required={
      *     "id",
      *     "label",
      *     "order",

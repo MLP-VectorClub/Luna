@@ -2,6 +2,7 @@
 
 namespace App\Utils;
 
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
@@ -96,5 +97,14 @@ class Core
     public static function fileToDataUri(string $path): string
     {
         return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
+    }
+
+    public static function carbonToIso(?Carbon $date): ?string
+    {
+        if ($date === null) {
+            return null;
+        }
+
+        return str_replace('+00:00', 'Z', $date->toW3cString());
     }
 }

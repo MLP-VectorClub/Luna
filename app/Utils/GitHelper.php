@@ -3,24 +3,50 @@
 
 namespace App\Utils;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
+use OpenApi\Annotations as OA;
 
 class GitHelper
 {
-    const CACHE_KEY = 'celestia_commit_info';
+    public const CACHE_KEY = 'celestia_commit_info';
 
     protected static function getCommitDataString(): string
     {
-        return rtrim(shell_exec('git log -1 --date=short --pretty="format:%h;%ci"'));
+        return rtrim(shell_exec('git log -1 --date=short --pretty="format:%h;%ct"'));
     }
 
     /**
      * Returns the cached Git version information
      *
+     * @OA\Schema(
+     *   schema="CommitData",
+     *   type="object",
+     *   description="An object containing information related to the verion of this appilcation that's currently running on the server",
+     *   required={
+     *     "commitId",
+     *     "commitTime",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="commitId",
+     *     type="string",
+     *     description="Abbreviated commit ID of the backend application, indicating the version currently deployed on the server (at least 7 characters long)",
+     *     example="50ce2e2",
+     *     nullable=true,
+     *   ),
+     *   @OA\Property(
+     *     property="commitTime",
+     *     nullable=true,
+     *     description="Date at which the commit currently deployed on the server was authored",
+     *     ref="#/components/schemas/IsoStandardDate"
+     *   ),
+     * )
+     *
      * @return array = [
      *     'commit_id' => string,
-     *     'commit_time' => int,
+     *     'commit_time' => new Carbon,
      * ]
      */
     public static function getCommitData(): array
@@ -36,7 +62,7 @@ class GitHelper
         if (!empty($commit_info)) {
             [$commit_id, $commit_time] = explode(';', $commit_info);
             $data['commit_id'] = $commit_id;
-            $data['commit_time'] = (int) $commit_time;
+            $data['commit_time'] = (new Carbon())->setTimestamp($commit_time);
         }
 
         return $data;

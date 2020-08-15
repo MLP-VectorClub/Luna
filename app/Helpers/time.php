@@ -12,7 +12,7 @@ if (!function_exists('isoTime')) {
         }
 
         if ($date instanceof Carbon) {
-            return $date->toW3cString();
+            return App\Utils\Core::carbonToIso($date);
         }
 
         return (string) $date;

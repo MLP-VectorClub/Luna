@@ -248,13 +248,11 @@ class UsersController extends Controller
      *   ),
      *   @OA\Property(
      *     property="lastUsedAt",
-     *     type="string",
-     *     format="date-time",
+     *     ref="#/components/schemas/IsoStandardDate"
      *   ),
      *   @OA\Property(
      *     property="createdAt",
-     *     type="string",
-     *     format="date-time",
+     *     ref="#/components/schemas/IsoStandardDate"
      *   ),
      * )
      *
