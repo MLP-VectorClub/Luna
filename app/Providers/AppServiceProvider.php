@@ -60,6 +60,8 @@ class AppServiceProvider extends ServiceProvider
         $grammar::macro('typeMlp_generation', fn () => MlpGenerationType::MLP_GENERATION);
         $conn->setQueryGrammar($grammar);
 
+        // TODO Allow client to specify desired language and use it as locale
+
         // Generate reasonable looking operation IDs in OpenAPI documentation
         Analysis::registerProcessor(function (Analysis $analysis) {
             /** @var Operation[] $all_operations */

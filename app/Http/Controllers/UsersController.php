@@ -17,7 +17,7 @@ use OpenApi\Annotations as OA;
  * @OA\Schema(
  *   schema="PublicUser",
  *   type="object",
- *   description="Represents an publicly accessible representation of a user",
+ *   description="Represents a publicly accessible representation of a user",
  *   required={
  *     "id",
  *     "name",

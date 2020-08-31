@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserPref extends Model
 {
-    use HasEnumCasts;
-
     protected $fillable = ['user_id', 'key', 'value'];
 
     protected $casts = [

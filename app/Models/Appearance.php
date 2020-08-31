@@ -20,7 +20,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class Appearance extends Model implements Sortable, HasMedia
 {
-    use InteractsWithMedia, SortableTrait, HasEnumCasts;
+    use InteractsWithMedia, SortableTrait;
 
     const SPRITES_COLLECTION = 'sprites';
     const SPRITE_PREVIEW_CONVERSION = 'sprite-preview';

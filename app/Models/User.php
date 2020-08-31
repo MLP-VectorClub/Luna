@@ -20,7 +20,7 @@ use OpenApi\Annotations as OA;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable, HasProtectedFields, HasEnumCasts;
+    use HasApiTokens, Notifiable, HasProtectedFields;
 
     /**
      * The attributes that are mass assignable.
