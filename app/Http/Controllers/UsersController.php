@@ -54,8 +54,6 @@ use OpenApi\Annotations as OA;
  *     ref="#/components/schemas/AvatarProvider"
  *   ),
  * )
- */
-/**
  * @OA\Schema(
  *   schema="User",
  *   allOf={
