@@ -41,9 +41,7 @@ class ColorGuideHelper
     public static function isElasticAvailable(): bool
     {
         try {
-            /** @var Elasticsearch\Client $client */
-            $client = Elasticsearch::connection();
-            $elastic_avail = $client->ping();
+            $elastic_avail = Elasticsearch::connection()->ping();
         } catch (NoNodesAvailableException|ServerErrorResponseException $e) {
             return false;
         }
@@ -156,8 +154,6 @@ class ColorGuideHelper
             'size' => $paginator->perPage(),
         ];
 
-        /** @var Elasticsearch\Client $client */
-        $client = Elasticsearch::connection();
-        return $client->search($params);
+        return Elasticsearch::connection()->search($params);
     }
 }
