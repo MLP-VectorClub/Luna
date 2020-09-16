@@ -4,12 +4,12 @@ namespace App\Models;
 
 use App\Enums\GuideName;
 use App\Traits\HasEnumCasts;
-use App\Traits\SortableTrait;
 use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
 use phpDocumentor\Reflection\Types\Boolean;
 use Ramsey\Uuid\Uuid;
 use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 use Spatie\Image\Manipulations;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
