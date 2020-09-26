@@ -437,6 +437,7 @@ class AppearancesController extends Controller
      *   path="/appearances",
      *   description="Allows querying the full library of public appearances (forced pagination)",
      *   tags={"appearances"},
+     *   security={},
      *   @OA\Parameter(
      *     in="query",
      *     name="guide",
@@ -527,6 +528,7 @@ class AppearancesController extends Controller
      *   path="/appearances/all",
      *   description="Get a list of every appearance in the database (without color group data)",
      *   tags={"appearances"},
+     *   security={},
      *   @OA\Parameter(
      *     in="query",
      *     name="guide",
@@ -606,6 +608,7 @@ class AppearancesController extends Controller
      *   path="/appearances/{id}/color-groups",
      *   description="Get all color groups associated with an appearance",
      *   tags={"appearances"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="id",
@@ -651,6 +654,7 @@ class AppearancesController extends Controller
      *   path="/appearances/{id}/sprite",
      *   description="Fetch the sprite file associated with the appearance",
      *   tags={"appearances"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="id",
@@ -733,6 +737,7 @@ class AppearancesController extends Controller
      *   path="/appearances/{id}/preview",
      *   description="Fetch the preview file associated with the appearance",
      *   tags={"appearances"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="id",

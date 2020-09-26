@@ -23,59 +23,60 @@ class SigninController extends Controller
 {
     /**
      * @OA\Schema(
-     *     schema="SigninRequest",
-     *     type="object",
-     *     required={
-     *         "email",
-     *         "password"
-     *     },
-     *     additionalProperties=false,
-     *     @OA\Property(
-     *         property="email",
-     *         type="string"
-     *     ),
-     *     @OA\Property(
-     *         property="password",
-     *         type="string"
-     *     ),
-     *     @OA\Property(
-     *         property="remember",
-     *         type="boolean",
-     *         description="When using session-based auth set to true for persistent cookies, omit or use false for session cookies"
-     *     )
+     *   schema="SigninRequest",
+     *   type="object",
+     *   required={
+     *     "email",
+     *     "password"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="email",
+     *     type="string"
+     *   ),
+     *   @OA\Property(
+     *     property="password",
+     *     type="string"
+     *   ),
+     *   @OA\Property(
+     *     property="remember",
+     *     type="boolean",
+     *     description="When using session-based auth set to true for persistent cookies, omit or use false for session cookies"
+     *   )
      * )
      * @OA\Post(
-     *     path="/users/signin",
-     *     description="Used for obtaining an API access token",
-     *     tags={"authentication"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/SigninRequest")
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="Authentication successful",
-     *         @OA\JsonContent(
-     *             additionalProperties=false,
-     *             @OA\Property(
-     *                 property="token",
-     *                 type="string"
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response="204",
-     *         description="Session-based authentication successful (authentication via cookies, no token is sent)"
-     *     ),
-     *     @OA\Response(
-     *         response="403",
-     *         description="Could not sign in, check the error message for details",
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *     ),
-     *     @OA\Response(
-     *         response="401",
-     *         description="Invalid credentials",
+     *   path="/users/signin",
+     *   description="Used for obtaining an API access token",
+     *   tags={"authentication"},
+     *   security={},
+     *   @OA\RequestBody(
+     *     required=true,
+     *     @OA\JsonContent(ref="#/components/schemas/SigninRequest")
+     *   ),
+     *   @OA\Response(
+     *     response="200",
+     *     description="Authentication successful",
+     *     @OA\JsonContent(
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="token",
+     *         type="string"
+     *       )
      *     )
+     *   ),
+     *   @OA\Response(
+     *     response="204",
+     *     description="Session-based authentication successful (authentication via cookies, no token is sent)"
+     *   ),
+     *   @OA\Response(
+     *     response="403",
+     *     description="Could not sign in, check the error message for details",
+     *     @OA\Schema(ref="#/components/schemas/ErrorResponse")
+     *   ),
+     *   @OA\Response(
+     *     response="401",
+     *     description="Invalid credentials",
+     *   )
      * )
      *
      * @param  Request  $request
@@ -115,6 +116,7 @@ class SigninController extends Controller
      *   path="/users/oauth/signin/{provider}",
      *   description="Redirect to the specified OAuth provider's authorization endpoint",
      *   tags={"authentication"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="provider",
@@ -142,8 +144,6 @@ class SigninController extends Controller
         return AccountHelper::socialRedirect($request, false);
     }
 
-
-
     /**
      * @OA\Schema(
      *   schema="OauthCode",
@@ -162,6 +162,7 @@ class SigninController extends Controller
      *   path="/users/oauth/signin/{provider}",
      *   description="Process an OAuth authorization response",
      *   tags={"authentication"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="provider",

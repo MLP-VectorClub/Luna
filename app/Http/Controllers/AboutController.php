@@ -40,6 +40,7 @@ class AboutController extends Controller
      *   path="/about/connection",
      *   description="Get diagnostic data related to the API connection and app server",
      *   tags={"server info"},
+     *   security={},
      *   @OA\Response(
      *     response="200",
      *     description="OK",

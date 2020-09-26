@@ -84,6 +84,7 @@ class UsefulLinksController extends Controller
      *   path="/useful-links/sidebar",
      *   description="Get the list of useful links available to the user for display in the sidebar",
      *   tags={"useful links"},
+     *   security={},
      *   @OA\Response(
      *     response="200",
      *     description="OK",

@@ -14,6 +14,7 @@ class ColorGuideController extends Controller
      *   path="/color-guides",
      *   description="Get data about the color guides available on the server",
      *   tags={"color guide"},
+     *   security={},
      *   @OA\Response(
      *     response="200",
      *     description="OK",

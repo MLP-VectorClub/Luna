@@ -74,6 +74,7 @@ use OpenApi\Annotations as OA;
  *   path="/sanctum/csrf-cookie",
  *   description="Initialize CSRF protection by sending a dummy request through the web middleware. Used only for session-based authentication.",
  *   tags={"authentication"},
+     *   security={},
  *   @OA\Response(
  *     response="204",
  *     description="Sucess"

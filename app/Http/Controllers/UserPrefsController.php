@@ -21,6 +21,7 @@ class UserPrefsController extends Controller
      *   path="/user-prefs/me",
      *   description="Get preferences for the current user (or defaults if none)",
      *   tags={"user prefs"},
+     *   security={},
      *   @OA\Response(
      *     response="200",
      *     description="Query successful",

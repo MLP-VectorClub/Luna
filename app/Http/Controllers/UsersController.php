@@ -114,6 +114,7 @@ class UsersController extends Controller
      *   path="/users/da/{username}",
      *   description="Get on-site user information via a DeviantArt username",
      *   tags={"users"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="username",
@@ -156,6 +157,7 @@ class UsersController extends Controller
      *   path="/users/{id}",
      *   description="Get information about the specified user",
      *   tags={"users"},
+     *   security={},
      *   @OA\Parameter(
      *     in="path",
      *     name="id",
