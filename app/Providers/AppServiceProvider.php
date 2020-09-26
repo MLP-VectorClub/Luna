@@ -10,6 +10,7 @@ use DateInterval;
 use DateTime;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Types\Type;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Query\Grammars\PostgresGrammar;
@@ -114,5 +115,8 @@ class AppServiceProvider extends ServiceProvider
         Date::macro('maybeToString', function (?Carbon $date): ?string {
             return $date !== null ? $date->toISOString() : null;
         });
+
+        // No Tailwind *(yet?)*
+        Paginator::useBootstrap();
     }
 }

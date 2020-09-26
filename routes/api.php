@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\AboutController;
+use App\Http\Controllers\AppearancesController;
+use App\Http\Controllers\Auth\SigninController;
+use App\Http\Controllers\Auth\SignupController;
+use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
 
@@ -16,44 +22,44 @@ use Illuminate\Support\Facades\App;
 
 Route::middleware('throttle:12,1')->group(function () {
     Route::prefix('users')->group(function () {
-        Route::post('signin', 'Auth\SigninController@viaPassword')->name('signin_password');
-        Route::post('/', 'Auth\SignupController@viaPassword')->name('signup_password');
-        Route::post('/oauth/signup/{provider}', 'Auth\SignupController@viaSocialite');
-        Route::post('/oauth/signin/{provider}', 'Auth\SigninController@viaSocialite');
+        Route::post('signin', [SigninController::class, 'viaPassword'])->name('signin_password');
+        Route::post('/', [SignupController::class, 'viaPassword'])->name('signup_password');
+        Route::post('/oauth/signup/{provider}', [SignupController::class, 'viaSocialite']);
+        Route::post('/oauth/signin/{provider}', [SigninController::class, 'viaSocialite']);
     });
 });
 
 Route::prefix('about')->group(function () {
     if (!App::isProduction()) {
-        Route::get('sleep', 'AboutController@sleep');
+        Route::get('sleep', [AboutController::class, 'sleep']);
     }
 
-    Route::get('connection', 'AboutController@serverInfo');
+    Route::get('connection', [AboutController::class, 'serverInfo']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {
     Route::prefix('users')->group(function () {
-        Route::get('oauth/signup/{provider}', 'Auth\SignupController@socialiteRedirect');
-        Route::get('oauth/signin/{provider}', 'Auth\SigninController@socialiteRedirect');
+        // Route::get('oauth/signup/{provider}', [SignupController::class, 'socialiteRedirect']);
+        Route::get('oauth/signin/{provider}', [SigninController::class, 'socialiteRedirect']);
 
-        Route::get('email/verify/{id}/{hash}', 'Auth\VerificationController@verify')->name('verification.verify');
-        Route::post('email/resend', 'Auth\VerificationController@resend')->name('verification.resend');
+        Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
+        Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
         Route::middleware('auth:sanctum')->group(function () {
-            Route::get('me', 'UsersController@me');
-            Route::post('signout', 'UsersController@signout');
-            Route::get('tokens', 'UsersController@tokens');
-            Route::delete('tokens/{token_id}', 'UsersController@deleteToken');
+            Route::get('me', [UsersController::class, 'me']);
+            Route::post('signout', [UsersController::class, 'signout']);
+            Route::get('tokens', [UsersController::class, 'tokens']);
+            Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);
         });
 
-        Route::get('{user}', 'UsersController@get');
-        Route::get('da/{username}', 'UsersController@getByName');
+        Route::get('{user}', [UsersController::class, 'get']);
+        Route::get('da/{username}', [UsersController::class, 'getByName']);
     });
 
     Route::prefix('appearances')->group(function () {
-        Route::get('/', 'AppearancesController@queryPublic');
-        Route::get('all', 'AppearancesController@queryAll')->name('appearances_all')->middleware('cacheResponse:300');
-        Route::get('{appearance}/sprite', 'AppearancesController@sprite');
-        Route::get('{appearance}/color-groups', 'AppearancesController@getColorGroups');
+        Route::get('/', [AppearancesController::class, 'queryPublic']);
+        Route::get('all', [AppearancesController::class, 'queryAll'])->name('appearances_all')->middleware('cacheResponse:300');
+        Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite']);
+        Route::get('{appearance}/color-groups', [AppearancesController::class, 'getColorGroups']);
     });
 });
