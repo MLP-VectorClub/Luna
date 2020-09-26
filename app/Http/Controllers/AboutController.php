@@ -10,7 +10,6 @@ use OpenApi\Annotations as OA;
 
 class AboutController extends Controller
 {
-
     /**
      * @OA\Schema(
      *   schema="ConnectionInfo",

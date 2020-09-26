@@ -5,6 +5,7 @@ use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
@@ -61,5 +62,9 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('all', [AppearancesController::class, 'queryAll'])->name('appearances_all')->middleware('cacheResponse:300');
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite']);
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'getColorGroups']);
+    });
+
+    Route::prefix('useful-links')->group(function () {
+        Route::get('sidebar', [UsefulLinksController::class, 'sidebar']);
     });
 });

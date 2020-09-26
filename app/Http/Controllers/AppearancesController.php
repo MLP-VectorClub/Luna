@@ -74,8 +74,8 @@ use function count;
  * @OA\Schema(
  *   schema="Order",
  *   type="number",
- *   example="1",
- *   minimum="0",
+ *   example=1,
+ *   minimum=0,
  *   description="Used for displaying items in a specific order. The API guarantees that array return values are sorted in ascending order based on this property."
  * )
  * @OA\Schema(

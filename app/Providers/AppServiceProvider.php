@@ -115,8 +115,5 @@ class AppServiceProvider extends ServiceProvider
         Date::macro('maybeToString', function (?Carbon $date): ?string {
             return $date !== null ? $date->toISOString() : null;
         });
-
-        // No Tailwind *(yet?)*
-        Paginator::useBootstrap();
     }
 }

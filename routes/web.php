@@ -14,5 +14,4 @@
 use App\Http\Controllers\AboutController;
 use Illuminate\Support\Facades\Route;
 
-// TODO Utilize
 Route::get('/about/server-info', [AboutController::class, 'serverInfo']);
