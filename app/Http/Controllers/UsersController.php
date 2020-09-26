@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DeviantartUser;
 use App\Models\User;
 use App\Utils\SettingsHelper;
+use App\Utils\UserPrefHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -13,77 +14,75 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\TransientToken;
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Schema(
- *   schema="PublicUser",
- *   type="object",
- *   description="Represents a publicly accessible representation of a user",
- *   required={
- *     "id",
- *     "name",
- *     "role",
- *     "avatarUrl",
- *     "avatarProvider",
- *   },
- *   additionalProperties=false,
- *   @OA\Property(
- *     property="id",
- *     type="integer",
- *     minimum=1,
- *     example=1,
- *   ),
- *   @OA\Property(
- *     property="name",
- *     type="string",
- *     example="example",
- *   ),
- *   @OA\Property(
- *     property="role",
- *     description="The publicly visible role for the user",
- *     ref="#/components/schemas/Role",
- *   ),
- *   @OA\Property(
- *     property="avatarUrl",
- *     type="string",
- *     format="uri",
- *     example="https://a.deviantart.net/avatars/e/x/example.png",
- *     nullable=true,
- *   ),
- *   @OA\Property(
- *     property="avatarProvider",
- *     ref="#/components/schemas/AvatarProvider"
- *   ),
- * )
- * @OA\Schema(
- *   schema="User",
- *   allOf={
- *     @OA\Schema(ref="#/components/schemas/PublicUser"),
- *     @OA\Schema(
- *       type="object",
- *       description="Represents an authenticated user",
- *       required={
- *         "email",
- *         "role",
- *       },
- *       additionalProperties=false,
- *       @OA\Property(
- *         property="email",
- *         type="string",
- *         example="user@example.com",
- *         nullable=true,
- *       ),
- *       @OA\Property(
- *         property="role",
- *         description="The database-level role for the user",
- *         ref="#/components/schemas/DatabaseRole",
- *       ),
- *     )
- *   }
- * )
- */
 class UsersController extends Controller
 {
     /**
+     * @OA\Schema(
+     *   schema="PublicUser",
+     *   type="object",
+     *   description="Represents a publicly accessible representation of a user",
+     *   required={
+     *     "id",
+     *     "name",
+     *     "role",
+     *     "avatarUrl",
+     *     "avatarProvider",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="id",
+     *     type="integer",
+     *     minimum=1,
+     *     example=1,
+     *   ),
+     *   @OA\Property(
+     *     property="name",
+     *     type="string",
+     *     example="example",
+     *   ),
+     *   @OA\Property(
+     *     property="role",
+     *     description="The publicly visible role for the user",
+     *     ref="#/components/schemas/Role",
+     *   ),
+     *   @OA\Property(
+     *     property="avatarUrl",
+     *     type="string",
+     *     format="uri",
+     *     example="https://a.deviantart.net/avatars/e/x/example.png",
+     *     nullable=true,
+     *   ),
+     *   @OA\Property(
+     *     property="avatarProvider",
+     *     ref="#/components/schemas/AvatarProvider"
+     *   ),
+     * )
+     * @OA\Schema(
+     *   schema="User",
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/PublicUser"),
+     *     @OA\Schema(
+     *       type="object",
+     *       description="Represents an authenticated user",
+     *       required={
+     *         "email",
+     *         "role",
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="email",
+     *         type="string",
+     *         example="user@example.com",
+     *         nullable=true,
+     *       ),
+     *       @OA\Property(
+     *         property="role",
+     *         description="The database-level role for the user",
+     *         ref="#/components/schemas/DatabaseRole",
+     *       ),
+     *     )
+     *   }
+     * )
      * @OA\Get(
      *   path="/users/me",
      *   description="Get information about the currently logged in user",

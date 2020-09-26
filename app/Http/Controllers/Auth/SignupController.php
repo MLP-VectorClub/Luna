@@ -86,9 +86,7 @@ class SignupController extends Controller
      *     @OA\Response(
      *         response="400",
      *         description="Validation error",
-     *         @OA\JsonContent(
-     *             ref="#/components/schemas/ValidationErrorResponse"
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
      *     ),
      *     @OA\Response(
      *         response="403",
@@ -97,9 +95,7 @@ class SignupController extends Controller
      *     @OA\Response(
      *         response="503",
      *         description="Registrations are not possible at the moment",
-     *         @OA\JsonContent(
-     *             ref="#/components/schemas/ErrorResponse"
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
      *     )
      * )
      *

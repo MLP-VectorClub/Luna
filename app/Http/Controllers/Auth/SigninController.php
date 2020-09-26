@@ -130,9 +130,7 @@ class SigninController extends Controller
      *   @OA\Response(
      *     response="400",
      *     description="Unsupported provider",
-     *     @OA\JsonContent(
-     *       ref="#/components/schemas/ValidationErrorResponse"
-     *     )
+     *     @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
      *   )
      * )
      *

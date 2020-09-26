@@ -12,11 +12,15 @@ use App\Enums\UserPrefKey;
 use App\Enums\VectorApp;
 use App\Utils\Core;
 use App\Utils\SettingsHelper;
+use App\Utils\UserPrefHelper;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
+use const OpenApi\UNDEFINED;
 
 $database_roles = Role::getValues();
 $dev_role = Role::Developer();
 $client_roles = array_filter($database_roles, fn ($role) => $role !== $dev_role->value);
+$user_pref_keys = array_map(fn (string $value) => Str::camel($value), UserPrefKey::getValues());
 
 return [
     'default' => 'default',
@@ -229,7 +233,7 @@ return [
             'SHOW_TYPES' => ShowType::getValues(),
             'MLP_GENERATIONS' => MlpGeneration::getValues(),
             'TAG_TYPES' => TagType::getValues(),
-            'USER_PREF_KEYS' => UserPrefKey::getValues(),
+            'USER_PREF_KEYS' => $user_pref_keys,
             'SPRITE_SIZES' => SpriteSize::getValues(),
             'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
             'SOCIAL_PROVIDERS' => SocialProvider::getValues(),

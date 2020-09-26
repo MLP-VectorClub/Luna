@@ -24,7 +24,7 @@ class AboutController extends Controller
      *     property="ip",
      *     type="string",
      *     format="ip",
-     *     description="The IP address the server believe this request originated from",
+     *     description="The IP address the server believes this request originated from",
      *     example="10.0.0.2",
      *     nullable=true,
      *   ),

@@ -112,7 +112,9 @@ class AppearancesController extends Controller
      *   additionalProperties=false,
      *   @OA\Property(
      *     property="id",
-     *     ref="#/components/schemas/ZeroBasedId"
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/ZeroBasedId")
+     *     }
      *   ),
      *   @OA\Property(
      *     property="label",
@@ -127,8 +129,10 @@ class AppearancesController extends Controller
      *   @OA\Property(
      *     property="sprite",
      *     nullable=true,
-     *     ref="#/components/schemas/Sprite",
-     *     description="The sprite that belongs to this appearance, or null if there is none"
+     *     description="The sprite that belongs to this appearance, or null if there is none",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/Sprite")
+     *     }
      *   ),
      *   @OA\Property(
      *     property="hasCutieMarks",
@@ -377,7 +381,7 @@ class AppearancesController extends Controller
      * @OA\Schema(
      *   schema="Color",
      *   type="object",
-     *   description="A color entry. Colors may link to other colors, in which case `linkedTo` will be set to the link target, but `hex` will always point to the value that should be displayed.",
+     *   description="A color entry",
      *   required={
      *     "id",
      *     "label",
@@ -405,16 +409,7 @@ class AppearancesController extends Controller
      *     format="#RRGGBB",
      *     description="The color value in uppercase hexadecimal form, including a # prefix",
      *     example="#6181B6"
-     *   ),
-     *   @OA\Property(
-     *     property="linkedTo",
-     *     deprecated=true,
-     *     description="This field used to indicate if this color was linked to another color, however, this feature was removed and this field now only ever returns null",
-     *     type="object",
-     *     nullable=true,
-     *     ref="#/components/schemas/Color",
-     *     example=null
-     *   ),
+     *   )
      * )
      * @param  Color  $c
      *

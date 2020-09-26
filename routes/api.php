@@ -5,7 +5,9 @@ use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\ColorGuideController;
 use App\Http\Controllers\UsefulLinksController;
+use App\Http\Controllers\UserPrefsController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
@@ -64,7 +66,15 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'getColorGroups']);
     });
 
+    Route::prefix('color-guides')->group(function () {
+        Route::get('/', [ColorGuideController::class, 'index']);
+    });
+
     Route::prefix('useful-links')->group(function () {
         Route::get('sidebar', [UsefulLinksController::class, 'sidebar']);
+    });
+
+    Route::prefix('user-prefs')->group(function () {
+        Route::get('me', [UserPrefsController::class, 'me']);
     });
 });

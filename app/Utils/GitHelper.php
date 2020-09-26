@@ -40,7 +40,9 @@ class GitHelper
      *     property="commitTime",
      *     nullable=true,
      *     description="Date at which the commit currently deployed on the server was authored",
-     *     ref="#/components/schemas/IsoStandardDate"
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/IsoStandardDate")
+     *     }
      *   ),
      * )
      *
