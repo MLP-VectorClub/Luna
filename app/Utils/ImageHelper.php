@@ -12,6 +12,7 @@ class ImageHelper
             return null;
         }
 
-        return Math::reduceRatio(...$size);
+        [$width, $height] = $size;
+        return Math::reduceRatio($width, $height);
     }
 }
