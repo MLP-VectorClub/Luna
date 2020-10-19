@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dd943ae6aac598b15eba62be0ca5ffb1",
+    "content-hash": "b94a069604f7b96748d8cb0cdc43450a",
     "packages": [
         {
             "name": "bensampo/laravel-enum",
@@ -396,6 +396,7 @@
                     "type": "github"
                 }
             ],
+            "abandoned": "react/http",
             "time": "2020-07-03T10:43:43+00:00"
         },
         {
@@ -5617,6 +5618,7 @@
             "keywords": [
                 "http"
             ],
+            "abandoned": "react/http",
             "time": "2020-01-14T08:36:16+00:00"
         },
         {
@@ -12875,7 +12877,8 @@
     "platform": {
         "php": "^7.4",
         "ext-json": "*",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "ext-gd": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "1.1.0"

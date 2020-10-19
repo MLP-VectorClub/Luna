@@ -6,8 +6,8 @@ use App\Models\Appearance;
 use App\Models\Cutiemark;
 use App\Models\User;
 use App\Utils\Core;
+use App\Utils\ImageHelper;
 use Illuminate\Console\Command;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -16,7 +16,6 @@ use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 use Throwable;
 use function count;
-use function GuzzleHttp\Psr7\mimetype_from_filename;
 
 class MigrateFilesystem extends Command
 {
@@ -237,7 +236,10 @@ class MigrateFilesystem extends Command
                     ->addMedia($file_path)
                     ->usingFileName(Core::generateHashFilename($file_path))
                     ->preservingOriginal()
-                    ->withCustomProperties(['user_id' => $this->uploader_id])
+                    ->withCustomProperties([
+                        'user_id' => $this->uploader_id,
+                        'aspect_ratio' => ImageHelper::getAspectRatio($file_path),
+                    ])
                     ->toMediaCollection(Appearance::SPRITES_COLLECTION);
             });
 

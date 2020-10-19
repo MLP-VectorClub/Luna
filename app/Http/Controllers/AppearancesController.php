@@ -214,18 +214,17 @@ class AppearancesController extends Controller
      *   }
      * )
      * @param  Appearance  $a
-     * @param  bool  $with_previews
      * @param  bool  $compact
      *
      * @return array
      */
-    public static function mapAppearance(Appearance $a, bool $with_previews, bool $compact = false): array
+    public static function mapAppearance(Appearance $a, bool $compact = false): array
     {
         $appearance = [
             'id' => $a->id,
             'label' => $a->label,
             'order' => $a->order,
-            'sprite' => self::mapSprite($a, $with_previews),
+            'sprite' => self::mapSprite($a),
             'hasCutieMarks' => $a->cutiemarks()->count() !== 0,
         ];
 
@@ -289,6 +288,7 @@ class AppearancesController extends Controller
      *   description="Data related to an appearance's sprite file. The actual file is available from a different endpoint.",
      *   required={
      *     "path",
+     *     "aspectRatio",
      *   },
      *   additionalProperties=false,
      *   @OA\Property(
@@ -298,19 +298,21 @@ class AppearancesController extends Controller
      *     description="The full URL of the current sprite image"
      *   ),
      *   @OA\Property(
-     *     property="preview",
-     *     type="string",
-     *     format="byte",
-     *     example="data:image/png;base64,<image data>",
-     *     description="Data URI for a small preview image with matching proportions to the actual image, suitable for displaying as a preview while the full image loads. May not be sent based on the request parameters."
+     *     property="aspectRatio",
+     *     type="array",
+     *     items={
+     *       "type": "number",
+     *     },
+     *     minItems=2,
+     *     maxItems=2,
+     *     description="The width and height of the sprite expressed in the smallest numbers possible while retaining the same aspect ratio. Useful for calculating placeholder element sizes."
      *   ),
      * )
      * @param  Appearance  $a
-     * @param  bool  $with_preview
      *
      * @return array|null
      */
-    public static function mapSprite(Appearance $a, $with_preview = false): ?array
+    public static function mapSprite(Appearance $a): ?array
     {
         $sprite_file = $a->spriteFile();
         if (!$sprite_file) {
@@ -318,13 +320,11 @@ class AppearancesController extends Controller
         }
 
         $sprite_file = $a->spriteFile();
-        $value = ['path' => $sprite_file->getFullUrl()];
 
-        if ($with_preview) {
-            $value['preview'] = Core::fileToDataUri($sprite_file->getPath(Appearance::SPRITE_PREVIEW_CONVERSION));
-        }
-
-        return $value;
+        return [
+            'path' => $sprite_file->getFullUrl(),
+            'aspect_ratio' => $sprite_file->getCustomProperty('aspect_ratio', [1, 1]),
+        ];
     }
 
     /**
@@ -466,12 +466,6 @@ class AppearancesController extends Controller
      *     @OA\Schema(ref="#/components/schemas/QueryString"),
      *     description="Search query"
      *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="previews",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/PreviewsIndicator")
-     *   ),
      *   @OA\Response(
      *     response="200",
      *     description="OK",
@@ -513,10 +507,9 @@ class AppearancesController extends Controller
         $guide_name = new GuideName($valid['guide']);
         $appearances_per_page = $valid['size'] ?? 7;
         $query = !empty($valid['q']) ? $valid['q'] : null;
-        $with_previews = $valid['previews'] ?? false;
         $page = $valid['page'] ?? 1;
         $pagination = ColorGuideHelper::searchGuide($page, $appearances_per_page, $guide_name, $query);
-        $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAppearance($a, $with_previews));
+        $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAppearance($a));
         return response()->json([
             'appearances' => $results,
             'pagination' => Core::mapPagination($pagination),
@@ -535,12 +528,6 @@ class AppearancesController extends Controller
      *     required=true,
      *     @OA\Schema(ref="#/components/schemas/GuideName"),
      *     description="Determines the guide to search in"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="previews",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/PreviewsIndicator")
      *   ),
      *   @OA\Response(
      *     response="200",
@@ -564,12 +551,11 @@ class AppearancesController extends Controller
         ])->validate();
 
         $guide_name = $valid['guide'];
-        $with_previews = $valid['previews'] ?? false;
 
         /** @var $appearances Appearance[] */
         $appearances = Appearance::ordered()->where('guide', $guide_name)->where('id', '!=', 0)->get();
 
-        $results = $appearances->map(fn (Appearance $a) => self::mapAppearance($a, $with_previews, true));
+        $results = $appearances->map(fn (Appearance $a) => self::mapAppearance($a, true));
 
         return response()->json([
             'appearances' => $results,

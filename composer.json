@@ -6,6 +6,7 @@
         "php": "^7.4",
         "ext-json": "*",
         "ext-pdo": "*",
+        "ext-gd": "*",
         "bensampo/laravel-enum": "^v3.0.0",
         "beyondcode/laravel-websockets": "^1.4",
         "cebe/php-openapi": "^1.3",

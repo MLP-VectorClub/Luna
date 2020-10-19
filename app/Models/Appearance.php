@@ -23,7 +23,6 @@ class Appearance extends Model implements Sortable, HasMedia
     use InteractsWithMedia, SortableTrait;
 
     const SPRITES_COLLECTION = 'sprites';
-    const SPRITE_PREVIEW_CONVERSION = 'sprite-preview';
     const DOUBLE_SIZE_CONVERSION = '2x';
     const SPRITE_SIZES = [300, 600];
 
@@ -63,12 +62,6 @@ class Appearance extends Model implements Sortable, HasMedia
             ->singleFile()
             ->acceptsMimeTypes(['image/png'])
             ->useDisk($disk);
-
-        $preview_convert = $this->addMediaConversion(self::SPRITE_PREVIEW_CONVERSION)
-              ->keepOriginalImageFormat()
-              ->fit(Manipulations::FIT_MAX, 28, 12)
-              ->setManipulations(new Manipulations())
-              ->performOnCollections(self::SPRITES_COLLECTION);
 
         $double_convert = $this->addMediaConversion(self::DOUBLE_SIZE_CONVERSION)
               ->keepOriginalImageFormat()
