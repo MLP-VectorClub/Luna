@@ -10,7 +10,7 @@ use OpenApi\Annotations as OA;
 
 class GitHelper
 {
-    public const CACHE_KEY = 'celestia_commit_info';
+    public const CACHE_KEY = 'luna_commit_info';
 
     protected static function getCommitDataString(): string
     {
@@ -68,5 +68,14 @@ class GitHelper
         }
 
         return $data;
+    }
+
+    public static function clearCommitDataCache(): bool
+    {
+        if (Cache::missing(self::CACHE_KEY)) {
+            return true;
+        }
+
+        return Cache::delete(self::CACHE_KEY);
     }
 }

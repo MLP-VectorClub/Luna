@@ -11,8 +11,8 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     CMD_COMPOSER="if [ -d vendor/ ]; then sudo chmod -R ug+rw vendor/; fi; sudo -u www-data composer install --optimize-autoloader --no-dev 2>&1"
     CMD_MIGRATE="sudo -u www-data php artisan migrate --force"
     CMD_NPM="sudo -u www-data npm install --production --no-save"
-    # CMD_REDIS_CLEAR="# TODO"
     CMD_LARAVEL_OPTIMIZE="sudo -u www-data php artisan optimize"
+    CMD_REDIS_CLEAR="sudo -u www-data php artisan commit:clear"
     CMD_GEN_API_DOCS="sudo -u www-data php artisan l5-swagger:generate"
 
     echo "$ $CMD_CD"
@@ -42,8 +42,8 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
         echo "# Skipping asset rebuild, no changes in assets folder"
     fi
 
-    # echo "$ $CMD_REDIS_CLEAR"
-    # eval ${CMD_REDIS_CLEAR}
+    echo "$ $CMD_REDIS_CLEAR"
+    eval ${CMD_REDIS_CLEAR}
 
     echo "$ $CMD_GEN_API_DOCS"
     eval ${CMD_GEN_API_DOCS}
