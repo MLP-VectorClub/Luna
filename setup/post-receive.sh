@@ -12,8 +12,7 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     CMD_MIGRATE="sudo -u www-data php artisan migrate --force"
     CMD_NPM="sudo -u www-data npm install --production --no-save"
     # CMD_REDIS_CLEAR="# TODO"
-    CMD_CACHE_CONFIG="sudo -u www-data php artisan config:cache"
-    CMD_CACHE_ROUTES="sudo -u www-data php artisan route:cache"
+    CMD_LARAVEL_OPTIMIZE="sudo -u www-data php artisan optimize"
     CMD_GEN_API_DOCS="sudo -u www-data php artisan l5-swagger:generate"
 
     echo "$ $CMD_CD"
@@ -23,11 +22,8 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     echo "$ $CMD_COMPOSER"
     eval ${CMD_COMPOSER}
 
-    echo "$ $CMD_CACHE_CONFIG"
-    eval ${CMD_CACHE_CONFIG}
-
-    echo "$ $CMD_CACHE_ROUTES"
-    eval ${CMD_CACHE_ROUTES}
+    echo "$ $CMD_LARAVEL_OPTIMIZE"
+    eval ${CMD_LARAVEL_OPTIMIZE}
 
     echo "$ $CMD_MIGRATE"
     eval ${CMD_MIGRATE}
