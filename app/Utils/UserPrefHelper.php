@@ -110,7 +110,7 @@ class UserPrefHelper
         throw new RuntimeException(sprintf("%s: Unhandled UserPrefKey $key", __METHOD__));
     }
 
-    public static function castRead(UserPrefKey $key, string $value)
+    public static function castRead(UserPrefKey $key, ?string $value)
     {
         switch ($key) {
             case UserPrefKey::Pcg_Slots():
@@ -228,18 +228,22 @@ class UserPrefHelper
         Validator::make(['value' => $value], ['value' => [...$rules]])->validate();
     }
 
-    private static function castBool(string $value): bool
+    private static function castBool(?string $value): bool
     {
         return $value === '1';
     }
 
-    private static function castInt(string $value): int
+    private static function castInt(?string $value): int
     {
         return (int) $value;
     }
 
-    private static function castEnum(string $value, string $class): Enum
+    private static function castEnum(?string $value, string $class): ?Enum
     {
+        if ($value === null) {
+            return null;
+        }
+
         if (!class_exists($class) || !method_exists($class, 'fromValue')) {
             throw new TypeError(sprintf(
                 "Argument 2 passed to %s must point to a class that extends %s",
@@ -261,7 +265,7 @@ class UserPrefHelper
         $pref = $user->prefs()->where('key', $key)->first();
 
         if ($pref === null) {
-            return self::default($pref->key);
+            return self::default($key);
         }
 
         return self::castRead($pref->key, $pref->value);

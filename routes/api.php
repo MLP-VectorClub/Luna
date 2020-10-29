@@ -38,6 +38,7 @@ Route::prefix('about')->group(function () {
     }
 
     Route::get('connection', [AboutController::class, 'serverInfo']);
+    Route::get('members', [AboutController::class, 'members']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {
@@ -53,9 +54,11 @@ Route::middleware('throttle:60,1')->group(function () {
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('tokens', [UsersController::class, 'tokens']);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);
+
+            Route::get('/', [UsersController::class, 'list']);
         });
 
-        Route::get('{user}', [UsersController::class, 'get']);
+        Route::get('{user}', [UsersController::class, 'getById']);
         Route::get('da/{username}', [UsersController::class, 'getByName']);
     });
 

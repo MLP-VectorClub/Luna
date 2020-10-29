@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Models\DeviantartUser;
 use App\Models\User;
 use App\Utils\SettingsHelper;
@@ -18,15 +19,13 @@ class UsersController extends Controller
 {
     /**
      * @OA\Schema(
-     *   schema="PublicUser",
+     *   schema="BarePublicUser",
      *   type="object",
-     *   description="Represents a publicly accessible representation of a user",
+     *   description="Represents the absolute minimum info necessary to get a user profile URL",
      *   required={
      *     "id",
      *     "name",
      *     "role",
-     *     "avatarUrl",
-     *     "avatarProvider",
      *   },
      *   additionalProperties=false,
      *   @OA\Property(
@@ -45,17 +44,32 @@ class UsersController extends Controller
      *     description="The publicly visible role for the user",
      *     ref="#/components/schemas/Role",
      *   ),
-     *   @OA\Property(
-     *     property="avatarUrl",
-     *     type="string",
-     *     format="uri",
-     *     example="https://a.deviantart.net/avatars/e/x/example.png",
-     *     nullable=true,
-     *   ),
-     *   @OA\Property(
-     *     property="avatarProvider",
-     *     ref="#/components/schemas/AvatarProvider"
-     *   ),
+     * )
+     * @OA\Schema(
+     *   schema="PublicUser",
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/BarePublicUser"),
+     *     @OA\Schema(
+     *       type="object",
+     *       description="Represents a publicly accessible representation of a user",
+     *       required={
+     *         "avatarUrl",
+     *         "avatarProvider",
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="avatarUrl",
+     *         type="string",
+     *         format="uri",
+     *         example="https://a.deviantart.net/avatars/e/x/example.png",
+     *         nullable=true,
+     *       ),
+     *       @OA\Property(
+     *         property="avatarProvider",
+     *         ref="#/components/schemas/AvatarProvider"
+     *       ),
+     *     )
+     *   }
      * )
      * @OA\Schema(
      *   schema="User",
@@ -149,7 +163,7 @@ class UsersController extends Controller
         $da_user = DeviantartUser::where('name', $username)->firstOrFail();
         /** @var User $user */
         $user = $da_user->user()->firstOrFail();
-        return $this->get($request, $user);
+        return $this->getById($request, $user);
     }
 
     /**
@@ -183,9 +197,54 @@ class UsersController extends Controller
      * @param  User  $user
      * @return \Illuminate\Http\JsonResponse
      */
-    public function get(Request $request, User $user)
+    public function getById(Request $request, User $user)
     {
         return response()->json($user->publicResponse());
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/users",
+     *   description="Get a full list of users, i.e. those that have the 'user' role (requires staff permissions)",
+     *   tags={"users"},
+     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *   @OA\Response(
+     *     response="200",
+     *     description="Query successful",
+     *     @OA\JsonContent(
+     *       type="array",
+     *       @OA\Items(ref="#/components/schemas/BarePublicUser")
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response="401",
+     *     description="Unathorized",
+     *   )
+     * )
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function list(Request $request, User $user)
+    {
+        if (!perm(Role::Staff())) {
+            abort(401);
+        }
+
+        $fetch_role = Role::User;
+        $roles = [$fetch_role];
+        $dev_role_label = SettingsHelper::get('dev_role_label');
+        if ($dev_role_label === $fetch_role) {
+            $roles[] = Role::Developer;
+        }
+        $users = User::whereIn('role', $roles)->orderBy('name')->get(['id', 'name']);
+
+        return response()->json($users->map(fn (User $u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'role' => $fetch_role,
+        ]));
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
+use App\Models\User;
 use App\Utils\Core;
 use App\Utils\GitHelper;
 use Illuminate\Http\Request;
@@ -71,6 +73,36 @@ class AboutController extends Controller
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
             'proxied_ips' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
         ]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/about/members",
+     *   description="Get a list of club members and staff (users above the 'user' role)",
+     *   tags={"users"},
+     *   security={},
+     *   @OA\Response(
+     *     response="200",
+     *     description="Query successful",
+     *     @OA\JsonContent(
+     *       type="array",
+     *       @OA\Items(ref="#/components/schemas/PublicUser")
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response="401",
+     *     description="Unathorized",
+     *   )
+     * )
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function members(Request $request, User $user)
+    {
+        $users = User::where('role', '!=', Role::User)->orderBy('name')->get();
+        return response()->json($users->map(fn (User $u) => $u->publicResponse()));
     }
 
     /**
