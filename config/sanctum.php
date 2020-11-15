@@ -14,10 +14,7 @@ return [
     */
 
     'stateful' => [
-        'localhost:3000',
-        'mlpvector.lc',
-        'mlpvector.lc:3000',
-        'new.mlpvector.club',
+        preg_replace('~^https?://~', '', env('FRONTEND_URL')),
     ],
 
     /*
