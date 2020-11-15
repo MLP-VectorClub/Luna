@@ -5,9 +5,11 @@ namespace App\Utils;
 use App\Appearances;
 use App\CoreUtils;
 use App\DB;
+use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
 use App\Enums\MlpGeneration;
 use App\Models\Appearance;
+use App\Models\Tag;
 use App\Pagination;
 use App\ShowHelper;
 use Elasticsearch;
@@ -16,14 +18,61 @@ use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Elasticsearch\Common\Exceptions\NoNodesAvailableException;
 use Elasticsearch\Common\Exceptions\ServerErrorResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use ONGR\ElasticsearchDSL;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
+use OpenApi\Annotations as OA;
 use function is_array;
 
 class ColorGuideHelper
 {
+    public const GROUP_TAG_IDS_ASSOC = [
+        GuideName::FriendshipIsMagic => [
+            664 => 'Main Cast',
+            45 => 'Cutie Mark Crusaders',
+            59 => 'Royalty',
+            666 => 'Student Six',
+            9 => 'Antagonists',
+            44 => 'Foals',
+            78 => 'Original Characters',
+            1 => 'Unicorns',
+            3 => 'Pegasi',
+            2 => 'Earth Ponies',
+            10 => 'Pets',
+            437 => 'Non-pony Characters',
+            385 => 'Creatures',
+            96 => 'Outfits & Clothing',
+            // add other tags here
+            64 => 'Objects',
+            0 => 'Other',
+        ],
+        GuideName::EquestriaGirls => [
+            76 => 'Humans',
+            0 => 'Other',
+        ],
+        GuideName::PonyLife => [
+            664 => 'Main Cast',
+            45 => 'Cutie Mark Crusaders',
+            59 => 'Royalty',
+            666 => 'Student Six',
+            9 => 'Antagonists',
+            44 => 'Foals',
+            78 => 'Original Characters',
+            1 => 'Unicorns',
+            3 => 'Pegasi',
+            2 => 'Earth Ponies',
+            10 => 'Pets',
+            437 => 'Non-pony Characters',
+            385 => 'Creatures',
+            96 => 'Outfits & Clothing',
+            // add other tags here
+            64 => 'Objects',
+            0 => 'Other',
+        ],
+    ];
+
     public static function mapGuideToMlpGeneration(GuideName $guide_name): ?MlpGeneration
     {
         static $guide_map;
@@ -155,5 +204,94 @@ class ColorGuideHelper
         ];
 
         return Elasticsearch::connection()->search($params);
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="GuideFullListGroupItem",
+     *   type="object",
+     *   required={
+     *     "label",
+     *     "appearanceIds"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="name",
+     *     type="string",
+     *     example="Main Cast"
+     *   ),
+     *   @OA\Property(
+     *     property="appearanceIds",
+     *     type="array",
+     *     @OA\Items(ref="#/components/schemas/OneBasedId")
+     *   ),
+     * )
+     * @OA\Schema(
+     *   schema="GuideFullListGroups",
+     *   type="object",
+     *   required={
+     *     "groups",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="groups",
+     *     type="array",
+     *     minItems=0,
+     *     @OA\Items(ref="#/components/schemas/GuideFullListGroupItem")
+     *   )
+     * )
+     * @param  GuideName  $guide
+     * @param  FullGuideSortField  $sort_field
+     * @param  Collection|Appearance[]  $appearances
+     * @return array
+     */
+    public static function createGroupsForFullList(
+        GuideName $guide,
+        FullGuideSortField $sort_field,
+        $appearances
+    ): array {
+        switch ($sort_field->value) {
+            case FullGuideSortField::DateAdded:
+                // No grouping when sorting by date
+                return [];
+            case FullGuideSortField::Relevance:
+                $group_items = [];
+                $ids_in_order = new Collection(array_keys(self::GROUP_TAG_IDS_ASSOC[$guide->value]));
+                foreach ($appearances as $appearance) {
+                    $tags = $appearance->tags->keyBy(fn (Tag $tag) => $tag->id);
+                    $fit_somewhere = $ids_in_order->some(function (int $id) use ($tags, $appearance, &$group_items) {
+                        $condition = isset($tags[$id]);
+                        if ($condition) {
+                            $group_items[$id][] = $appearance->id;
+                        }
+                        return $condition;
+                    });
+                    if (!$fit_somewhere) {
+                        $group_items[0][] = $appearance->id;
+                    }
+                }
+                return $ids_in_order
+                    ->filter(fn (int $id) => isset($group_items[$id]))
+                    ->map(fn (int $id) => [
+                        'name' => self::GROUP_TAG_IDS_ASSOC[$guide->value][$id],
+                        'appearance_ids' => $group_items[$id],
+                    ])
+                    ->toArray();
+            case FullGuideSortField::Alphabetically:
+                $group_items = [];
+                foreach ($appearances as $appearance) {
+                    $first_letter = strtoupper($appearance->label[0]);
+                    $key = preg_match('/^[A-Z]$/', $first_letter) ? $first_letter : '#';
+                    $group_items[$key][] = $appearance->id;
+                }
+                return (new Collection(array_keys($group_items)))
+                    ->map(fn (string $letter) => [
+                        'name' => $letter,
+                        'appearance_ids' => $group_items[$letter],
+                    ])
+                    ->toArray();
+        }
+
+        throw new \RuntimeException("Unhandled sort field $sort_field");
     }
 }

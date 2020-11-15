@@ -7,6 +7,7 @@ use App\Models\DeviantartUser;
 use App\Models\User;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -114,9 +115,9 @@ class UsersController extends Controller
      * )
      *
      * @param  Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -155,9 +156,9 @@ class UsersController extends Controller
      *
      * @param  Request  $request
      * @param  string   $username
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function getByName(Request $request, string $username)
+    public function getByName(Request $request, string $username): JsonResponse
     {
         /** @var DeviantartUser $da_user */
         $da_user = DeviantartUser::where('name', $username)->firstOrFail();
@@ -195,9 +196,9 @@ class UsersController extends Controller
      *
      * @param  Request  $request
      * @param  User  $user
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function getById(Request $request, User $user)
+    public function getById(Request $request, User $user): JsonResponse
     {
         return response()->json($user->publicResponse());
     }
@@ -224,9 +225,9 @@ class UsersController extends Controller
      *
      * @param  Request  $request
      * @param  User  $user
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function list(Request $request, User $user)
+    public function list(Request $request, User $user): JsonResponse
     {
         if (!perm(Role::Staff())) {
             abort(401);
@@ -266,7 +267,7 @@ class UsersController extends Controller
      * @param  Request  $request
      * @return Response
      */
-    public function signout(Request $request)
+    public function signout(Request $request): Response
     {
         /** @var User $user */
         $user = $request->user();
@@ -351,9 +352,9 @@ class UsersController extends Controller
      *   )
      * )
      * @param  Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function tokens(Request $request)
+    public function tokens(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -408,7 +409,7 @@ class UsersController extends Controller
      * @param  Request  $request
      * @return Response
      */
-    public function deleteToken(int $token_id, Request $request)
+    public function deleteToken(int $token_id, Request $request): Response
     {
         /** @var User $user */
         $user = $request->user();

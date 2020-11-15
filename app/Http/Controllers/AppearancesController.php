@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Enums\SpriteSize;
@@ -65,6 +66,9 @@ use function count;
  *     @OA\Items(ref="#/components/schemas/Appearance")
  *   )
  * )
+ */
+
+/**
  * @OA\Schema(
  *   schema="PreviewsIndicator",
  *   type="boolean",
@@ -155,10 +159,7 @@ class AppearancesController extends Controller
      *     @OA\Items(
      *       type="string"
      *     )
-     *   ),
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/CommonAppearance")
-     *   }
+     *   )
      * )
      * @OA\Schema(
      *   schema="SlimAppearance",
@@ -225,7 +226,7 @@ class AppearancesController extends Controller
             'label' => $a->label,
             'order' => $a->order,
             'sprite' => self::mapSprite($a),
-            'hasCutieMarks' => $a->cutiemarks()->count() !== 0,
+            'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
         ];
 
         $tag_mapper = fn (Tag $t) => self::mapTag($t);
@@ -233,9 +234,11 @@ class AppearancesController extends Controller
             $appearance['created_at'] = gmdate('c', $a->created_at->getTimestamp());
             $appearance['tags'] = TagHelper::getFor($a->id, true, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
-            $appearance['colorGroups'] = self::_getColorGroups($a);
+            $appearance['color_groups'] = self::_getColorGroups($a);
         } else {
-            $appearance['characterTagNames'] = $a->tags()->where('type', TagType::Character())->pluck('name');
+            $appearance['character_tag_names'] = $a->tags
+                ->filter(fn (Tag $tag) => $tag->type === TagType::Character)
+                ->pluck('name');
         }
 
         return $appearance;
@@ -435,7 +438,7 @@ class AppearancesController extends Controller
      * )
      * @OA\Get(
      *   path="/appearances",
-     *   description="Allows querying the full library of public appearances (forced pagination)",
+     *   description="Allows querying the full library of public appearances with forced pagination",
      *   tags={"appearances"},
      *   security={},
      *   @OA\Parameter(
@@ -529,12 +532,20 @@ class AppearancesController extends Controller
      *     @OA\Schema(ref="#/components/schemas/GuideName"),
      *     description="Determines the guide to search in"
      *   ),
+     *   @OA\Parameter(
+     *     in="query",
+     *     name="sort",
+     *     required=true,
+     *     @OA\Schema(ref="#/components/schemas/FullGuideSortField"),
+     *     description="Determines how the results will be sorted"
+     *   ),
      *   @OA\Response(
      *     response="200",
      *     description="OK",
      *     @OA\JsonContent(
      *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/SlimAppearanceList")
+     *         @OA\Schema(ref="#/components/schemas/SlimAppearanceList"),
+     *         @OA\Schema(ref="#/components/schemas/GuideFullListGroups")
      *       }
      *     )
      *   )
@@ -543,32 +554,51 @@ class AppearancesController extends Controller
      * @return JsonResponse
      * @throws ValidationException
      */
-    public function queryAll(Request $request)
+    public function queryFullPublic(Request $request)
     {
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new EnumValue(GuideName::class)],
-            'previews' => 'sometimes|required|accepted',
+            'sort' => [new EnumValue(FullGuideSortField::class)],
         ])->validate();
 
-        $guide_name = $valid['guide'];
+        $guide_name = new GuideName($valid['guide']);
+        $sort = !empty($valid['sort']) ? new FullGuideSortField($valid['sort']) : FullGuideSortField::Relevance();
 
-        /** @var $appearances Appearance[] */
-        $appearances = Appearance::ordered()->where('guide', $guide_name)->where('id', '!=', 0)->get();
+        /**
+         * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $builder
+         * @return \Illuminate\Support\Collection|Appearance[]
+         */
+        $get_by_guide = fn ($builder) => $builder->where('guide', $guide_name)->where('id', '!=', 0)->get();
+
+        switch ($sort) {
+            case FullGuideSortField::Relevance():
+                $appearances = $get_by_guide(Appearance::ordered()->with('tags'));
+                break;
+            case FullGuideSortField::Alphabetically():
+                $appearances = $get_by_guide(Appearance::orderBy('label'));
+                break;
+            case FullGuideSortField::DateAdded():
+                $appearances = $get_by_guide(Appearance::orderByDesc('created_at'));
+                break;
+            default:
+        }
 
         $results = $appearances->map(fn (Appearance $a) => self::mapAppearance($a, true));
 
         return response()->json([
             'appearances' => $results,
+            'groups' => ColorGuideHelper::createGroupsForFullList($guide_name, $sort, $appearances),
         ]);
     }
 
     /**
      * @param  Request  $request
+     * @param  string  $parameter
      * @return Appearance|Response
      */
-    private static function _resolveAppearance(Request $request)
+    private static function _resolveAppearance(Request $request, string $parameter = 'id')
     {
-        $id = (int) $request->get('id');
+        $id = (int) $request->get($parameter);
         return Appearance::findOrFail($id);
     }
 

@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\App;
 
 Route::middleware('throttle:12,1')->group(function () {
     Route::prefix('users')->group(function () {
+        Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
+
         Route::post('signin', [SigninController::class, 'viaPassword'])->name('signin_password');
         Route::post('/', [SignupController::class, 'viaPassword'])->name('signup_password');
         Route::post('/oauth/signup/{provider}', [SignupController::class, 'viaSocialite']);
@@ -46,7 +48,6 @@ Route::middleware('throttle:60,1')->group(function () {
         // Route::get('oauth/signup/{provider}', [SignupController::class, 'socialiteRedirect']);
         Route::get('oauth/signin/{provider}', [SigninController::class, 'socialiteRedirect']);
 
-        Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
         Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
         Route::middleware('auth:sanctum')->group(function () {
@@ -64,7 +65,7 @@ Route::middleware('throttle:60,1')->group(function () {
 
     Route::prefix('appearances')->group(function () {
         Route::get('/', [AppearancesController::class, 'queryPublic']);
-        Route::get('all', [AppearancesController::class, 'queryAll'])->name('appearances_all')->middleware('cacheResponse:300');
+        Route::get('full', [AppearancesController::class, 'queryFullPublic'])->name('appearances_full')->middleware('cacheResponse:300');
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite']);
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'getColorGroups']);
     });

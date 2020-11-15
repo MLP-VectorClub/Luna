@@ -2,6 +2,7 @@
 
 use App\Enums\AvatarProvider;
 use App\Enums\GuideName;
+use App\Enums\FullGuideSortField;
 use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\ShowType;
@@ -239,6 +240,7 @@ return [
             'SOCIAL_PROVIDERS' => SocialProvider::getValues(),
             'VECTOR_APPS' => VectorApp::getValues(),
             'ISO_STANDARD_DATE' => Core::carbonToIso(new Carbon()),
+            'GUIDE_SORT_FIELDS' => FullGuideSortField::getValues(),
         ],
     ],
 ];

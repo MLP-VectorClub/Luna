@@ -24,7 +24,7 @@ class AppCacheProfile extends CacheAllSuccessfulGetRequests
         $route = $request->route();
         if ($route) {
             switch ($route->getName()) {
-                case "appearances_all":
+                case "appearances_full":
                     $guide_name = $request->get('guide');
                     $with_previews = $request->get('previews', false);
                     return Core::generateCacheKey(1, 'appearances all', $guide_name, $with_previews);
