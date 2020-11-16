@@ -229,8 +229,8 @@ class AppearancesController extends Controller
             'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
         ];
 
-        $tag_mapper = fn (Tag $t) => self::mapTag($t);
         if (!$compact) {
+            $tag_mapper = fn (Tag $t) => self::mapTag($t);
             $appearance['created_at'] = gmdate('c', $a->created_at->getTimestamp());
             $appearance['tags'] = TagHelper::getFor($a->id, true, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
@@ -238,6 +238,7 @@ class AppearancesController extends Controller
         } else {
             $appearance['character_tag_names'] = $a->tags
                 ->filter(fn (Tag $tag) => $tag->type === TagType::Character)
+                ->flatMap(fn (Tag $tag) => [$tag, ...$tag->synonymTo])
                 ->pluck('name');
         }
 
@@ -572,7 +573,7 @@ class AppearancesController extends Controller
 
         switch ($sort) {
             case FullGuideSortField::Relevance():
-                $appearances = $get_by_guide(Appearance::ordered()->with('tags'));
+                $appearances = $get_by_guide(Appearance::ordered()->with('tags.synonymTo'));
                 break;
             case FullGuideSortField::Alphabetically():
                 $appearances = $get_by_guide(Appearance::orderBy('label'));
