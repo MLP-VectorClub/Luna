@@ -121,7 +121,7 @@ class UsersController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        return response()->json($user->toArrayWithProtected());
+        return response()->camelJson($user->toArrayWithProtected());
     }
 
     /**
@@ -200,7 +200,7 @@ class UsersController extends Controller
      */
     public function getById(Request $request, User $user): JsonResponse
     {
-        return response()->json($user->publicResponse());
+        return response()->camelJson($user->publicResponse());
     }
 
     /**
@@ -241,7 +241,7 @@ class UsersController extends Controller
         }
         $users = User::whereIn('role', $roles)->orderBy('name')->get(['id', 'name']);
 
-        return response()->json($users->map(fn (User $u) => [
+        return response()->camelJson($users->map(fn (User $u) => [
             'id' => $u->id,
             'name' => $u->name,
             'role' => $fetch_role,
@@ -322,7 +322,7 @@ class UsersController extends Controller
      *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
      *   @OA\Response(
      *     response="200",
-     *     description="Sucess",
+     *     description="Success",
      *     @OA\JsonContent(
      *       required={
      *         "currentTokenId",
@@ -362,7 +362,7 @@ class UsersController extends Controller
         /** @var PersonalAccessToken|TransientToken $current_token */
         $current_token = $user->currentAccessToken();
 
-        return response()->json([
+        return response()->camelJson([
             'current_token_id' => $current_token->id ?? null,
             'tokens' => $user->tokens->map(function (PersonalAccessToken $t) {
                 return [
@@ -394,7 +394,7 @@ class UsersController extends Controller
      *   ),
      *   @OA\Response(
      *     response="204",
-     *     description="Sucess"
+     *     description="Success"
      *   ),
      *   @OA\Response(
      *     response="404",

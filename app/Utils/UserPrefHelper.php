@@ -255,16 +255,18 @@ class UserPrefHelper
     }
 
     /**
-     * @param  User  $user
+     * @param  User|null  $user
      * @param  UserPrefKey  $key
      * @return mixed preference value
      */
-    public static function get(User $user, UserPrefKey $key)
+    public static function get(?User $user, UserPrefKey $key)
     {
-        /** @var UserPref $pref */
-        $pref = $user->prefs()->where('key', $key)->first();
+        if ($user) {
+            /** @var UserPref $pref */
+            $pref = $user->prefs()->where('key', $key)->first();
+        }
 
-        if ($pref === null) {
+        if (empty($pref)) {
             return self::default($key);
         }
 
@@ -273,13 +275,18 @@ class UserPrefHelper
 
     /**
      * @param  ?User  $user
+     * @param  array|null  $keys
      * @return array All preferences of the use
      */
-    public static function getAll(?User $user): array
+    public static function getAll(?User $user, ?array $keys = null): array
     {
         if ($user !== null) {
+            $query = $user->prefs();
+            if ($keys !== null) {
+                $query->whereIn('key', $keys);
+            }
             /** @var UserPref[] $prefs */
-            $prefs = $user->prefs()->get();
+            $prefs = $query->get();
 
             $result = $prefs->reduce(function (array $acc, UserPref $pref) {
                 $acc[$pref->key->value] = self::castRead($pref->key, $pref->value);
@@ -289,7 +296,12 @@ class UserPrefHelper
             $result = [];
         }
 
-        foreach (UserPrefKey::getInstances() as $key) {
+        if ($keys !== null) {
+            $instances = array_map(fn (string $key): UserPrefKey => new UserPrefKey($key), $keys);
+        } else {
+            $instances = UserPrefKey::getInstances();
+        }
+        foreach ($instances as $key) {
             if (!array_key_exists($key->value, $result)) {
                 $result[$key->value] = self::default($key);
             }

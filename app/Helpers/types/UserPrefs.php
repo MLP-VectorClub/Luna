@@ -13,93 +13,93 @@ use OpenApi\Annotations as OA;
  *   required=USER_PREF_KEYS,
  *   additionalProperties=false,
  *   @OA\Property(
- *     property="cgItemsperpage",
+ *     property="cg_itemsperpage",
  *     type="number",
  *   ),
  *   @OA\Property(
- *     property="cgHidesynon",
+ *     property="cg_hidesynon",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="cgHideclrinfo",
+ *     property="cg_hideclrinfo",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="cgFulllstprev",
+ *     property="cg_fulllstprev",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="cgNutshell",
+ *     property="cg_nutshell",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="cgDefaultguide",
+ *     property="cg_defaultguide",
  *     nullable=true,
  *     allOf={
  *       @OA\Schema(ref="#/components/schemas/GuideName")
  *     },
  *   ),
  *   @OA\Property(
- *     property="pAvatarprov",
+ *     property="p_avatarprov",
  *     ref="#/components/schemas/AvatarProvider",
  *   ),
  *   @OA\Property(
- *     property="pVectorapp",
+ *     property="p_vectorapp",
  *     nullable=true,
  *     allOf={
  *       @OA\Schema(ref="#/components/schemas/VectorApp")
  *     },
  *   ),
  *   @OA\Property(
- *     property="pHidediscord",
+ *     property="p_hidediscord",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="pHidepcg",
+ *     property="p_hidepcg",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="pHomelastep",
+ *     property="p_homelastep",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="epHidesynopses",
+ *     property="ep_hidesynopses",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="epNoappprev",
+ *     property="ep_noappprev",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="epRevstepbtn",
+ *     property="ep_revstepbtn",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="aPcgearn",
+ *     property="a_pcgearn",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="aPcgmake",
+ *     property="a_pcgmake",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="aPcgsprite",
+ *     property="a_pcgsprite",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="aPostreq",
+ *     property="a_postreq",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="aPostres",
+ *     property="a_postres",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="aReserve",
+ *     property="a_reserve",
  *     type="boolean",
  *   ),
  *   @OA\Property(
- *     property="pcgSlots",
+ *     property="pcg_slots",
  *     type="number",
  *     nullable=true,
  *   ),

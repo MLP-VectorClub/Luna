@@ -127,7 +127,10 @@ class SigninController extends Controller
      *   @OA\Response(
      *     response="302",
      *     description="Redirect to the authorization endpoint",
-     *     @OA\Header(header="Location", ref="#/components/schemas/LocationHeader")
+     *     @OA\Header(
+     *       header="Location",
+     *       @OA\Schema(ref="#/components/schemas/LocationHeader")
+     *     )
      *   ),
      *   @OA\Response(
      *     response="400",
@@ -173,15 +176,6 @@ class SigninController extends Controller
      *   @OA\RequestBody(
      *       required=true,
      *       @OA\JsonContent(ref="#/components/schemas/OauthCode")
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="code",
-     *     required=true,
-     *     schema={
-     *       "type": "string"
-     *     },
-     *     description="The authorization code from the provider"
      *   ),
      *   @OA\Response(
      *     response="200",

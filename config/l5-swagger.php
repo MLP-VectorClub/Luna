@@ -21,7 +21,7 @@ use const OpenApi\UNDEFINED;
 $database_roles = Role::getValues();
 $dev_role = Role::Developer();
 $client_roles = array_filter($database_roles, fn ($role) => $role !== $dev_role->value);
-$user_pref_keys = array_map(fn (string $value) => Str::camel($value), UserPrefKey::getValues());
+$user_pref_keys = UserPrefKey::getValues();
 
 return [
     'default' => 'default',

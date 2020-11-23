@@ -15,19 +15,19 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(
  *     property="pony",
  *     type="number",
- *     example=250,
+ *     example=122,
  *     minimum=0
  *   ),
  *   @OA\Property(
  *     property="eqg",
  *     type="number",
- *     example=36,
+ *     example=248,
  *     minimum=0
  *   ),
  *   @OA\Property(
  *     property="pl",
  *     type="number",
- *     example=2,
+ *     example=14,
  *     minimum=0
  *   ),
  * )

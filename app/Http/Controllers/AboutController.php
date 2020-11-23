@@ -67,7 +67,7 @@ class AboutController extends Controller
     public function serverInfo()
     {
         $commit_data = GitHelper::getCommitData();
-        return response()->json([
+        return response()->camelJson([
             'commit_id' => $commit_data['commit_id'],
             'commit_time' => Core::carbonToIso($commit_data['commit_time']),
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
@@ -102,7 +102,7 @@ class AboutController extends Controller
     public function members(Request $request, User $user)
     {
         $users = User::where('role', '!=', Role::User)->orderBy('name')->get();
-        return response()->json($users->map(fn (User $u) => $u->publicResponse()));
+        return response()->camelJson($users->map(fn (User $u) => $u->publicResponse()));
     }
 
     /**

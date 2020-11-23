@@ -50,7 +50,7 @@ class ColorGuideController extends Controller
             return $acc;
         }, []);
 
-        return response()->json([
+        return response()->camelJson([
             'entry_counts' => $entry_counts,
         ]);
     }

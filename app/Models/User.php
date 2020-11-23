@@ -124,7 +124,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $token = $this->createToken(sprintf('%s on %s', Browser::browserName(), Browser::platformName()));
 
-        return response()->json(['token' => $token->plainTextToken]);
+        return response()->camelJson(['token' => $token->plainTextToken]);
     }
 
     public function publicResponse(): array

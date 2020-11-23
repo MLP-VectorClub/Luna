@@ -77,7 +77,7 @@ use OpenApi\Annotations as OA;
      *   security={},
  *   @OA\Response(
  *     response="204",
- *     description="Sucess"
+ *     description="Success"
  *   )
  * )
  * @OA\Schema(

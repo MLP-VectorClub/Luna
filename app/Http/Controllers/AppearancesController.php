@@ -7,6 +7,7 @@ use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Enums\SpriteSize;
 use App\Enums\TagType;
+use App\Enums\UserPrefKey;
 use App\Models\Appearance;
 use App\Models\Color;
 use App\Models\ColorGroup;
@@ -17,6 +18,7 @@ use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
 use App\Utils\Permission;
 use App\Utils\TagHelper;
+use App\Utils\UserPrefHelper;
 use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
@@ -255,6 +257,7 @@ class AppearancesController extends Controller
      * @OA\Schema(
      *   schema="SlimGuideTag",
      *   type="object",
+     *   additionalProperties=false,
      *   @OA\Property(
      *     property="id",
      *     ref="#/components/schemas/OneBasedId"
@@ -435,7 +438,8 @@ class AppearancesController extends Controller
      *   type="integer",
      *   minimum=7,
      *   maximum=20,
-     *   default=7
+     *   default=7,
+     *   description="The number of results to return per page"
      * )
      * @OA\Get(
      *   path="/appearances",
@@ -460,8 +464,7 @@ class AppearancesController extends Controller
      *     in="query",
      *     name="size",
      *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/GuidePageSize"),
-     *     description="The number of results to return per page"
+     *     @OA\Schema(ref="#/components/schemas/GuidePageSize")
      *   ),
      *   @OA\Parameter(
      *     in="query",
@@ -509,12 +512,12 @@ class AppearancesController extends Controller
         ])->validate();
 
         $guide_name = new GuideName($valid['guide']);
-        $appearances_per_page = $valid['size'] ?? 7;
+        $appearances_per_page = $valid['size'] ?? UserPrefHelper::get($request->user(), UserPrefKey::ColorGuide_ItemsPerPage());
         $query = !empty($valid['q']) ? $valid['q'] : null;
         $page = $valid['page'] ?? 1;
         $pagination = ColorGuideHelper::searchGuide($page, $appearances_per_page, $guide_name, $query);
         $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAppearance($a));
-        return response()->json([
+        return response()->camelJson([
             'appearances' => $results,
             'pagination' => Core::mapPagination($pagination),
         ]);
@@ -586,7 +589,7 @@ class AppearancesController extends Controller
 
         $results = $appearances->map(fn (Appearance $a) => self::mapAppearance($a, true));
 
-        return response()->json([
+        return response()->camelJson([
             'appearances' => $results,
             'groups' => ColorGuideHelper::createGroupsForFullList($guide_name, $sort, $appearances),
         ]);
@@ -614,7 +617,7 @@ class AppearancesController extends Controller
 
             // TODO Check token parameter and allow if matches
 
-            return response()->json(['message' => trans('errors.color_guide.appearance_private')], 403);
+            return response()->camelJson(['message' => trans('errors.color_guide.appearance_private')], 403);
         }
 
         return null;
@@ -652,7 +655,7 @@ class AppearancesController extends Controller
             return $error;
         }
 
-        return response()->json(['colorGroups' => self::_getColorGroups($appearance)]);
+        return response()->camelJson(['colorGroups' => self::_getColorGroups($appearance)]);
     }
 
     /**
@@ -681,11 +684,13 @@ class AppearancesController extends Controller
      *   @OA\Parameter(
      *     in="query",
      *     name="size",
+     *     required=false,
      *     @OA\Schema(ref="#/components/schemas/SpriteSize")
      *   ),
      *   @OA\Parameter(
      *     in="query",
      *     name="token",
+     *     required=false,
      *     @OA\Schema(ref="#/components/schemas/AppearanceToken")
      *   ),
      *   @OA\Response(
@@ -699,7 +704,10 @@ class AppearancesController extends Controller
      *   @OA\Response(
      *     response="302",
      *     description="Redirect to the current sprite image URL (if the appearance is public).",
-     *     @OA\Header(header="Location", ref="#/components/schemas/LocationHeader")
+     *     @OA\Header(
+     *       header="Location",
+     *       @OA\Schema(ref="#/components/schemas/LocationHeader"),
+     *     ),
      *   ),
      *   @OA\Response(
      *     response="404",

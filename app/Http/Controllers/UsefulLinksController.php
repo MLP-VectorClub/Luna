@@ -119,6 +119,6 @@ class UsefulLinksController extends Controller
         $links = UsefulLink::ordered()->whereIn('minrole', $available_roles)->get()
             ->map(fn (UsefulLink $usefulLink) => $this->mapUsefulLink($usefulLink));
 
-        return response()->json($links);
+        return response()->camelJson($links);
     }
 }

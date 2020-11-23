@@ -56,7 +56,7 @@ class GenerateEnumDocblocks extends Command
     {
         $properties = Collection::make(UserPrefKey::getInstances())->map(function (UserPrefKey $key) {
             $type_data = UserPrefHelper::type($key);
-            $property = sprintf(" *     property=\"%s\",\n", Str::camel($key->value));
+            $property = sprintf(" *     property=\"%s\",\n", $key->value);
             $type = '';
             if (isset($type_data['type'])) {
                 $type = " *     type=\"{$type_data['type']}\",\n";
