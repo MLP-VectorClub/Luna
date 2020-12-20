@@ -37,6 +37,20 @@ class AboutController extends Controller
      *     example="192.168.0.2, 10.0.0.2, 172.16.0.2",
      *     nullable=true,
      *   ),
+     *   @OA\Property(
+     *     property="userAgent",
+     *     type="string",
+     *     description="The value of the User-Agent HTTP header as received by the server",
+     *     example="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0",
+     *     nullable=true,
+     *   ),
+     *   @OA\Property(
+     *     property="deviceIdentifier",
+     *     type="string",
+     *     description="Short string representing the current browser and OS used to make the request (based on user agent)",
+     *     example="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0",
+     *     nullable=true,
+     *   ),
      * )
      * @OA\Get(
      *   path="/about/connection",
@@ -72,6 +86,8 @@ class AboutController extends Controller
             'commit_time' => Core::carbonToIso($commit_data['commit_time']),
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
             'proxied_ips' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            'device_identifier' => Core::getDeviceIdentifier(),
         ]);
     }
 

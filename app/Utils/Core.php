@@ -2,6 +2,7 @@
 
 namespace App\Utils;
 
+use Browser;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
@@ -106,5 +107,10 @@ class Core
         }
 
         return str_replace('+00:00', 'Z', $date->toW3cString());
+    }
+
+    public static function getDeviceIdentifier(): string
+    {
+        return sprintf('%s on %s', Browser::browserName(), Browser::platformName());
     }
 }

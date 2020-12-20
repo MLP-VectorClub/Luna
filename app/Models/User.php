@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\UserPrefKey;
 use App\Traits\HasEnumCasts;
 use App\Traits\HasProtectedFields;
+use App\Utils\Core;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
 use Browser;
@@ -122,7 +123,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function authResponse()
     {
-        $token = $this->createToken(sprintf('%s on %s', Browser::browserName(), Browser::platformName()));
+        $token = $this->createToken(Core::getDeviceIdentifier());
 
         return response()->camelJson(['token' => $token->plainTextToken]);
     }

@@ -11,6 +11,7 @@ use App\Enums\UserPrefKey;
 use App\Models\Appearance;
 use App\Models\Color;
 use App\Models\ColorGroup;
+use App\Models\PinnedAppearance;
 use App\Models\Tag;
 use App\Models\User;
 use App\Utils\Caching;
@@ -20,24 +21,13 @@ use App\Utils\Permission;
 use App\Utils\TagHelper;
 use App\Utils\UserPrefHelper;
 use BenSampo\Enum\Rules\EnumValue;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Routing\ResponseFactory;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Routing\Redirector;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
-use function count;
 
 /**
  * @OA\Schema(
@@ -72,12 +62,6 @@ use function count;
 
 /**
  * @OA\Schema(
- *   schema="PreviewsIndicator",
- *   type="boolean",
- *   enum={true},
- *   description="Optional parameter that indicates whether you would like to get preview image data with the request. Typically unnecessary unless you want to display a temporary image while the larger image loads."
- * )
- * @OA\Schema(
  *   schema="Order",
  *   type="number",
  *   example=1,
@@ -105,15 +89,13 @@ class AppearancesController extends Controller
 {
     /**
      * @OA\Schema(
-     *   schema="CommonAppearance",
+     *   schema="AutocompleteAppearance",
      *   type="object",
-     *   description="Common properties of the two Appearance schemas",
+     *   description="The barest of properties for an appearance intended for use in autocompletion results",
      *   required={
      *     "id",
      *     "label",
-     *     "order",
      *     "sprite",
-     *     "hasCutieMarks"
      *   },
      *   additionalProperties=false,
      *   @OA\Property(
@@ -129,22 +111,52 @@ class AppearancesController extends Controller
      *     example="Twinkle Sprinkle"
      *   ),
      *   @OA\Property(
-     *     property="order",
-     *     ref="#/components/schemas/Order"
-     *   ),
-     *   @OA\Property(
      *     property="sprite",
      *     nullable=true,
      *     description="The sprite that belongs to this appearance, or null if there is none",
      *     allOf={
      *       @OA\Schema(ref="#/components/schemas/Sprite")
      *     }
-     *   ),
-     *   @OA\Property(
-     *     property="hasCutieMarks",
-     *     type="boolean",
-     *     description="Indicates whether there are any cutie marks tied to this appearance"
      *   )
+     * )
+     * @param  Appearance  $a
+     * @return array
+     */
+    public static function mapAutocompleteAppearance(Appearance $a): array
+    {
+        return [
+            'id' => $a->id,
+            'label' => $a->label,
+            'sprite' => self::mapSprite($a),
+        ];
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="CommonAppearance",
+     *   type="object",
+     *   description="Common properties of the two main Appearance schemas",
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/AutocompleteAppearance"),
+     *     @OA\Schema(
+     *       type="object",
+     *       required={
+     *         "order",
+     *         "hasCutieMarks"
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="order",
+     *         ref="#/components/schemas/Order"
+     *       ),
+     *       @OA\Property(
+     *         property="hasCutieMarks",
+     *         type="boolean",
+     *         description="Indicates whether there are any cutie marks tied to this appearance"
+     *       )
+     *     )
+     *   }
      * )
      * @OA\Schema(
      *   schema="SlimAppearanceOnly",
@@ -223,20 +235,17 @@ class AppearancesController extends Controller
      */
     public static function mapAppearance(Appearance $a, bool $compact = false): array
     {
-        $appearance = [
-            'id' => $a->id,
-            'label' => $a->label,
+        $appearance = array_merge(self::mapAutocompleteAppearance($a), [
             'order' => $a->order,
-            'sprite' => self::mapSprite($a),
             'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
-        ];
+        ]);
 
         if (!$compact) {
             $tag_mapper = fn (Tag $t) => self::mapTag($t);
             $appearance['created_at'] = gmdate('c', $a->created_at->getTimestamp());
             $appearance['tags'] = TagHelper::getFor($a->id, true, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
-            $appearance['color_groups'] = self::_getColorGroups($a);
+            $appearance['color_groups'] = self::getColorGroups($a);
         } else {
             $appearance['character_tag_names'] = $a->tags
                 ->filter(fn (Tag $tag) => $tag->type === TagType::Character)
@@ -247,10 +256,10 @@ class AppearancesController extends Controller
         return $appearance;
     }
 
-    private static function _getColorGroups(Appearance $a): array
+    private static function getColorGroups(Appearance $a): array
     {
-        $color_groups = $a->colorGroups()->with('colors');
-        return $color_groups->get()->map(fn (ColorGroup $cg) => self::mapColorGroup($cg))->toArray();
+        $color_groups = $a->colorGroups ?: $a->colorGroups()->with('colors')->get();
+        return $color_groups->map(fn (ColorGroup $cg) => self::mapColorGroup($cg))->toArray();
     }
 
     /**
@@ -368,19 +377,19 @@ class AppearancesController extends Controller
      *     description="The list of colors inside this group"
      *   )
      * )
-     * @param ColorGroup $cg
+     * @param  ColorGroup  $cg
      *
      * @return array
      */
     public static function mapColorGroup(ColorGroup $cg)
     {
-        $colors = $cg->colors()->get()->map(fn (Color $c) => self::mapColor($c));
+        $colors = $cg->colors ?: $cg->colors()->get();
 
         return [
             'id' => $cg->id,
             'label' => $cg->label,
             'order' => $cg->order,
-            'colors' => $colors,
+            'colors' => $colors->map(fn (Color $c) => self::mapColor($c)),
         ];
     }
 
@@ -507,12 +516,14 @@ class AppearancesController extends Controller
             'guide' => ['required', new EnumValue(GuideName::class)],
             'size' => 'sometimes|numeric|between:7,20',
             'q' => 'sometimes|string',
-            'previews' => 'sometimes|required|accepted',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
         $guide_name = new GuideName($valid['guide']);
-        $appearances_per_page = $valid['size'] ?? UserPrefHelper::get($request->user(), UserPrefKey::ColorGuide_ItemsPerPage());
+        $appearances_per_page = $valid['size'] ?? UserPrefHelper::get(
+            $request->user(),
+            UserPrefKey::ColorGuide_ItemsPerPage()
+        );
         $query = !empty($valid['q']) ? $valid['q'] : null;
         $page = $valid['page'] ?? 1;
         $pagination = ColorGuideHelper::searchGuide($page, $appearances_per_page, $guide_name, $query);
@@ -649,13 +660,13 @@ class AppearancesController extends Controller
      * @param  Appearance  $appearance
      * @return JsonResponse|Response
      */
-    public function getColorGroups(Request $request, Appearance $appearance)
+    public function colorGroups(Request $request, Appearance $appearance)
     {
         if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
             return $error;
         }
 
-        return response()->camelJson(['colorGroups' => self::_getColorGroups($appearance)]);
+        return response()->camelJson(['colorGroups' => self::getColorGroups($appearance)]);
     }
 
     /**
@@ -813,5 +824,120 @@ class AppearancesController extends Controller
 
         // TODO CGUtils::renderPreviewSVG($appearance);
         return response()->noContent(404);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/appearances/pinned",
+     *   description="Get list of pinned appearances for a specific guide",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(
+     *     in="query",
+     *     name="guide",
+     *     required=true,
+     *     @OA\Schema(ref="#/components/schemas/GuideName")
+     *   ),
+     *   @OA\Response(
+     *     response="200",
+     *     description="The list of pinned appearances",
+     *     @OA\JsonContent(
+     *       additionalProperties=false,
+     *       type="array",
+     *       minItems=0,
+     *       @OA\Items(ref="#/components/schemas/Appearance")
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response="422",
+     *     description="Invalid guide name",
+     *     @OA\JsonContent(
+     *       allOf={
+     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
+     *       }
+     *     )
+     *   )
+     * )
+     * @param  Request  $request
+     * @return JsonResponse|Response
+     */
+    public function pinned(Request $request)
+    {
+        $valid = Validator::make($request->all(), [
+            'guide' => ['required', new EnumValue(GuideName::class)],
+        ])->validate();
+
+        // TODO Temporary shortcut for development
+        if (time() > 0) {
+            if ($valid['guide'] === GuideName::FriendshipIsMagic) {
+                $pinned_appearances = [self::mapAppearance(Appearance::findOrFail(0))];
+            } else {
+                $pinned_appearances = [];
+            }
+        } else {
+            $pinned_appearances = PinnedAppearance::where('guide', $valid['guide'])
+                ->with('appearance')
+                ->map(fn (PinnedAppearance $pinned_appearance) => self::mapAppearance($pinned_appearance->appearance));
+        }
+
+        return response()->camelJson($pinned_appearances);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/appearances/autocomplete",
+     *   description="Get list of pinned appearances for a specific guide",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(
+     *     in="query",
+     *     name="guide",
+     *     required=true,
+     *     @OA\Schema(ref="#/components/schemas/GuideName")
+     *   ),
+     *   @OA\Parameter(
+     *     in="query",
+     *     name="q",
+     *     required=true,
+     *     @OA\Schema(ref="#/components/schemas/QueryString"),
+     *     description="Search query"
+     *   ),
+     *   @OA\Response(
+     *     response="200",
+     *     description="List of matching appearances",
+     *     @OA\JsonContent(
+     *       additionalProperties=false,
+     *       type="array",
+     *       minItems=0,
+     *       @OA\Items(ref="#/components/schemas/AutocompleteAppearance")
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response="422",
+     *     description="Invalid guide name",
+     *     @OA\JsonContent(
+     *       allOf={
+     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
+     *       }
+     *     )
+     *   )
+     * )
+     * @param  Request  $request
+     * @return JsonResponse|Response
+     */
+    public function autocomplete(Request $request)
+    {
+        $valid = Validator::make($request->all(), [
+            'guide' => ['required', new EnumValue(GuideName::class)],
+            'q' => 'sometimes|string|min:1',
+        ])->validate();
+
+        $guide_name = new GuideName($valid['guide']);
+        $query = !empty($valid['q']) ? $valid['q'] : null;
+        $page = 1;
+        $autocomplete_count = 5;
+        $pagination = ColorGuideHelper::searchGuide($page, $autocomplete_count, $guide_name, $query);
+        $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAutocompleteAppearance($a));
+        return response()->camelJson($results);
     }
 }

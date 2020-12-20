@@ -170,14 +170,11 @@ class ColorGuideHelper
         }
 
         if (!empty($search_results['hits']['hits'])) {
-            $ids = [];
-            foreach ($search_results['hits']['hits'] as $i => $hit) {
-                $ids[$hit['_id']] = $i;
-            }
+            $ids = (new Collection($search_results['hits']['hits']))->map(fn ($el) => $el['_id'])->unique();
 
             /** @var Appearance[] $appearances */
             $appearances = Appearance::ordered()
-                ->whereIn('id', array_keys($ids))
+                ->whereIn('id', $ids)
                 ->where('guide', $guide)
                 ->get();
         } else {
