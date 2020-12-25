@@ -67,6 +67,7 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/', [AppearancesController::class, 'queryPublic']);
         Route::get('full', [AppearancesController::class, 'queryFullPublic'])->name('appearances_full')->middleware('cacheResponse:300');
         Route::get('pinned', [AppearancesController::class, 'pinned'])->name('pinned_appearance')->middleware('cacheResponse:60');
+        Route::get('autocomplete', [AppearancesController::class, 'autocomplete'])->name('appearances_autocomplete')->middleware('cacheResponse:180');
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite']);
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'getColorGroups']);
     });

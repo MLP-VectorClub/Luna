@@ -119,16 +119,18 @@ class ColorGuideHelper
 
         // Search query exists
         if ($search_for !== null) {
-            $search_query = preg_replace("~[^\w\s*?'-]~", '', $search_for);
-            $multi_match = new ElasticsearchDSL\Query\FullText\MultiMatchQuery(
-                ['label', 'tags'],
-                $search_query,
-                [
-                    'type' => 'cross_fields',
-                    'minimum_should_match' => '100%',
-                ]
-            );
-            $search_query->addQuery($multi_match);
+            $search_for_sanitized = preg_replace("~[^\w\s*?'-]~", '', $search_for);
+            if ($search_for_sanitized !== '') {
+                $multi_match = new ElasticsearchDSL\Query\FullText\MultiMatchQuery(
+                    ['label', 'tags'],
+                    $search_for_sanitized,
+                    [
+                        'type' => 'cross_fields',
+                        'minimum_should_match' => '100%',
+                    ]
+                );
+                $search_query->addQuery($multi_match);
+            }
         }
 
         $sort = new ElasticsearchDSL\Sort\FieldSort('order', 'asc');

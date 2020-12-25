@@ -515,7 +515,7 @@ class AppearancesController extends Controller
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new EnumValue(GuideName::class)],
             'size' => 'sometimes|numeric|between:7,20',
-            'q' => 'sometimes|string',
+            'q' => 'sometimes|string|nullable',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
@@ -929,7 +929,7 @@ class AppearancesController extends Controller
     {
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new EnumValue(GuideName::class)],
-            'q' => 'sometimes|string|min:1',
+            'q' => 'sometimes|string|nullable',
         ])->validate();
 
         $guide_name = new GuideName($valid['guide']);
