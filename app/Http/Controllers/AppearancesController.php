@@ -267,6 +267,10 @@ class AppearancesController extends Controller
      *   schema="SlimGuideTag",
      *   type="object",
      *   additionalProperties=false,
+     *   required={
+     *     "id",
+     *     "name",
+     *   },
      *   @OA\Property(
      *     property="id",
      *     ref="#/components/schemas/OneBasedId"
@@ -282,7 +286,11 @@ class AppearancesController extends Controller
      *   @OA\Property(
      *     property="type",
      *     ref="#/components/schemas/TagType"
-     *   )
+     *   ),
+     *   @OA\Property(
+     *     property="synonymOf",
+     *     ref="#/components/schemas/OneBasedId"
+     *   ),
      * )
      * @param  Tag  $t
      *
@@ -290,11 +298,17 @@ class AppearancesController extends Controller
      */
     public static function mapTag(Tag $t)
     {
-        return [
+        $tag = [
             'id' => $t->id,
             'name' => $t->name,
-            'type' => $t->type,
         ];
+        if ($t->type !== null) {
+            $tag['type'] = $t->type;
+        }
+        if ($t->synonym_of !== null) {
+            $tag['synonym_of'] = $t->synonym_of;
+        }
+        return $tag;
     }
 
     /**
