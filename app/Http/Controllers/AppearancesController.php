@@ -241,9 +241,16 @@ class AppearancesController extends Controller
         ]);
 
         if (!$compact) {
+            $show_synonyms = false;
+            $is_staff = Permission::sufficient(Role::Staff());
+            if ($is_staff) {
+                $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags());
+                $show_synonyms = !$hide_synonym_tags;
+            }
+
             $tag_mapper = fn (Tag $t) => self::mapTag($t);
             $appearance['created_at'] = gmdate('c', $a->created_at->getTimestamp());
-            $appearance['tags'] = TagHelper::getFor($a->id, true, true)->map($tag_mapper);
+            $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
             $appearance['color_groups'] = self::getColorGroups($a);
         } else {
