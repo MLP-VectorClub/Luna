@@ -2,7 +2,6 @@
 
 use App\EloquentFixes\DBAL\Types\CitextType;
 use App\EloquentFixes\DBAL\Types\MlpGenerationType;
-use App\Enums\MlpGeneration;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -176,9 +175,10 @@ class ImportOldSchema extends Migration
             $table->timestampsTz($this->ts_precision);
         });
 
-
-        DB::statement(sprintf(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS %s", MlpGenerationType::MLP_GENERATION));
-        DB::statement(sprintf(/** @lang PostgreSQL */ "CREATE TYPE %s AS ENUM ('%s', '%s')", MlpGenerationType::MLP_GENERATION, MlpGeneration::FriendshipIsMagic(), MlpGeneration::PonyLife()));
+        // No references to enums or other constants here because refactoring can mess with historical migrations
+        $generation_type_name = 'mlp_generation';
+        DB::statement(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS {$generation_type_name}");
+        DB::statement(/** @lang PostgreSQL */ "CREATE TYPE {$generation_type_name} AS ENUM ('pony', 'pl')");
 
         Schema::create('show', function (Blueprint $table) {
             $table->id();

@@ -249,7 +249,7 @@ class AppearancesController extends Controller
             }
 
             $tag_mapper = fn (Tag $t) => self::mapTag($t);
-            $appearance['created_at'] = gmdate('c', $a->created_at->getTimestamp());
+            $appearance['created_at'] = $a->created_at->toISOString();
             $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
             $appearance['color_groups'] = self::getColorGroups($a);

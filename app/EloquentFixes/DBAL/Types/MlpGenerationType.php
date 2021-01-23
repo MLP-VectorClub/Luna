@@ -13,7 +13,11 @@ use RuntimeException;
 
 final class MlpGenerationType extends TextType
 {
-    const MLP_GENERATION = 'mlp_generation';
+    /**
+     * CAUTION! This name refers to a database type and must be modified along
+     * with a migration to recreate it with the new name.
+     */
+    public const MLP_GENERATION = 'mlp_generation';
 
     /** @inheritDoc */
     public function getName()

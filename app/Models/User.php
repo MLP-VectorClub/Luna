@@ -73,6 +73,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(UserPref::class);
     }
 
+    public function postedSHow()
+    {
+        return $this->hasMany(Show::class, 'posted_by');
+    }
+
     public function sendEmailVerificationNotification()
     {
         if ($this->email === null) {

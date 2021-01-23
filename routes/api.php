@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\ColorGuideController;
+use App\Http\Controllers\ShowController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserPrefsController;
 use App\Http\Controllers\UsersController;
@@ -82,5 +83,9 @@ Route::middleware('throttle:60,1')->group(function () {
 
     Route::prefix('user-prefs')->group(function () {
         Route::get('me', [UserPrefsController::class, 'me']);
+    });
+
+    Route::prefix('show')->group(function () {
+        Route::get('/', [ShowController::class, 'index']);
     });
 });

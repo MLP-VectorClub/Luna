@@ -4,7 +4,7 @@ namespace App\Utils;
 
 use Browser;
 use Carbon\Carbon;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 use function gettype;
@@ -31,22 +31,26 @@ class Core
      *     @OA\Property(
      *       property="currentPage",
      *       type="integer",
-     *       minimum=1
+     *       minimum=1,
+     *       example=1
      *     ),
      *     @OA\Property(
      *       property="totalPages",
      *       type="integer",
-     *       minimum=1
+     *       minimum=1,
+     *       example=20
      *     ),
      *     @OA\Property(
      *       property="totalItems",
      *       type="integer",
-     *       minimum=0
+     *       minimum=0,
+     *       example=200
      *     ),
      *     @OA\Property(
      *       property="itemsPerPage",
      *       type="integer",
-     *       minimum=1
+     *       minimum=1,
+     *       example=10
      *     ),
      *   ),
      * )

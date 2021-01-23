@@ -5,6 +5,7 @@ use App\Enums\GuideName;
 use App\Enums\FullGuideSortField;
 use App\Enums\MlpGeneration;
 use App\Enums\Role;
+use App\Enums\ShowOrdering;
 use App\Enums\ShowType;
 use App\Enums\SocialProvider;
 use App\Enums\SpriteSize;
@@ -232,6 +233,7 @@ return [
             'AVATAR_PROVIDERS' => AvatarProvider::getValues(),
             'GUIDE_NAMES' => GuideName::getValues(),
             'SHOW_TYPES' => ShowType::getValues(),
+            'SHOW_ORDERING' => ShowOrdering::getValues(),
             'MLP_GENERATIONS' => MlpGeneration::getValues(),
             'TAG_TYPES' => TagType::getValues(),
             'USER_PREF_KEYS' => $user_pref_keys,
