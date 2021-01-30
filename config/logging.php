@@ -62,7 +62,7 @@ return [
         'discord' => [
             'driver' => 'custom',
             'via'    => MarvinLabs\DiscordLogger\Logger::class,
-            'level'  => 'debug',
+            'level'  => 'warning',
             'url'    => $discord_webhook_url,
         ],
 

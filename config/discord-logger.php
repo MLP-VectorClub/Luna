@@ -17,7 +17,7 @@ return [
      * - \MarvinLabs\DiscordLogger\Converters\SimpleRecordConverter::class
      * - \MarvinLabs\DiscordLogger\Converters\RichRecordConverter::class
      */
-    'converter' => \MarvinLabs\DiscordLogger\Converters\SimpleRecordConverter::class,
+    'converter' => \MarvinLabs\DiscordLogger\Converters\RichRecordConverter::class,
 
     /**
      * If enabled, stacktraces will be attached as files. If not, stacktraces will be directly printed out in the
@@ -51,11 +51,11 @@ return [
     'emojis' => [
         'DEBUG' => ':beetle:',
         'INFO' => ':bulb:',
-        'NOTICE' => ':wink:',
-        'WARNING' => ':flushed:',
-        'ERROR' => ':poop:',
-        'CRITICAL' => ':imp:',
-        'ALERT' => ':japanese_ogre:',
+        'NOTICE' => ':bell:',
+        'WARNING' => ':warning:',
+        'ERROR' => ':exclamation:',
+        'CRITICAL' => ':bangbang:',
+        'ALERT' => ':fire:',
         'EMERGENCY' => ':skull:',
     ],
 ];
