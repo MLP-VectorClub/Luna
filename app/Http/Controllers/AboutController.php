@@ -82,8 +82,8 @@ class AboutController extends Controller
     {
         $commit_data = GitHelper::getCommitData();
         return response()->camelJson([
-            'commit_id' => $commit_data['commit_id'],
-            'commit_time' => Core::carbonToIso($commit_data['commit_time']),
+            'commit_id' => $commit_data['commit_id'] ?? null,
+            'commit_time' => Core::carbonToIso($commit_data['commit_time'] ?? null),
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
             'proxied_ips' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,

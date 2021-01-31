@@ -4,13 +4,14 @@
 namespace App\Utils;
 
 use Carbon\Carbon;
+use DateInterval;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Annotations as OA;
 
 class GitHelper
 {
-    public const CACHE_KEY = 'luna_commit_info';
+    public const CACHE_KEY = 'commit_info';
 
     protected static function getCommitDataString(): string
     {
@@ -54,10 +55,7 @@ class GitHelper
     public static function getCommitData(): array
     {
         $commit_info = App::isProduction()
-            ? Cache::get(self::CACHE_KEY, function () {
-                $commit_info = self::getCommitDataString();
-                Cache::put(self::CACHE_KEY, $commit_info, new \DateInterval('PT1H'));
-            })
+            ? Cache::remember(self::CACHE_KEY, new DateInterval('PT1H'), fn () => self::getCommitDataString())
             : self::getCommitDataString();
 
         $data = [];
