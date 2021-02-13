@@ -16,7 +16,8 @@ class CreatePinnedAppearancesTable extends Migration
         Schema::create('pinned_appearances', function (Blueprint $table) {
             $table->id();
             $table->string('guide', 4)->index();
-            $table->foreignId('appearance_id')->constrained('appearances')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('appearance_id')->unique()->constrained('appearances')->onDelete('restrict')->onUpdate('cascade');
+            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }

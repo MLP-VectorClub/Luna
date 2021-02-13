@@ -888,18 +888,10 @@ class AppearancesController extends Controller
             'guide' => ['required', new EnumValue(GuideName::class)],
         ])->validate();
 
-        // TODO Temporary shortcut for development
-        if (time() > 0) {
-            if ($valid['guide'] === GuideName::FriendshipIsMagic) {
-                $pinned_appearances = [self::mapAppearance(Appearance::findOrFail(0))];
-            } else {
-                $pinned_appearances = [];
-            }
-        } else {
-            $pinned_appearances = PinnedAppearance::where('guide', $valid['guide'])
-                ->with('appearance')
-                ->map(fn (PinnedAppearance $pinned_appearance) => self::mapAppearance($pinned_appearance->appearance));
-        }
+        $pinned_appearances = PinnedAppearance::where('guide', $valid['guide'])
+            ->with('appearance')
+            ->get()
+            ->map(fn (PinnedAppearance $pinned) => self::mapAppearance($pinned->appearance));
 
         return response()->camelJson($pinned_appearances);
     }

@@ -16,6 +16,6 @@ class PinnedAppearance extends Model
 
     public function appearance()
     {
-        return $this->hasOne(Appearance::class);
+        return $this->belongsTo(Appearance::class);
     }
 }
