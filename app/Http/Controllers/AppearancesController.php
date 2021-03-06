@@ -92,32 +92,23 @@ class AppearancesController extends Controller
      *   schema="AutocompleteAppearance",
      *   type="object",
      *   description="The barest of properties for an appearance intended for use in autocompletion results",
-     *   required={
-     *     "id",
-     *     "label",
-     *     "sprite",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="The name of the appearance",
-     *     example="Twinkle Sprinkle"
-     *   ),
-     *   @OA\Property(
-     *     property="sprite",
-     *     nullable=true,
-     *     description="The sprite that belongs to this appearance, or null if there is none",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/Sprite")
-     *     }
-     *   )
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
+     *     @OA\Schema(
+     *       required={
+     *         "sprite",
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="sprite",
+     *         nullable=true,
+     *         description="The sprite that belongs to this appearance, or null if there is none",
+     *         allOf={
+     *           @OA\Schema(ref="#/components/schemas/Sprite")
+     *         }
+     *       )
+     *     )
+     *   }
      * )
      * @param  Appearance  $a
      * @return array
@@ -235,6 +226,11 @@ class AppearancesController extends Controller
      */
     public static function mapAppearance(Appearance $a, bool $compact = false): array
     {
+        static $is_staff = null;
+        if ($is_staff === null) {
+            $is_staff = Permission::sufficient(Role::Staff());
+        }
+
         $appearance = array_merge(self::mapAutocompleteAppearance($a), [
             'order' => $a->order,
             'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
@@ -242,7 +238,6 @@ class AppearancesController extends Controller
 
         if (!$compact) {
             $show_synonyms = false;
-            $is_staff = Permission::sufficient(Role::Staff());
             if ($is_staff) {
                 $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags());
                 $show_synonyms = !$hide_synonym_tags;
@@ -494,7 +489,8 @@ class AppearancesController extends Controller
      *     in="query",
      *     name="size",
      *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/GuidePageSize")
+     *     @OA\Schema(ref="#/components/schemas/GuidePageSize"),
+     *     description="The number of results to return per page"
      *   ),
      *   @OA\Parameter(
      *     in="query",

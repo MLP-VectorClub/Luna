@@ -40,6 +40,7 @@ class AccountHelper
                 'string',
                 'email',
                 'min:3',
+                'max:255',
                 'unique:users',
                 new StrictEmail(),
             ],

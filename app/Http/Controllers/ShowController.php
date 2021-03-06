@@ -172,7 +172,8 @@ class ShowController extends Controller
      *     in="query",
      *     name="size",
      *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/ShowListPageSize")
+     *     @OA\Schema(ref="#/components/schemas/ShowListPageSize"),
+     *     description="The number of results to return per page"
      *   ),
      *   @OA\Response(
      *     response="200",

@@ -5,8 +5,10 @@ namespace App\Models;
 use App\Enums\GuideName;
 use App\Traits\HasEnumCasts;
 use App\Traits\Sorted;
+use DateInterval;
 use Illuminate\Database\Eloquent\Model;
-use phpDocumentor\Reflection\Types\Boolean;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use Ramsey\Uuid\Uuid;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
@@ -64,9 +66,9 @@ class Appearance extends Model implements Sortable, HasMedia
             ->useDisk($disk);
 
         $double_convert = $this->addMediaConversion(self::DOUBLE_SIZE_CONVERSION)
-              ->keepOriginalImageFormat()
-              ->fit(Manipulations::FIT_CONTAIN, 1400, 600)
-              ->performOnCollections(self::SPRITES_COLLECTION);
+            ->keepOriginalImageFormat()
+            ->fit(Manipulations::FIT_CONTAIN, 1400, 600)
+            ->performOnCollections(self::SPRITES_COLLECTION);
     }
 
     public function owner()
@@ -110,5 +112,29 @@ class Appearance extends Model implements Sortable, HasMedia
     public function getRelativeOutputPath(): string
     {
         return 'sprites';
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getPreviewDataAttribute(): array
+    {
+        $delimiter = '|';
+        $cache_key = "appearance_{$this->id}_preview_data";
+        $cached_data = Cache::remember(
+            $cache_key,
+            new DateInterval('PT1H'),
+            fn () => Color::select('colors.hex')
+                ->leftJoin('color_groups', 'colors.group_id', '=', 'color_groups.id')
+                ->where('color_groups.appearance_id', $this->id)
+                ->whereNotNull('colors.hex')
+                ->orderByRaw('color_groups."order"')
+                ->orderByRaw('colors."order"')
+                ->limit(4)
+                ->get()
+                ->map(fn (Color $c) => $c->hex)
+                ->join($delimiter)
+        );
+        return explode($delimiter, $cached_data);
     }
 }

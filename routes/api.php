@@ -73,8 +73,9 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'getColorGroups']);
     });
 
-    Route::prefix('color-guides')->group(function () {
+    Route::prefix('color-guide')->group(function () {
         Route::get('/', [ColorGuideController::class, 'index']);
+        Route::get('major-changes', [ColorGuideController::class, 'majorChanges']);
     });
 
     Route::prefix('useful-links')->group(function () {

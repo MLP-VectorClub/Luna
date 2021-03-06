@@ -293,4 +293,52 @@ class ColorGuideHelper
 
         throw new \RuntimeException("Unhandled sort field $sort_field");
     }
+
+    /**
+     * @OA\Schema(
+     *   schema="AppearancePreviewData",
+     *   type="array",
+     *   minItems=1,
+     *   maxItems=4,
+     *   format="Array of HEX color values, minimum 1, maximum 4, or null for no preview",
+     *   example={"#FF0000","#00FF00","#0000FF"},
+     *   @OA\Items(type="string")
+     * )
+     * @OA\Schema(
+     *   schema="PreviewAppearance",
+     *   type="object",
+     *   description="Minimal set of properties to display an appearance link, optinally with a colored preview",
+     *   required={
+     *     "id",
+     *     "label",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="id",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/ZeroBasedId")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="label",
+     *     type="string",
+     *     description="The name of the appearance",
+     *     example="Twinkle Sprinkle",
+     *   ),
+     *   @OA\Property(
+     *     property="previewData",
+     *     ref="#/components/schemas/AppearancePreviewData",
+     *   ),
+     * )
+     * @param  Appearance  $a
+     * @return array
+     */
+    public static function mapPreviewAppearance(Appearance $a): array
+    {
+        return [
+            'id' => $a->id,
+            'label' => $a->label,
+            'previewData' => $a->preview_data,
+        ];
+    }
 }
