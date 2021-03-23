@@ -42,7 +42,10 @@ class AppServiceProvider extends ServiceProvider
             $platform->registerDoctrineTypeMapping(CitextType::CITEXT, CitextType::CITEXT);
         }
         if (!$platform->hasDoctrineTypeMappingFor(MlpGenerationType::MLP_GENERATION)) {
-            $platform->registerDoctrineTypeMapping(MlpGenerationType::MLP_GENERATION, MlpGenerationType::MLP_GENERATION);
+            $platform->registerDoctrineTypeMapping(
+                MlpGenerationType::MLP_GENERATION,
+                MlpGenerationType::MLP_GENERATION
+            );
         }
         $grammar = new class($platform->getDateTimeTzFormatString()) extends PostgresGrammar {
             protected string $format_string;
@@ -107,7 +110,7 @@ class AppServiceProvider extends ServiceProvider
         /**
          * Convert a potentially null Carbon timestamp to string
          *
-         * @param  Carbon|null $date
+         * @param  Carbon|null  $date
          * @return string|null
          */
         Date::macro('maybeToString', function (?Carbon $date): ?string {

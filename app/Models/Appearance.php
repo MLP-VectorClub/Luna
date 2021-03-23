@@ -7,9 +7,10 @@ use App\Traits\HasEnumCasts;
 use App\Traits\Sorted;
 use DateInterval;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Collection;
 use Ramsey\Uuid\Uuid;
+use SeinopSys\RGBAColor;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use Spatie\Image\Manipulations;
@@ -120,21 +121,33 @@ class Appearance extends Model implements Sortable, HasMedia
     public function getPreviewDataAttribute(): array
     {
         $delimiter = '|';
-        $cache_key = "appearance_{$this->id}_preview_data";
-        $cached_data = Cache::remember(
-            $cache_key,
-            new DateInterval('PT1H'),
-            fn () => Color::select('colors.hex')
-                ->leftJoin('color_groups', 'colors.group_id', '=', 'color_groups.id')
-                ->where('color_groups.appearance_id', $this->id)
-                ->whereNotNull('colors.hex')
-                ->orderByRaw('color_groups."order"')
-                ->orderByRaw('colors."order"')
-                ->limit(4)
-                ->get()
-                ->map(fn (Color $c) => $c->hex)
-                ->join($delimiter)
-        );
+        if (App::isProduction()) {
+            $cache_key = "appearance_{$this->id}_preview_data";
+            $cached_data = Cache::remember(
+                $cache_key,
+                new DateInterval('PT1H'),
+                fn () => $this->getPreviewData($delimiter)
+            );
+        } else {
+            $cached_data = $this->getPreviewData($delimiter);
+        }
         return explode($delimiter, $cached_data);
+    }
+
+    protected function getPreviewData(string $delimiter): string
+    {
+        return Color::select(['colors.hex', 'colors.order'])
+            ->leftJoin('color_groups', 'colors.group_id', '=', 'color_groups.id')
+            ->where('color_groups.appearance_id', $this->id)
+            ->whereNotNull('colors.hex')
+            ->orderBy('color_groups.order')
+            ->orderBy('colors.order')
+            ->limit(4)
+            ->get()
+            ->map(fn (Color $c) => RGBAColor::parse($c->hex))
+            ->filter(fn (?RGBAColor $c) => $c !== null)
+            ->sort(fn (RGBAColor $a, RGBAColor $b) => $b->yiq() <=> $a->yiq())
+            ->map(fn (RGBAColor $c) => $c->toHex())
+            ->join($delimiter);
     }
 }

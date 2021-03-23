@@ -341,4 +341,83 @@ class ColorGuideHelper
             'previewData' => $a->preview_data,
         ];
     }
+
+    /**
+     * @OA\Schema(
+     *   schema="AutocompleteAppearance",
+     *   type="object",
+     *   description="The barest of properties for an appearance intended for use in autocompletion results",
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
+     *     @OA\Schema(
+     *       required={
+     *         "sprite",
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="sprite",
+     *         nullable=true,
+     *         description="The sprite that belongs to this appearance, or null if there is none",
+     *         allOf={
+     *           @OA\Schema(ref="#/components/schemas/Sprite")
+     *         }
+     *       )
+     *     )
+     *   }
+     * )
+     * @param  Appearance  $a
+     * @return array
+     */
+    public static function mapAutocompleteAppearance(Appearance $a): array
+    {
+        return array_merge(self::mapPreviewAppearance($a), [
+            'sprite' => self::mapSprite($a),
+        ]);
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="Sprite",
+     *   type="object",
+     *   description="Data related to an appearance's sprite file. The actual file is available from a different endpoint.",
+     *   required={
+     *     "path",
+     *     "aspectRatio",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="path",
+     *     type="string",
+     *     format="URL",
+     *     description="The full URL of the current sprite image"
+     *   ),
+     *   @OA\Property(
+     *     property="aspectRatio",
+     *     type="array",
+     *     items={
+     *       "type": "number",
+     *     },
+     *     minItems=2,
+     *     maxItems=2,
+     *     description="The width and height of the sprite expressed in the smallest numbers possible while retaining the same aspect ratio. Useful for calculating placeholder element sizes."
+     *   ),
+     * )
+     * @param  Appearance  $a
+     *
+     * @return array|null
+     */
+    public static function mapSprite(Appearance $a): ?array
+    {
+        $sprite_file = $a->spriteFile();
+        if (!$sprite_file) {
+            return null;
+        }
+
+        $sprite_file = $a->spriteFile();
+
+        return [
+            'path' => $sprite_file->getFullUrl(),
+            'aspect_ratio' => $sprite_file->getCustomProperty('aspect_ratio', [1, 1]),
+        ];
+    }
 }

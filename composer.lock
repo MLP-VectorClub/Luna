@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aec81b9c85132a884e9412b63d479bf0",
+    "content-hash": "885bce1f75f112d351f4568e12567579",
     "packages": [
         {
             "name": "bensampo/laravel-enum",
@@ -6518,6 +6518,50 @@
                 "source": "https://github.com/ringcentral/psr7/tree/master"
             },
             "time": "2018-05-29T20:21:04+00:00"
+        },
+        {
+            "name": "seinopsys/rgbacolor",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SeinopSys/RGBAColor.git",
+                "reference": "442027f02506ca75d904164833a18c40c531f2fb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SeinopSys/RGBAColor/zipball/442027f02506ca75d904164833a18c40c531f2fb",
+                "reference": "442027f02506ca75d904164833a18c40c531f2fb",
+                "shasum": ""
+            },
+            "require": {
+                "ext-pcre": "*",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "6.*"
+            },
+            "type": "class",
+            "autoload": {
+                "psr-4": {
+                    "SeinopSys\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "SeinopSys",
+                    "email": "seinopsys@gmail.com"
+                }
+            ],
+            "description": "A flexible class for parsing/storing color values",
+            "support": {
+                "issues": "https://github.com/SeinopSys/RGBAColor/issues",
+                "source": "https://github.com/SeinopSys/RGBAColor/tree/master"
+            },
+            "time": "2017-10-22T20:46:15+00:00"
         },
         {
             "name": "socialiteproviders/deviantart",

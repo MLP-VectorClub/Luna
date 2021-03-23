@@ -89,41 +89,6 @@ class AppearancesController extends Controller
 {
     /**
      * @OA\Schema(
-     *   schema="AutocompleteAppearance",
-     *   type="object",
-     *   description="The barest of properties for an appearance intended for use in autocompletion results",
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
-     *     @OA\Schema(
-     *       required={
-     *         "sprite",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="sprite",
-     *         nullable=true,
-     *         description="The sprite that belongs to this appearance, or null if there is none",
-     *         allOf={
-     *           @OA\Schema(ref="#/components/schemas/Sprite")
-     *         }
-     *       )
-     *     )
-     *   }
-     * )
-     * @param  Appearance  $a
-     * @return array
-     */
-    public static function mapAutocompleteAppearance(Appearance $a): array
-    {
-        return [
-            'id' => $a->id,
-            'label' => $a->label,
-            'sprite' => self::mapSprite($a),
-        ];
-    }
-
-    /**
-     * @OA\Schema(
      *   schema="CommonAppearance",
      *   type="object",
      *   description="Common properties of the two main Appearance schemas",
@@ -231,7 +196,7 @@ class AppearancesController extends Controller
             $is_staff = Permission::sufficient(Role::Staff());
         }
 
-        $appearance = array_merge(self::mapAutocompleteAppearance($a), [
+        $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a), [
             'order' => $a->order,
             'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
         ]);
@@ -311,52 +276,6 @@ class AppearancesController extends Controller
             $tag['synonym_of'] = $t->synonym_of;
         }
         return $tag;
-    }
-
-    /**
-     * @OA\Schema(
-     *   schema="Sprite",
-     *   type="object",
-     *   description="Data related to an appearance's sprite file. The actual file is available from a different endpoint.",
-     *   required={
-     *     "path",
-     *     "aspectRatio",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="path",
-     *     type="string",
-     *     format="URL",
-     *     description="The full URL of the current sprite image"
-     *   ),
-     *   @OA\Property(
-     *     property="aspectRatio",
-     *     type="array",
-     *     items={
-     *       "type": "number",
-     *     },
-     *     minItems=2,
-     *     maxItems=2,
-     *     description="The width and height of the sprite expressed in the smallest numbers possible while retaining the same aspect ratio. Useful for calculating placeholder element sizes."
-     *   ),
-     * )
-     * @param  Appearance  $a
-     *
-     * @return array|null
-     */
-    public static function mapSprite(Appearance $a): ?array
-    {
-        $sprite_file = $a->spriteFile();
-        if (!$sprite_file) {
-            return null;
-        }
-
-        $sprite_file = $a->spriteFile();
-
-        return [
-            'path' => $sprite_file->getFullUrl(),
-            'aspect_ratio' => $sprite_file->getCustomProperty('aspect_ratio', [1, 1]),
-        ];
     }
 
     /**
@@ -946,7 +865,7 @@ class AppearancesController extends Controller
         $page = 1;
         $autocomplete_count = 5;
         $pagination = ColorGuideHelper::searchGuide($page, $autocomplete_count, $guide_name, $query);
-        $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAutocompleteAppearance($a));
+        $results = $pagination->getCollection()->map(fn (Appearance $a) => ColorGuideHelper::mapAutocompleteAppearance($a));
         return response()->camelJson($results);
     }
 }

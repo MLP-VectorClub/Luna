@@ -1,5 +1,6 @@
 {
     "name": "mlp-vectorclub/luna",
+    "description": "Work-in-progress backend for the MLP-VectorClub's website",
     "type": "project",
     "license": "MIT",
     "require": {
@@ -27,6 +28,7 @@
         "ongr/elasticsearch-dsl": "^7.2",
         "qcod/laravel-settings": "^1.0",
         "restcord/restcord": "^0.4.0",
+        "seinopsys/rgbacolor": "^1.0",
         "socialiteproviders/deviantart": "^4.0",
         "socialiteproviders/discord": "^2.0",
         "spatie/eloquent-sortable": "^3.8",
