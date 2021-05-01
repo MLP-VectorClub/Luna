@@ -136,6 +136,11 @@ class Appearance extends Model implements Sortable, HasMedia
         return $this->owner_id !== null;
     }
 
+    public function getHasCutieMarksAttribute(): bool
+    {
+        return $this->cutiemarks()->count() !== 0;
+    }
+
     protected function getPreviewData(string $delimiter): string
     {
         return Color::select(['colors.hex', 'colors.order'])

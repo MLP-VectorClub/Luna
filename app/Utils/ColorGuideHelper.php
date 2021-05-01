@@ -615,7 +615,7 @@ class ColorGuideHelper
 
         $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a, $double_size_sprite), [
             'order' => $a->order,
-            'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
+            'has_cutie_marks' => $a->has_cutie_marks,
         ]);
 
         if (!$compact) {
@@ -651,14 +651,15 @@ class ColorGuideHelper
      *     @OA\Schema(
      *       type="object",
      *       required={
-     *         "cutie_marks",
+     *         "cutieMarks",
      *       },
      *       additionalProperties=false,
      *       @OA\Property(
      *         property="cutieMarks",
      *         type="array",
-     *         description="The list of cutie mark object associated iwth this appearance",
-     *         @OA\Items(ref="#/components/schemas/CutieMark")
+     *         description="The list of cutie mark object associated with this appearance",
+     *         @OA\Items(ref="#/components/schemas/CutieMark"),
+     *         minItems=0,
      *       )
      *     )
      *   }
