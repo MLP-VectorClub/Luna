@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Appearance;
-use App\Models\Cutiemark;
+use App\Models\CutieMark;
 use App\Models\User;
 use App\Utils\Core;
 use App\Utils\ImageHelper;
@@ -164,14 +164,14 @@ class MigrateFilesystem extends Command
         $cm_ids = Collection::make($fileinfo)->map(function (SplFileInfo $info) {
             return (int) preg_replace('~^(\d+).*$~', '$1', $info->getFilename());
         })->sort();
-        $cms = Cutiemark::findMany($cm_ids)->keyBy('id');
+        $cms = CutieMark::findMany($cm_ids)->keyBy('id');
         $diff = array_diff($cm_ids->toArray(), $cms->keys()->toArray());
         if (count($diff) > 0) {
             $this->output->newLine();
             $this->info('IDs present in filesystem, but not the database: '.implode(', ', $diff));
             throw new RuntimeException('Database result count does not match file count, be sure to import database records first or delete files that belong to non-existent records.');
         }
-        /** @var Cutiemark[] $records_mapped */
+        /** @var CutieMark[] $records_mapped */
         $records_mapped = $cm_ids->map(function (int $id) use ($cms) {
             if (!isset($cms[$id])) {
                 $this->error("Could not find CM by id $id in database results array");
@@ -188,7 +188,7 @@ class MigrateFilesystem extends Command
                     ->usingFileName(Core::generateHashFilename($file_path))
                     ->preservingOriginal()
                     ->withCustomProperties(['user_id' => $this->uploader_id])
-                    ->toMediaCollection(Cutiemark::CUTIEMARKS_COLLECTION);
+                    ->toMediaCollection(CutieMark::CUTIEMARKS_COLLECTION);
             });
 
             $this->output->progressAdvance();

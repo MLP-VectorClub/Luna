@@ -6,19 +6,14 @@ use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Enums\SpriteSize;
-use App\Enums\TagType;
 use App\Enums\UserPrefKey;
 use App\Models\Appearance;
-use App\Models\Color;
-use App\Models\ColorGroup;
 use App\Models\PinnedAppearance;
-use App\Models\Tag;
 use App\Models\User;
 use App\Utils\Caching;
 use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
 use App\Utils\Permission;
-use App\Utils\TagHelper;
 use App\Utils\UserPrefHelper;
 use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Http\JsonResponse;
@@ -87,295 +82,6 @@ use OpenApi\Annotations as OA;
  */
 class AppearancesController extends Controller
 {
-    /**
-     * @OA\Schema(
-     *   schema="CommonAppearance",
-     *   type="object",
-     *   description="Common properties of the two main Appearance schemas",
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/AutocompleteAppearance"),
-     *     @OA\Schema(
-     *       type="object",
-     *       required={
-     *         "order",
-     *         "hasCutieMarks"
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="order",
-     *         ref="#/components/schemas/Order"
-     *       ),
-     *       @OA\Property(
-     *         property="hasCutieMarks",
-     *         type="boolean",
-     *         description="Indicates whether there are any cutie marks tied to this appearance"
-     *       )
-     *     )
-     *   }
-     * )
-     * @OA\Schema(
-     *   schema="SlimAppearanceOnly",
-     *   type="object",
-     *   description="Represents properties that belong to the slim appearance object only",
-     *   required={
-     *     "characterTagNames",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="characterTagNames",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(
-     *       type="string"
-     *     )
-     *   )
-     * )
-     * @OA\Schema(
-     *   schema="SlimAppearance",
-     *   type="object",
-     *   description="A less heavy version of the regular Appearance schema",
-     *   required={
-     *     "characterTagNames",
-     *   },
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
-     *     @OA\Schema(ref="#/components/schemas/SlimAppearanceOnly")
-     *   }
-     * )
-     * @OA\Schema(
-     *   schema="AppearanceOnly",
-     *   type="object",
-     *   description="Represents properties that belong to the full appearance object only",
-     *   required={
-     *     "created_at",
-     *     "tags",
-     *     "notes",
-     *     "colorGroups"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="created_at",
-     *     ref="#/components/schemas/IsoStandardDate"
-     *   ),
-     *   @OA\Property(
-     *     property="notes",
-     *     type="string",
-     *     format="html",
-     *     nullable=true,
-     *     example="Far legs use darker colors. Based on <strong>S2E21</strong>."
-     *   ),
-     *   @OA\Property(
-     *     property="tags",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(ref="#/components/schemas/SlimGuideTag")
-     *   )
-     * )
-     * @OA\Schema(
-     *   schema="Appearance",
-     *   type="object",
-     *   description="Represents an entry in the color guide",
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
-     *     @OA\Schema(ref="#/components/schemas/AppearanceOnly"),
-     *     @OA\Schema(ref="#/components/schemas/ListOfColorGroups")
-     *   }
-     * )
-     * @param  Appearance  $a
-     * @param  bool  $compact
-     *
-     * @return array
-     */
-    public static function mapAppearance(Appearance $a, bool $compact = false): array
-    {
-        static $is_staff = null;
-        if ($is_staff === null) {
-            $is_staff = Permission::sufficient(Role::Staff());
-        }
-
-        $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a), [
-            'order' => $a->order,
-            'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
-        ]);
-
-        if (!$compact) {
-            $show_synonyms = false;
-            if ($is_staff) {
-                $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags());
-                $show_synonyms = !$hide_synonym_tags;
-            }
-
-            $tag_mapper = fn (Tag $t) => self::mapTag($t);
-            $appearance['created_at'] = $a->created_at->toISOString();
-            $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
-            $appearance['notes'] = $a->notes_rend;
-            $appearance['color_groups'] = self::getColorGroups($a);
-        } else {
-            $appearance['character_tag_names'] = $a->tags
-                ->filter(fn (Tag $tag) => $tag->type === TagType::Character)
-                ->flatMap(fn (Tag $tag) => [$tag, ...$tag->synonymTo])
-                ->pluck('name');
-        }
-
-        return $appearance;
-    }
-
-    private static function getColorGroups(Appearance $a): array
-    {
-        $color_groups = $a->colorGroups ?: $a->colorGroups()->with('colors')->get();
-        return $color_groups->map(fn (ColorGroup $cg) => self::mapColorGroup($cg))->toArray();
-    }
-
-    /**
-     * @OA\Schema(
-     *   schema="SlimGuideTag",
-     *   type="object",
-     *   additionalProperties=false,
-     *   required={
-     *     "id",
-     *     "name",
-     *   },
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="name",
-     *     type="string",
-     *     minLength=1,
-     *     maxLength=255,
-     *     example="mane six",
-     *     description="Tag name (all lowercase)"
-     *   ),
-     *   @OA\Property(
-     *     property="type",
-     *     ref="#/components/schemas/TagType"
-     *   ),
-     *   @OA\Property(
-     *     property="synonymOf",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     * )
-     * @param  Tag  $t
-     *
-     * @return array
-     */
-    public static function mapTag(Tag $t)
-    {
-        $tag = [
-            'id' => $t->id,
-            'name' => $t->name,
-        ];
-        if ($t->type !== null) {
-            $tag['type'] = $t->type;
-        }
-        if ($t->synonym_of !== null) {
-            $tag['synonym_of'] = $t->synonym_of;
-        }
-        return $tag;
-    }
-
-    /**
-     * @OA\Schema(
-     *   schema="ColorGroup",
-     *   type="object",
-     *   description="Groups a list of colors",
-     *   required={
-     *     "id",
-     *     "label",
-     *     "order",
-     *     "colors"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="The name of the color group",
-     *     example="Coat"
-     *   ),
-     *   @OA\Property(
-     *     property="order",
-     *     ref="#/components/schemas/Order"
-     *   ),
-     *   @OA\Property(
-     *     property="colors",
-     *     type="array",
-     *     minItems=1,
-     *     @OA\Items(ref="#/components/schemas/Color"),
-     *     description="The list of colors inside this group"
-     *   )
-     * )
-     * @param  ColorGroup  $cg
-     *
-     * @return array
-     */
-    public static function mapColorGroup(ColorGroup $cg)
-    {
-        $colors = $cg->colors ?: $cg->colors()->get();
-
-        return [
-            'id' => $cg->id,
-            'label' => $cg->label,
-            'order' => $cg->order,
-            'colors' => $colors->map(fn (Color $c) => self::mapColor($c)),
-        ];
-    }
-
-    /**
-     * @OA\Schema(
-     *   schema="Color",
-     *   type="object",
-     *   description="A color entry",
-     *   required={
-     *     "id",
-     *     "label",
-     *     "order",
-     *     "hex"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="The name of the color",
-     *     example="Fill"
-     *   ),
-     *   @OA\Property(
-     *     property="order",
-     *     ref="#/components/schemas/Order"
-     *   ),
-     *   @OA\Property(
-     *     property="hex",
-     *     type="string",
-     *     format="#RRGGBB",
-     *     description="The color value in uppercase hexadecimal form, including a # prefix",
-     *     example="#6181B6"
-     *   )
-     * )
-     * @param  Color  $c
-     *
-     * @return array
-     */
-    public static function mapColor(Color $c)
-    {
-        return [
-            'id' => $c->id,
-            'label' => $c->label,
-            'order' => $c->order,
-            'hex' => $c->hex,
-        ];
-    }
-
     /**
      * @OA\Schema(
      *   schema="GuidePageSize",
@@ -457,13 +163,13 @@ class AppearancesController extends Controller
 
         $guide_name = new GuideName($valid['guide']);
         $appearances_per_page = $valid['size'] ?? UserPrefHelper::get(
-            $request->user(),
-            UserPrefKey::ColorGuide_ItemsPerPage()
-        );
+                $request->user(),
+                UserPrefKey::ColorGuide_ItemsPerPage()
+            );
         $query = !empty($valid['q']) ? $valid['q'] : null;
         $page = $valid['page'] ?? 1;
         $pagination = ColorGuideHelper::searchGuide($page, $appearances_per_page, $guide_name, $query);
-        $results = $pagination->getCollection()->map(fn (Appearance $a) => self::mapAppearance($a));
+        $results = $pagination->getCollection()->map(fn (Appearance $a) => ColorGuideHelper::mapAppearance($a));
         return response()->camelJson([
             'appearances' => $results,
             'pagination' => Core::mapPagination($pagination),
@@ -534,7 +240,7 @@ class AppearancesController extends Controller
             default:
         }
 
-        $results = $appearances->map(fn (Appearance $a) => self::mapAppearance($a, true));
+        $results = $appearances->map(fn (Appearance $a) => ColorGuideHelper::mapAppearance($a, true));
 
         return response()->camelJson([
             'appearances' => $results,
@@ -543,14 +249,47 @@ class AppearancesController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *   path="/appearances/{id}",
+     *   description="Get all relevant information about a sn appearance at once, including tags, color groups and relations (heavy)",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(
+     *     in="path",
+     *     name="id",
+     *     required=true,
+     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
+     *   ),
+     *   @OA\Response(
+     *     response="200",
+     *     description="Complete appearance information",
+     *     @OA\JsonContent(
+     *       allOf={
+     *         @OA\Schema(ref="#/components/schemas/DetailedAppearance")
+     *       }
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response="404",
+     *     description="Appearance not found or has been deleted",
+     *     @OA\JsonContent(
+     *       allOf={
+     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
+     *       }
+     *     )
+     *   )
+     * )
      * @param  Request  $request
-     * @param  string  $parameter
-     * @return Appearance|Response
+     * @param  Appearance  $appearance
+     * @return JsonResponse
      */
-    private static function _resolveAppearance(Request $request, string $parameter = 'id')
+    public function get(Request $request, Appearance $appearance)
     {
-        $id = (int) $request->get($parameter);
-        return Appearance::findOrFail($id);
+        if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
+            return $error;
+        }
+
+        return response()->camelJson(ColorGuideHelper::mapDetailedAppearance($appearance));
     }
 
     private static function _handlePrivateAppearanceCheck(Request $request, Appearance $appearance): ?JsonResponse
@@ -602,7 +341,7 @@ class AppearancesController extends Controller
             return $error;
         }
 
-        return response()->camelJson(['colorGroups' => self::getColorGroups($appearance)]);
+        return response()->camelJson(['colorGroups' => ColorGuideHelper::getColorGroups($appearance)]);
     }
 
     /**
@@ -684,24 +423,27 @@ class AppearancesController extends Controller
             return $error;
         }
 
-        $sprite_file = $appearance->spriteFile();
-        if ($sprite_file === null) {
-            return response()->noContent(404);
-        }
-
         $params = Validator::make($request->only('size'), [
             'size' => ['required', 'integer', new EnumValue(SpriteSize::class)],
         ])->valid();
         $double_size = isset($params['size']) && $params['size'] === SpriteSize::Double();
 
-        if ($appearance->owner_id === null) {
-            $url = $sprite_file->getUrl($double_size ? Appearance::DOUBLE_SIZE_CONVERSION : '');
-            return redirect($url);
+        $sprite_file = $appearance->spriteFile();
+        if ($sprite_file === null) {
+            return response()->noContent(404);
         }
 
-        $sprite_path = $sprite_file->getPath($double_size ? Appearance::DOUBLE_SIZE_CONVERSION : '');
+        // For private appearances, respond with the sprite URL
+        if ($appearance->is_private) {
+            $sprite_path = $double_size
+                ? $sprite_file->getPath(Appearance::DOUBLE_SIZE_CONVERSION)
+                : $sprite_file->getPath();
+            return response()->file($sprite_path, ['cache-control' => 'private, must-revalidate']);
+        }
 
-        return response()->file($sprite_path, ['cache-control' => 'private, must-revalidate']);
+        // For public appearances, redirect to cached public location
+        $sprite_data = ColorGuideHelper::mapSprite($appearance, $double_size, $sprite_file);
+        return redirect($sprite_data['path']);
     }
 
     /**
@@ -806,7 +548,7 @@ class AppearancesController extends Controller
         $pinned_appearances = PinnedAppearance::where('guide', $valid['guide'])
             ->with('appearance')
             ->get()
-            ->map(fn (PinnedAppearance $pinned) => self::mapAppearance($pinned->appearance));
+            ->map(fn (PinnedAppearance $pinned) => ColorGuideHelper::mapAppearance($pinned->appearance));
 
         return response()->camelJson($pinned_appearances);
     }
@@ -865,7 +607,51 @@ class AppearancesController extends Controller
         $page = 1;
         $autocomplete_count = 5;
         $pagination = ColorGuideHelper::searchGuide($page, $autocomplete_count, $guide_name, $query);
-        $results = $pagination->getCollection()->map(fn (Appearance $a) => ColorGuideHelper::mapAutocompleteAppearance($a));
+        $results = $pagination->getCollection()->map(fn (Appearance $a
+        ) => ColorGuideHelper::mapAutocompleteAppearance($a));
         return response()->camelJson($results);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/appearances/{id}/locate",
+     *   description="Find out the guide and label for an appearance using its ID",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(
+     *     in="path",
+     *     name="id",
+     *     required=true,
+     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
+     *   ),
+     *   @OA\Response(
+     *     response="200",
+     *     description="Bare appearance information",
+     *     @OA\JsonContent(
+     *       allOf={
+     *         @OA\Schema(ref="#/components/schemas/PreviewAppearance")
+     *       }
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response="404",
+     *     description="Appearance not found or has been deleted",
+     *     @OA\JsonContent(
+     *       allOf={
+     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
+     *       }
+     *     )
+     *   )
+     * )
+     * @param  Request  $request
+     * @return JsonResponse|Response
+     */
+    public function locate(Request $request, Appearance $appearance)
+    {
+        if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
+            return $error;
+        }
+
+        return response()->camelJson(ColorGuideHelper::mapPreviewAppearance($appearance));
     }
 }

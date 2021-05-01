@@ -8,7 +8,15 @@ use App\DB;
 use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
 use App\Enums\MlpGeneration;
+use App\Enums\Role;
+use App\Enums\TagType;
+use App\Enums\UserPrefKey;
 use App\Models\Appearance;
+use App\Models\Color;
+use App\Models\ColorGroup;
+use App\Models\CutieMark;
+use App\Models\DeviantartUser;
+use App\Models\MajorChange;
 use App\Models\Tag;
 use App\Pagination;
 use App\ShowHelper;
@@ -19,11 +27,13 @@ use Elasticsearch\Common\Exceptions\NoNodesAvailableException;
 use Elasticsearch\Common\Exceptions\ServerErrorResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use ONGR\ElasticsearchDSL;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use OpenApi\Annotations as OA;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function is_array;
 
 class ColorGuideHelper
@@ -91,7 +101,7 @@ class ColorGuideHelper
     {
         try {
             $elastic_avail = Elasticsearch::connection()->ping();
-        } catch (NoNodesAvailableException|ServerErrorResponseException $e) {
+        } catch (NoNodesAvailableException | ServerErrorResponseException $e) {
             return false;
         }
 
@@ -307,10 +317,11 @@ class ColorGuideHelper
      * @OA\Schema(
      *   schema="PreviewAppearance",
      *   type="object",
-     *   description="Minimal set of properties to display an appearance link, optinally with a colored preview",
+     *   description="Minimal set of properties to display an appearance link, optionally with a colored preview",
      *   required={
      *     "id",
      *     "label",
+     *     "guide",
      *   },
      *   additionalProperties=false,
      *   @OA\Property(
@@ -326,6 +337,12 @@ class ColorGuideHelper
      *     example="Twinkle Sprinkle",
      *   ),
      *   @OA\Property(
+     *     property="guide",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/GuideName")
+     *     }
+     *   ),
+     *   @OA\Property(
      *     property="previewData",
      *     ref="#/components/schemas/AppearancePreviewData",
      *   ),
@@ -338,6 +355,7 @@ class ColorGuideHelper
         return [
             'id' => $a->id,
             'label' => $a->label,
+            'guide' => $a->guide,
             'previewData' => $a->preview_data,
         ];
     }
@@ -366,12 +384,13 @@ class ColorGuideHelper
      *   }
      * )
      * @param  Appearance  $a
+     * @param  bool  $double_size_sprite
      * @return array
      */
-    public static function mapAutocompleteAppearance(Appearance $a): array
+    public static function mapAutocompleteAppearance(Appearance $a, bool $double_size_sprite = false): array
     {
         return array_merge(self::mapPreviewAppearance($a), [
-            'sprite' => self::mapSprite($a),
+            'sprite' => self::mapSprite($a, $double_size_sprite),
         ]);
     }
 
@@ -403,21 +422,510 @@ class ColorGuideHelper
      *   ),
      * )
      * @param  Appearance  $a
-     *
+     * @param  bool  $double_size
+     * @param  Media|null  $sprite_file
      * @return array|null
      */
-    public static function mapSprite(Appearance $a): ?array
+    public static function mapSprite(Appearance $a, bool $double_size = false, ?Media $sprite_file = null): ?array
     {
-        $sprite_file = $a->spriteFile();
+        if ($sprite_file === null) {
+            $sprite_file = $a->spriteFile();
+        }
         if (!$sprite_file) {
             return null;
         }
 
-        $sprite_file = $a->spriteFile();
-
+        $path = $a->is_private
+            ? route('appearance_sprite', ['appearance' => $a])
+            : $sprite_file->getFullUrl($double_size ? Appearance::DOUBLE_SIZE_CONVERSION : '');
         return [
-            'path' => $sprite_file->getFullUrl(),
+            'path' => $path,
             'aspect_ratio' => $sprite_file->getCustomProperty('aspect_ratio', [1, 1]),
         ];
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="MajorChange",
+     *   type="object",
+     *   description="The details for the major change entry",
+     *   required={
+     *     "id",
+     *     "reason",
+     *     "appearance",
+     *     "user",
+     *     "createdAt",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="id",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/OneBasedId")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="reason",
+     *     type="string",
+     *     description="The reason for the change",
+     *     example="Updated coat colors"
+     *   ),
+     *   @OA\Property(
+     *     property="appearance",
+     *     description="The appearance the change was made on",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/PreviewAppearance")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="user",
+     *     description="The identifier for the user who created the appearance",
+     *     nullable=true,
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/BarePublicUser")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="createdAt",
+     *     ref="#/components/schemas/IsoStandardDate"
+     *   ),
+     * )
+     * @param  MajorChange  $mc
+     * @param  bool  $is_staff
+     * @return array
+     */
+    public static function mapMajorChange(MajorChange $mc, bool $is_staff): array
+    {
+        return [
+            'id' => $mc->id,
+            'reason' => $mc->reason,
+            'appearance' => ColorGuideHelper::mapPreviewAppearance($mc->appearance),
+            'user' => $is_staff ? $mc->user->toArray() : null,
+            'created_at' => $mc->created_at->toISOString(),
+        ];
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="CommonAppearance",
+     *   type="object",
+     *   description="Common properties of the two main Appearance schemas",
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/AutocompleteAppearance"),
+     *     @OA\Schema(
+     *       type="object",
+     *       required={
+     *         "order",
+     *         "hasCutieMarks"
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="order",
+     *         ref="#/components/schemas/Order"
+     *       ),
+     *       @OA\Property(
+     *         property="hasCutieMarks",
+     *         type="boolean",
+     *         description="Indicates whether there are any cutie marks tied to this appearance"
+     *       )
+     *     )
+     *   }
+     * )
+     * @OA\Schema(
+     *   schema="SlimAppearanceOnly",
+     *   type="object",
+     *   description="Represents properties that belong to the slim appearance object only",
+     *   required={
+     *     "characterTagNames",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="characterTagNames",
+     *     type="array",
+     *     minItems=0,
+     *     @OA\Items(
+     *       type="string"
+     *     )
+     *   )
+     * )
+     * @OA\Schema(
+     *   schema="SlimAppearance",
+     *   type="object",
+     *   description="A less heavy version of the regular Appearance schema",
+     *   required={
+     *     "characterTagNames",
+     *   },
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
+     *     @OA\Schema(ref="#/components/schemas/SlimAppearanceOnly")
+     *   }
+     * )
+     * @OA\Schema(
+     *   schema="AppearanceOnly",
+     *   type="object",
+     *   description="Represents properties that belong to the full appearance object only",
+     *   required={
+     *     "created_at",
+     *     "tags",
+     *     "notes",
+     *     "colorGroups",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="created_at",
+     *     ref="#/components/schemas/IsoStandardDate",
+     *   ),
+     *   @OA\Property(
+     *     property="notes",
+     *     type="string",
+     *     format="html",
+     *     nullable=true,
+     *     example="Far legs use darker colors. Based on <strong>S2E21</strong>."
+     *   ),
+     *   @OA\Property(
+     *     property="tags",
+     *     type="array",
+     *     minItems=0,
+     *     @OA\Items(ref="#/components/schemas/SlimGuideTag")
+     *   )
+     * )
+     * @OA\Schema(
+     *   schema="Appearance",
+     *   type="object",
+     *   description="Represents an entry in the color guide",
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
+     *     @OA\Schema(ref="#/components/schemas/AppearanceOnly"),
+     *     @OA\Schema(ref="#/components/schemas/ListOfColorGroups")
+     *   }
+     * )
+     * @param  Appearance  $a
+     * @param  bool  $compact
+     *
+     * @return array
+     */
+    public static function mapAppearance(Appearance $a, bool $compact = false, bool $double_size_sprite = false): array
+    {
+        static $is_staff = null;
+        if ($is_staff === null) {
+            $is_staff = Permission::sufficient(Role::Staff());
+        }
+
+        $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a, $double_size_sprite), [
+            'order' => $a->order,
+            'has_cutie_marks' => $a->cutiemarks()->count() !== 0,
+        ]);
+
+        if (!$compact) {
+            $show_synonyms = false;
+            if ($is_staff) {
+                $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags());
+                $show_synonyms = !$hide_synonym_tags;
+            }
+
+            $tag_mapper = fn (Tag $t) => self::mapTag($t);
+            $appearance['created_at'] = $a->created_at->toISOString();
+            $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
+            $appearance['notes'] = $a->notes_rend;
+            $appearance['color_groups'] = self::getColorGroups($a);
+        } else {
+            $appearance['character_tag_names'] = $a->tags
+                ->filter(fn (Tag $tag) => $tag->type === TagType::Character)
+                ->flatMap(fn (Tag $tag) => [$tag, ...$tag->synonymTo])
+                ->pluck('name');
+        }
+
+        return $appearance;
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="DetailedAppearance",
+     *   type="object",
+     *   description="An appearance object containing the full range of information available",
+     *   additionalProperties=false,
+     *   allOf={
+     *     @OA\Schema(ref="#/components/schemas/Appearance"),
+     *     @OA\Schema(
+     *       type="object",
+     *       required={
+     *         "cutie_marks",
+     *       },
+     *       additionalProperties=false,
+     *       @OA\Property(
+     *         property="cutieMarks",
+     *         type="array",
+     *         description="The list of cutie mark object associated iwth this appearance",
+     *         @OA\Items(ref="#/components/schemas/CutieMark")
+     *       )
+     *     )
+     *   }
+     * )
+     * @param  Appearance  $a
+     *
+     * @return array
+     */
+    public static function mapDetailedAppearance(Appearance $a): array
+    {
+        $appearance = array_merge(self::mapAppearance($a, false, true), [
+            'cutie_marks' => $a->cutiemarks()->chunkMap(
+                fn (CutieMark $cutiemark) => self::mapCutiemark($cutiemark)
+            )->toArray(),
+        ]);
+
+        return $appearance;
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="Color",
+     *   type="object",
+     *   description="A color entry",
+     *   required={
+     *     "id",
+     *     "label",
+     *     "order",
+     *     "hex"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="id",
+     *     ref="#/components/schemas/OneBasedId"
+     *   ),
+     *   @OA\Property(
+     *     property="label",
+     *     type="string",
+     *     description="The name of the color",
+     *     example="Fill"
+     *   ),
+     *   @OA\Property(
+     *     property="order",
+     *     ref="#/components/schemas/Order"
+     *   ),
+     *   @OA\Property(
+     *     property="hex",
+     *     type="string",
+     *     format="#RRGGBB",
+     *     description="The color value in uppercase hexadecimal form, including a # prefix",
+     *     example="#6181B6"
+     *   )
+     * )
+     * @param  Color  $c
+     *
+     * @return array
+     */
+    public static function mapColor(Color $c)
+    {
+        return [
+            'id' => $c->id,
+            'label' => $c->label,
+            'order' => $c->order,
+            'hex' => $c->hex,
+        ];
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="FavMe",
+     *   type="string",
+     *   description="DeviantArt's shorthand URL format, which typically takes the form of `http://fav.me/d######`, where `#` is the base-36 encoded version of the deviation's numerical ID, found at the end of the deviation URL. This value includes the leading `d`.",
+     *   minLength=7,
+     *   maxLength=7
+     * )
+     * @OA\Schema(
+     *   schema="CutieMarkRotation",
+     *   type="number",
+     *   description="The number of degrees to rotate the cutie mark image on the UI to better reflect its potion in the preview. Purely for cosmetic use.",
+     *   minimum=-45,
+     *   maximum=45,
+     *   default=0
+     * )
+     * @OA\Schema(
+     *   schema="CutieMark",
+     *   type="object",
+     *   description="A cutie mark entry",
+     *   required={
+     *     "id",
+     *     "viewUrl",
+     *     "facing",
+     *     "rotation",
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="id",
+     *     ref="#/components/schemas/OneBasedId"
+     *   ),
+     *   @OA\Property(
+     *     property="viewUrl",
+     *     type="string",
+     *     description="The URL used for displaying the cutie mark SVG file.",
+     *   ),
+     *   @OA\Property(
+     *     property="facing",
+     *     nullable=true,
+     *     description="The direction the character is facing when this cutie mark should be used. `null` is used to indicate when the image is the same on both sides, meaning it's symmetrical.",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/CutieMarkFacing")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="favMe",
+     *     description="Optional link to a deviation on DeviantArt that is the original source of this cutie mark vector, for the sake of giving credit.",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/FavMe")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="rotation",
+     *     ref="#/components/schemas/CutieMarkRotation"
+     *   ),
+     *   @OA\Property(
+     *     property="contributor",
+     *     description="Optional details of the DeviantArt user who contributed this cutie mark.",
+     *     allOf={
+     *       @OA\Schema(ref="#/components/schemas/PublicUser")
+     *     }
+     *   ),
+     *   @OA\Property(
+     *     property="label",
+     *     type="string",
+     *     description="Optional label in case the cutie mark warrants additional information, e.g. only used for certain kind of characters. Should be given higher priority on the UI than the facing information.",
+     *   ),
+     * )
+     *
+     * @param  CutieMark  $cm
+     *
+     * @return array
+     */
+    public static function mapCutieMark(CutieMark $cm)
+    {
+        $cutie_mark = [
+            'id' => $cm->id,
+            'facing' => $cm->facing,
+            'fav_me' => $cm->favme,
+            'rotation' => $cm->rotation,
+            'view_url' => $cm->vectorFile()->getFullUrl(),
+        ];
+        if ($cm->contributor_id) {
+            /** @var $contributor DeviantartUser */
+            $contributor = $cm->contributor()->first();
+            if ($contributor !== null) {
+                $contributing_user = $contributor->user()->first();
+                if ($contributing_user !== null) {
+                    $cutie_mark['contributor'] = $contributing_user->toArray();
+                }
+            }
+        }
+        if ($cm->label) {
+            $cutie_mark['label'] = $cm->label;
+        }
+        return $cutie_mark;
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="SlimGuideTag",
+     *   type="object",
+     *   additionalProperties=false,
+     *   required={
+     *     "id",
+     *     "name",
+     *   },
+     *   @OA\Property(
+     *     property="id",
+     *     ref="#/components/schemas/OneBasedId"
+     *   ),
+     *   @OA\Property(
+     *     property="name",
+     *     type="string",
+     *     minLength=1,
+     *     maxLength=255,
+     *     example="mane six",
+     *     description="Tag name (all lowercase)"
+     *   ),
+     *   @OA\Property(
+     *     property="type",
+     *     ref="#/components/schemas/TagType"
+     *   ),
+     *   @OA\Property(
+     *     property="synonymOf",
+     *     ref="#/components/schemas/OneBasedId"
+     *   ),
+     * )
+     * @param  Tag  $t
+     *
+     * @return array
+     */
+    public static function mapTag(Tag $t)
+    {
+        $tag = [
+            'id' => $t->id,
+            'name' => $t->name,
+        ];
+        if ($t->type !== null) {
+            $tag['type'] = $t->type;
+        }
+        if ($t->synonym_of !== null) {
+            $tag['synonym_of'] = $t->synonym_of;
+        }
+        return $tag;
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="ColorGroup",
+     *   type="object",
+     *   description="Groups a list of colors",
+     *   required={
+     *     "id",
+     *     "label",
+     *     "order",
+     *     "colors"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="id",
+     *     ref="#/components/schemas/OneBasedId"
+     *   ),
+     *   @OA\Property(
+     *     property="label",
+     *     type="string",
+     *     description="The name of the color group",
+     *     example="Coat"
+     *   ),
+     *   @OA\Property(
+     *     property="order",
+     *     ref="#/components/schemas/Order"
+     *   ),
+     *   @OA\Property(
+     *     property="colors",
+     *     type="array",
+     *     minItems=1,
+     *     @OA\Items(ref="#/components/schemas/Color"),
+     *     description="The list of colors inside this group"
+     *   )
+     * )
+     * @param  ColorGroup  $cg
+     *
+     * @return array
+     */
+    public static function mapColorGroup(ColorGroup $cg)
+    {
+        $colors = $cg->colors ?: $cg->colors()->get();
+
+        return [
+            'id' => $cg->id,
+            'label' => $cg->label,
+            'order' => $cg->order,
+            'colors' => $colors->map(fn (Color $c) => self::mapColor($c)),
+        ];
+    }
+
+    public static function getColorGroups(Appearance $a): array
+    {
+        $color_groups = $a->colorGroups ?: $a->colorGroups()->with('colors')->get();
+        return $color_groups->map(fn (ColorGroup $cg) => ColorGuideHelper::mapColorGroup($cg))->toArray();
     }
 }

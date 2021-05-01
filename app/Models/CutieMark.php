@@ -9,9 +9,11 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Cutiemark extends Model implements HasMedia
+class CutieMark extends Model implements HasMedia
 {
     use InteractsWithMedia;
+
+    protected $table = 'cutiemarks';
 
     const CUTIEMARKS_COLLECTION = 'cutiemarks';
 
@@ -28,7 +30,9 @@ class Cutiemark extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $disk = $this->appearance()->first()->owner_id === null ? 'public' : 'local';
+        /** @var Appearance $appearance */
+        $appearance = $this->appearance()->first();
+        $disk = $appearance->is_private ? 'local' : 'public';
         $this->addMediaCollection(self::CUTIEMARKS_COLLECTION)
             ->singleFile()
             ->acceptsMimeTypes(['image/svg','image/svg+xml'])

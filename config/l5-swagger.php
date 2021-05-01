@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AvatarProvider;
+use App\Enums\CutieMarkFacing;
 use App\Enums\GuideName;
 use App\Enums\FullGuideSortField;
 use App\Enums\MlpGeneration;
@@ -243,6 +244,7 @@ return [
             'VECTOR_APPS' => VectorApp::getValues(),
             'ISO_STANDARD_DATE' => Core::carbonToIso(new Carbon()),
             'GUIDE_SORT_FIELDS' => FullGuideSortField::getValues(),
+            'CUTIE_MARK_FACINGS' => CutieMarkFacing::getValues(),
         ],
     ],
 ];

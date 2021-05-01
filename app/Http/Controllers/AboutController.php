@@ -122,7 +122,7 @@ class AboutController extends Controller
     }
 
     /**
-     * An undocumented endpoint for development use that just loads forever
+     * An undocumented endpoint for development use that just loads "forever"
      *
      * nginx will likely terminate the connection sooner though
      *

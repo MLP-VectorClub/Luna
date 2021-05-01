@@ -18,9 +18,6 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-/**
- * @property GuideName $guide
- */
 class Appearance extends Model implements Sortable, HasMedia
 {
     use InteractsWithMedia, SortableTrait;
@@ -79,7 +76,7 @@ class Appearance extends Model implements Sortable, HasMedia
 
     public function cutiemarks()
     {
-        return $this->hasMany(Cutiemark::class);
+        return $this->hasMany(CutieMark::class);
     }
 
     public function colorGroups()
@@ -132,6 +129,11 @@ class Appearance extends Model implements Sortable, HasMedia
             $cached_data = $this->getPreviewData($delimiter);
         }
         return explode($delimiter, $cached_data);
+    }
+
+    public function getIsPrivateAttribute(): bool
+    {
+        return $this->owner_id !== null;
     }
 
     protected function getPreviewData(string $delimiter): string

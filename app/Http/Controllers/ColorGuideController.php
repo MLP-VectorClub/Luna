@@ -12,10 +12,7 @@ use App\Utils\Core;
 use App\Utils\Permission;
 use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Annotations as OA;
 
@@ -41,66 +38,6 @@ use OpenApi\Annotations as OA;
  */
 class ColorGuideController extends Controller
 {
-    /**
-     * @OA\Schema(
-     *   schema="MajorChange",
-     *   type="object",
-     *   description="The details for the major change entry",
-     *   required={
-     *     "id",
-     *     "reason",
-     *     "appearance",
-     *     "user",
-     *     "createdAt",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/OneBasedId")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="reason",
-     *     type="string",
-     *     description="The reason for the change",
-     *     example="Updated coat colors"
-     *   ),
-     *   @OA\Property(
-     *     property="appearance",
-     *     description="The appearance the change was made on",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/PreviewAppearance")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="user",
-     *     description="The identifier for the user who created the appearance",
-     *     nullable=true,
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/BarePublicUser")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="createdAt",
-     *     ref="#/components/schemas/IsoStandardDate"
-     *   ),
-     * )
-     * @param  MajorChange  $mc
-     * @param  bool  $is_staff
-     * @return array
-     */
-    public static function mapMajorChange(MajorChange $mc, bool $is_staff): array
-    {
-        return [
-            'id' => $mc->id,
-            'reason' => $mc->reason,
-            'appearance' => ColorGuideHelper::mapPreviewAppearance($mc->appearance),
-            'user' => $is_staff ? $mc->user->toArray() : null,
-            'created_at' => $mc->created_at->toISOString(),
-        ];
-    }
-
     /**
      * @OA\Get(
      *   path="/color-guide",
@@ -231,7 +168,7 @@ class ColorGuideController extends Controller
             ->paginate($changes_per_page, ['major_changes.*']);
 
         $changes = Collection::make($pagination->items())
-            ->map(fn (MajorChange $change) => self::mapMajorChange($change, $is_staff));
+            ->map(fn (MajorChange $change) => ColorGuideHelper::mapMajorChange($change, $is_staff));
 
         return response()->camelJson([
             'changes' => $changes,
