@@ -2,31 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\AvatarProvider;
-use App\Enums\Role;
-use App\Enums\SocialProvider;
-use App\Enums\UserPrefKey;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\SocialAuthRequest;
-use App\Models\DeviantartUser;
-use App\Models\DiscordMember;
-use App\Models\User;
-use App\Rules\StrictEmail;
-use App\Rules\Username;
 use App\Utils\AccountHelper;
-use App\Utils\UserPrefHelper;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use Laravel\Socialite\Facades\Socialite;
-use OpenApi\Annotations as OA;
-use Valorin\Pwned\Pwned;
 
 class SignupController extends Controller
 {
@@ -113,5 +93,10 @@ class SignupController extends Controller
 
         $user = AccountHelper::create($request->all());
         return AccountHelper::authResponse($request, $user, true);
+    }
+
+    public function viaSocialite()
+    {
+        abort(403, "Social signup is not implemented yet");
     }
 }

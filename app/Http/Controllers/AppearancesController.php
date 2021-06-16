@@ -163,9 +163,9 @@ class AppearancesController extends Controller
 
         $guide_name = new GuideName($valid['guide']);
         $appearances_per_page = $valid['size'] ?? UserPrefHelper::get(
-                $request->user(),
-                UserPrefKey::ColorGuide_ItemsPerPage()
-            );
+            $request->user(),
+            UserPrefKey::ColorGuide_ItemsPerPage()
+        );
         $query = !empty($valid['q']) ? $valid['q'] : null;
         $page = $valid['page'] ?? 1;
         $pagination = ColorGuideHelper::searchGuide($page, $appearances_per_page, $guide_name, $query);
@@ -607,7 +607,8 @@ class AppearancesController extends Controller
         $page = 1;
         $autocomplete_count = 5;
         $pagination = ColorGuideHelper::searchGuide($page, $autocomplete_count, $guide_name, $query);
-        $results = $pagination->getCollection()->map(fn (Appearance $a
+        $results = $pagination->getCollection()->map(fn (
+            Appearance $a
         ) => ColorGuideHelper::mapAutocompleteAppearance($a));
         return response()->camelJson($results);
     }
