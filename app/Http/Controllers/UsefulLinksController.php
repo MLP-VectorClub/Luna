@@ -115,6 +115,7 @@ class UsefulLinksController extends Controller
         /** @var $user User */
         $user = Auth::user();
         $available_roles = array_filter(Role::getInstances(), fn ($el) => Permission::sufficient($el, $user->role));
+        $available_roles[] = 'guest';
 
         $links = UsefulLink::ordered()->whereIn('minrole', $available_roles)->get()
             ->map(fn (UsefulLink $usefulLink) => $this->mapUsefulLink($usefulLink));

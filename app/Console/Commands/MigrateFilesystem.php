@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Middleware\TransformApiHeaders;
 use App\Models\Appearance;
 use App\Models\CutieMark;
 use App\Models\User;
@@ -39,8 +40,7 @@ class MigrateFilesystem extends Command
     private const CATEGORY_CUTIEMARKS = 'cutiemarks';
     private const CATEGORY_SPRITES = 'sprites';
 
-    private int $uploader_id;
-    private bool $wipe;
+    private int $uploader_id = 1;
 
     /**
      * Execute the console command.
@@ -49,16 +49,23 @@ class MigrateFilesystem extends Command
      */
     public function handle()
     {
-        $this->wipe = (bool) $this->option('wipe');
-        if ($this->wipe) {
+        $wipe = (bool) $this->option('wipe');
+        if ($wipe) {
             $this->warn('Wipe option enabled, data will be wiped / overwritten as necessary');
         }
 
-        $this->uploader_id = $this->hasArgument('uid') ? (int) $this->argument('uid') : 1;
+        if ($this->hasArgument('uid')) {
+            $uploader_id_arg = $this->argument('uid');
+            if (!is_numeric($uploader_id_arg)) {
+                $this->error("uid argument must be a valid numeric value, got ".var_export($uploader_id_arg, true));
+                return 1;
+            }
+            $this->uploader_id = (int) $uploader_id_arg;
+        }
         $user = User::find($this->uploader_id);
         if (!$user) {
             $this->error("Could not find uploader user (id {$this->uploader_id}) in database");
-            return 1;
+            return 2;
         }
 
         $this->info("Imported files will be uploaded as {$user->name} (id $user->id)");
@@ -66,18 +73,18 @@ class MigrateFilesystem extends Command
         $folder = $this->argument('folder');
         if (empty($folder)) {
             $this->error("The folder argument is required!");
-            return 2;
+            return 3;
         }
         if (!is_dir($folder)) {
             $this->error("$folder must be a folder!");
-            return 3;
+            return 4;
         }
 
         $segments = explode(DIRECTORY_SEPARATOR, trim($folder, DIRECTORY_SEPARATOR));
         $last_segment = $segments[count($segments) - 1];
         if ($last_segment !== 'fs') {
             $this->error("$folder must point to the 'fs' directory of the old application!");
-            return 4;
+            return 5;
         }
 
         $this->line('Scouting for importable data…');
@@ -95,7 +102,7 @@ class MigrateFilesystem extends Command
             }
         }
 
-        if (!$this->wipe) {
+        if (!$wipe) {
             $options = array_map(function (string $key) use ($files) {
                 $file_count = count($files[$key]);
                 return sprintf("%s (%s %s)", $key, $file_count, Str::plural('file', $file_count));
