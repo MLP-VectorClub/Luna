@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,8 +13,8 @@ use OpenApi\Annotations as OA;
  *   example="pony"
  * )
  */
-final class MlpGeneration extends Enum
+enum MlpGeneration: string
 {
-    const FriendshipIsMagic = 'pony';
-    const PonyLife = 'pl';
+    case FriendshipIsMagic = 'pony';
+    case PonyLife = 'pl';
 }

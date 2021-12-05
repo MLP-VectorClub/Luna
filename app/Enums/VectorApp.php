@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -17,9 +16,10 @@ use OpenApi\Annotations as OA;
  * @method static self Inkscape()
  * @method static self Ponyscape()
  */
-final class VectorApp extends Enum
+enum VectorApp: string
 {
-    const Illustrator = 'illustrator';
-    const Inkscape = 'inkscape';
-    const Ponyscape = 'ponyscape';
+    use ValuableEnum;
+    case Illustrator = 'illustrator';
+    case Inkscape = 'inkscape';
+    case Ponyscape = 'ponyscape';
 }

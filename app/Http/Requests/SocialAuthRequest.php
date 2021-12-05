@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\SocialProvider;
-use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -26,14 +25,14 @@ class SocialAuthRequest extends FormRequest
     public function validator()
     {
         return Validator::make(['provider' => $this->route('provider')], [
-            'provider' => ['required', new EnumValue(SocialProvider::class)],
+            'provider' => ['required', Rule::in(SocialProvider::values())],
         ]);
     }
 
     /**
      * @inheritDoc
      * @return array = [
-     *     'provider' => SocialProvider::getValues(),
+     *     'provider' => SocialProvider::cases(),
      * ]
      */
     public function validated()

@@ -10,7 +10,6 @@ use App\Models\MajorChange;
 use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
 use App\Utils\Permission;
-use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
@@ -74,7 +73,7 @@ class ColorGuideController extends Controller
      */
     public function index()
     {
-        $entry_counts = array_reduce(GuideName::getValues(), function (array $acc, string $value) {
+        $entry_counts = array_reduce(GuideName::values(), function (array $acc, string $value) {
             $acc[$value] = Appearance::where('guide', $value)->count();
             return $acc;
         }, []);
@@ -147,18 +146,18 @@ class ColorGuideController extends Controller
     public function majorChanges(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', new EnumValue(GuideName::class)],
+            'guide' => ['required', Rule::in(GuideName::values())],
             'size' => 'sometimes|numeric|between:1,15',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
         $query = MajorChange::with('appearance');
-        $is_staff = Permission::sufficient(Role::Staff());
+        $is_staff = Permission::sufficient(Role::Staff);
         if ($is_staff) {
             $query = $query->with('user');
         }
 
-        $guide = new GuideName($valid['guide']);
+        $guide = GuideName::from($valid['guide']);
         $page = $valid['page'] ?? 1;
         $changes_per_page = $valid['size'] ?? 9;
         $pagination = $query

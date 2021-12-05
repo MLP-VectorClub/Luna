@@ -8,7 +8,6 @@ use App\Models\DeviantartUser;
 use App\Models\User;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
-use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -52,7 +51,7 @@ class UserPrefsController extends Controller
     {
 
         $valid = Validator::make($request->all(), [
-            'keys' => ['sometimes', 'required', 'array', 'distinct', 'min:1', Rule::in(UserPrefKey::getValues())],
+            'keys' => ['sometimes', 'required', 'array', 'distinct', 'min:1', Rule::in(UserPrefKey::values())],
         ])->validate();
 
         /** @var User $user */

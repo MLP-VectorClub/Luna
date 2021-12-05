@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -15,9 +14,10 @@ use OpenApi\Annotations as OA;
  *   example="label"
  * )
  */
-final class FullGuideSortField extends Enum
+enum FullGuideSortField: string
 {
-    const Alphabetically = 'label';
-    const DateAdded = 'added';
-    const Relevance = 'relevance';
+    use ValuableEnum;
+    case Alphabetically = 'label';
+    case DateAdded = 'added';
+    case Relevance = 'relevance';
 }

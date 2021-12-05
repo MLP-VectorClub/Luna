@@ -32,16 +32,16 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    SocialProvider::DeviantArt => [
+    SocialProvider::DeviantArt->value => [
         'client_id' => env('DEVIANTART_CLIENT_ID'),
         'client_secret' => env('DEVIANTART_CLIENT_SECRET'),
-        'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::DeviantArt())
+        'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord->value)
     ],
 
-    SocialProvider::Discord => [
+    SocialProvider::Discord->value => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
-        'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord())
+        'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord->value)
     ],
 
 ];

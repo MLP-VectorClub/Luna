@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,8 +13,9 @@ use OpenApi\Annotations as OA;
  *   example=300
  * )
  */
-final class SpriteSize extends Enum
+enum SpriteSize: int
 {
-    const Default = 300;
-    const Double = 600;
+    use ValuableEnum;
+    case Default = 300;
+    case Double = 600;
 }

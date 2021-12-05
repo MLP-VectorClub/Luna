@@ -54,7 +54,7 @@ class GenerateEnumDocblocks extends Command
      */
     protected function generateUserPrefs(string $file_loc): int
     {
-        $properties = Collection::make(UserPrefKey::getInstances())->map(function (UserPrefKey $key) {
+        $properties = Collection::make(UserPrefKey::cases())->map(function (UserPrefKey $key) {
             $type_data = UserPrefHelper::type($key);
             $property = sprintf(" *     property=\"%s\",\n", $key->value);
             $type = '';
@@ -129,7 +129,7 @@ PHP;
      */
     protected function generateGuideEntryCounts(string $file_loc): int
     {
-        $properties = Collection::make(GuideName::getInstances())->map(function (GuideName $key) {
+        $properties = Collection::make(GuideName::cases())->map(function (GuideName $key) {
             $property = sprintf(" *     property=\"%s\",\n", Str::camel($key->value));
             $example = random_int(0, 300);
             $comment = <<<PHP

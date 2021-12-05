@@ -229,7 +229,7 @@ class UsersController extends Controller
      */
     public function list(Request $request, User $user): JsonResponse
     {
-        if (!perm(Role::Staff())) {
+        if (!perm(Role::Staff)) {
             abort(401);
         }
 

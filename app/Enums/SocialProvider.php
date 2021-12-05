@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,8 +13,9 @@ use OpenApi\Annotations as OA;
  *   example="deviantart"
  * )
  */
-final class SocialProvider extends Enum
+enum SocialProvider: string
 {
-    const DeviantArt = 'deviantart';
-    const Discord = 'discord';
+    use ValuableEnum;
+    case DeviantArt = 'deviantart';
+    case Discord = 'discord';
 }

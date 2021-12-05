@@ -203,8 +203,8 @@ class ShowController extends Controller
     {
         $valid = Validator::make($request->all(), [
             'types' => 'required|array|min:1',
-            'types.*' => ['string', new EnumValue(ShowType::class)],
-            'order' =>  ['required', 'string', new EnumValue(ShowOrdering::class)],
+            'types.*' => ['string', Rule::in(ShowType::values())],
+            'order' =>  ['required', 'string', Rule::in(ShowOrdering::values())],
             'page' => 'sometimes|required|int|min:1',
             'size' => 'sometimes|numeric|between:1,10',
         ])->validate();

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\EloquentFixes\DBAL\Types;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
+use Doctrine\DBAL\Platforms\PostgreSQL94Platform;
 use Doctrine\DBAL\Types\TextType;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
@@ -28,9 +28,9 @@ final class MlpGenerationType extends TextType
     /**
      * {@inheritdoc}
      */
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform)
     {
-        if ($platform instanceof PostgreSqlPlatform === false) {
+        if ($platform instanceof PostgreSQL94Platform === false) {
             throw new RuntimeException('You are meant to run this site with a PostgreSQL database');
         }
 

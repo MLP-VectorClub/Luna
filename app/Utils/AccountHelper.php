@@ -74,7 +74,7 @@ class AccountHelper
 
         // First user will receive developer role
         if (!$have_users) {
-            $data['role'] = Role::Developer();
+            $data['role'] = Role::Developer;
         }
 
         // Hash password
@@ -149,9 +149,9 @@ class AccountHelper
             }
             $app_user = self::create([
                 'name' => $data->getNickname(),
-                'role' => Role::User(),
+                'role' => Role::User,
             ]);
-            UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider(), AvatarProvider::DeviantArt());
+            UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider, AvatarProvider::DeviantArt);
 
             $record = new DeviantartUser();
             $record->id = $data->getId();
@@ -186,9 +186,9 @@ class AccountHelper
             $app_user = self::create([
                 'name' => $data->getName(),
                 'email' => $data->getEmail(),
-                'role' => Role::User(),
+                'role' => Role::User,
             ]);
-            UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider(), AvatarProvider::Discord());
+            UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider, AvatarProvider::Discord);
 
             $record = new DiscordMember();
             $record->id = $data->getId();
@@ -221,10 +221,10 @@ class AccountHelper
         $validated = $request->validated();
         $driver = Socialite::driver($validated['provider'])->stateless();
         switch ($validated['provider']) {
-            case SocialProvider::DeviantArt():
+            case SocialProvider::DeviantArt:
                 $driver->setScopes('user browse');
                 break;
-            case SocialProvider::Discord():
+            case SocialProvider::Discord:
                 $driver->setScopes(['identify', 'email']);
                 break;
         }
@@ -241,10 +241,10 @@ class AccountHelper
 
         DB::transaction(function () use ($validated, $data, $register, &$user) {
             switch ($validated['provider']) {
-                case SocialProvider::DeviantArt():
+                case SocialProvider::DeviantArt:
                     $user = self::socialDeviantart($data, $register);
                     break;
-                case SocialProvider::Discord():
+                case SocialProvider::Discord:
                     $user = self::socialDiscord($data, $register);
                     break;
                 default:

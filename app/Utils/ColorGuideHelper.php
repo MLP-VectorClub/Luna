@@ -36,61 +36,61 @@ use OpenApi\Annotations as OA;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function is_array;
 
+$GROUP_TAG_IDS_ASSOC = [
+    GuideName::FriendshipIsMagic->value => [
+        664 => 'Main Cast',
+        45 => 'Cutie Mark Crusaders',
+        59 => 'Royalty',
+        666 => 'Student Six',
+        9 => 'Antagonists',
+        44 => 'Foals',
+        78 => 'Original Characters',
+        1 => 'Unicorns',
+        3 => 'Pegasi',
+        2 => 'Earth Ponies',
+        10 => 'Pets',
+        437 => 'Non-pony Characters',
+        385 => 'Creatures',
+        96 => 'Outfits & Clothing',
+        // add other tags here
+        64 => 'Objects',
+        0 => 'Other',
+    ],
+    GuideName::EquestriaGirls->value => [
+        76 => 'Humans',
+        0 => 'Other',
+    ],
+    GuideName::PonyLife->value => [
+        664 => 'Main Cast',
+        45 => 'Cutie Mark Crusaders',
+        59 => 'Royalty',
+        666 => 'Student Six',
+        9 => 'Antagonists',
+        44 => 'Foals',
+        78 => 'Original Characters',
+        1 => 'Unicorns',
+        3 => 'Pegasi',
+        2 => 'Earth Ponies',
+        10 => 'Pets',
+        437 => 'Non-pony Characters',
+        385 => 'Creatures',
+        96 => 'Outfits & Clothing',
+        // add other tags here
+        64 => 'Objects',
+        0 => 'Other',
+    ],
+];
+
 class ColorGuideHelper
 {
-    public const GROUP_TAG_IDS_ASSOC = [
-        GuideName::FriendshipIsMagic => [
-            664 => 'Main Cast',
-            45 => 'Cutie Mark Crusaders',
-            59 => 'Royalty',
-            666 => 'Student Six',
-            9 => 'Antagonists',
-            44 => 'Foals',
-            78 => 'Original Characters',
-            1 => 'Unicorns',
-            3 => 'Pegasi',
-            2 => 'Earth Ponies',
-            10 => 'Pets',
-            437 => 'Non-pony Characters',
-            385 => 'Creatures',
-            96 => 'Outfits & Clothing',
-            // add other tags here
-            64 => 'Objects',
-            0 => 'Other',
-        ],
-        GuideName::EquestriaGirls => [
-            76 => 'Humans',
-            0 => 'Other',
-        ],
-        GuideName::PonyLife => [
-            664 => 'Main Cast',
-            45 => 'Cutie Mark Crusaders',
-            59 => 'Royalty',
-            666 => 'Student Six',
-            9 => 'Antagonists',
-            44 => 'Foals',
-            78 => 'Original Characters',
-            1 => 'Unicorns',
-            3 => 'Pegasi',
-            2 => 'Earth Ponies',
-            10 => 'Pets',
-            437 => 'Non-pony Characters',
-            385 => 'Creatures',
-            96 => 'Outfits & Clothing',
-            // add other tags here
-            64 => 'Objects',
-            0 => 'Other',
-        ],
-    ];
-
     public static function mapGuideToMlpGeneration(GuideName $guide_name): ?MlpGeneration
     {
         static $guide_map;
 
         if (!$guide_map) {
             $guide_map = [
-                GuideName::FriendshipIsMagic()->value => MlpGeneration::FriendshipIsMagic(),
-                GuideName::PonyLife()->value => MlpGeneration::PonyLife(),
+                GuideName::FriendshipIsMagic->value => MlpGeneration::FriendshipIsMagic,
+                GuideName::PonyLife->value => MlpGeneration::PonyLife,
             ];
         }
 
@@ -259,13 +259,14 @@ class ColorGuideHelper
         FullGuideSortField $sort_field,
         $appearances
     ): array {
+        global $GROUP_TAG_IDS_ASSOC;
         switch ($sort_field->value) {
             case FullGuideSortField::DateAdded:
                 // No grouping when sorting by date
                 return [];
             case FullGuideSortField::Relevance:
                 $group_items = [];
-                $ids_in_order = new Collection(array_keys(self::GROUP_TAG_IDS_ASSOC[$guide->value]));
+                $ids_in_order = new Collection(array_keys($GROUP_TAG_IDS_ASSOC[$guide->value]));
                 foreach ($appearances as $appearance) {
                     $tags = $appearance->tags->keyBy(fn (Tag $tag) => $tag->id);
                     $fit_somewhere = $ids_in_order->some(function (int $id) use ($tags, $appearance, &$group_items) {
@@ -282,7 +283,7 @@ class ColorGuideHelper
                 return $ids_in_order
                     ->filter(fn (int $id) => isset($group_items[$id]))
                     ->map(fn (int $id) => [
-                        'name' => self::GROUP_TAG_IDS_ASSOC[$guide->value][$id],
+                        'name' => $GROUP_TAG_IDS_ASSOC[$guide->value][$id],
                         'appearance_ids' => $group_items[$id],
                     ])
                     ->toArray();
@@ -610,7 +611,7 @@ class ColorGuideHelper
     {
         static $is_staff = null;
         if ($is_staff === null) {
-            $is_staff = Permission::sufficient(Role::Staff());
+            $is_staff = Permission::sufficient(Role::Staff);
         }
 
         $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a, $double_size_sprite), [
@@ -621,7 +622,7 @@ class ColorGuideHelper
         if (!$compact) {
             $show_synonyms = false;
             if ($is_staff) {
-                $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags());
+                $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags);
                 $show_synonyms = !$hide_synonym_tags;
             }
 

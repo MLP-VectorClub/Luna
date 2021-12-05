@@ -8,7 +8,7 @@ use App\EloquentFixes\DBAL\Types\MlpGenerationType;
 use Carbon\Carbon;
 use DateInterval;
 use DateTime;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Types\Type;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\App;

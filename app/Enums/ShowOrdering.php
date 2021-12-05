@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,8 +13,9 @@ use OpenApi\Annotations as OA;
  *   example="series",
  * )
  */
-final class ShowOrdering extends Enum
+enum ShowOrdering: string
 {
-    const Series = 'series';
-    const Overall = 'overall';
+    use ValuableEnum;
+    case Series = 'series';
+    case Overall = 'overall';
 }

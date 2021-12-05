@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,9 +13,11 @@ use OpenApi\Annotations as OA;
  *   example="pony"
  * )
  */
-final class GuideName extends Enum
+enum GuideName: string
 {
-    const FriendshipIsMagic = 'pony';
-    const EquestriaGirls = 'eqg';
-    const PonyLife = 'pl';
+    use ValuableEnum;
+
+    case FriendshipIsMagic = 'pony';
+    case EquestriaGirls = 'eqg';
+    case PonyLife = 'pl';
 }

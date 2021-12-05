@@ -18,7 +18,7 @@ final class CitextType extends TextType
     }
 
     /** @inheritDoc */
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform)
     {
         return $platform->getDoctrineTypeMapping(self::CITEXT);
     }

@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,12 +13,12 @@ use OpenApi\Annotations as OA;
  *     example="spec"
  * )
  */
-final class TagType extends Enum
+enum TagType: string
 {
-    const Clothing = 'app';
-    const Category = 'cat';
-    const Gender = 'gen';
-    const Species = 'spec';
-    const Character = 'char';
-    const Warning = 'warn';
+    case Clothing = 'app';
+    case Category = 'cat';
+    case Gender = 'gen';
+    case Species = 'spec';
+    case Character = 'char';
+    case Warning = 'warn';
 }

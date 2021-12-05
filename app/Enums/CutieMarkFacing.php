@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,8 +13,8 @@ use OpenApi\Annotations as OA;
  *   example="left"
  * )
  */
-final class CutieMarkFacing extends Enum
+enum CutieMarkFacing: string
 {
-    const Left = 'left';
-    const Right = 'right';
+    case Left = 'left';
+    case Right = 'right';
 }

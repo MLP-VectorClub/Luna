@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,27 +13,28 @@ use OpenApi\Annotations as OA;
  *     example="cg_itemsperpage"
  * )
  */
-final class UserPrefKey extends Enum
+enum UserPrefKey: string
 {
-    const ColorGuide_ItemsPerPage = 'cg_itemsperpage';
-    const ColorGuide_HideSynonymTags = 'cg_hidesynon';
-    const ColorGuide_HideColorInfo = 'cg_hideclrinfo';
-    const ColorGuide_HideFullListPreviews = 'cg_fulllstprev';
-    const ColorGuide_NutshellNames = 'cg_nutshell';
-    const ColorGuide_DefaultGuide = 'cg_defaultguide';
-    const Personal_AvatarProvider = 'p_avatarprov';
-    const Personal_VectorApp = 'p_vectorapp';
-    const Personal_HideDiscord = 'p_hidediscord';
-    const Personal_PrivatePersonalGuide = 'p_hidepcg';
-    const Personal_HomeLastEpisode = 'p_homelastep';
-    const Episode_HideSynopses = 'ep_hidesynopses';
-    const Episode_NoAppearancePreviews = 'ep_noappprev';
-    const Episode_ReverseStepButtons = 'ep_revstepbtn';
-    const Admin_CanEarnPcgPoints = 'a_pcgearn';
-    const Admin_CanMakePcgAppearances = 'a_pcgmake';
-    const Admin_CanUploadPcgSprites = 'a_pcgsprite';
-    const Admin_CanPostRequests = 'a_postreq';
-    const Admin_CanPostReservations = 'a_postres';
-    const Admin_CanReservePosts = 'a_reserve';
-    const Pcg_Slots = 'pcg_slots';
+    use ValuableEnum;
+    case ColorGuide_ItemsPerPage = 'cg_itemsperpage';
+    case ColorGuide_HideSynonymTags = 'cg_hidesynon';
+    case ColorGuide_HideColorInfo = 'cg_hideclrinfo';
+    case ColorGuide_HideFullListPreviews = 'cg_fulllstprev';
+    case ColorGuide_NutshellNames = 'cg_nutshell';
+    case ColorGuide_DefaultGuide = 'cg_defaultguide';
+    case Personal_AvatarProvider = 'p_avatarprov';
+    case Personal_VectorApp = 'p_vectorapp';
+    case Personal_HideDiscord = 'p_hidediscord';
+    case Personal_PrivatePersonalGuide = 'p_hidepcg';
+    case Personal_HomeLastEpisode = 'p_homelastep';
+    case Episode_HideSynopses = 'ep_hidesynopses';
+    case Episode_NoAppearancePreviews = 'ep_noappprev';
+    case Episode_ReverseStepButtons = 'ep_revstepbtn';
+    case Admin_CanEarnPcgPoints = 'a_pcgearn';
+    case Admin_CanMakePcgAppearances = 'a_pcgmake';
+    case Admin_CanUploadPcgSprites = 'a_pcgsprite';
+    case Admin_CanPostRequests = 'a_postreq';
+    case Admin_CanPostReservations = 'a_postres';
+    case Admin_CanReservePosts = 'a_reserve';
+    case Pcg_Slots = 'pcg_slots';
 }

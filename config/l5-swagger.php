@@ -20,10 +20,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use const OpenApi\UNDEFINED;
 
-$database_roles = Role::getValues();
-$dev_role = Role::Developer();
+$database_roles = Role::cases();
+$dev_role = Role::Developer;
 $client_roles = array_filter($database_roles, fn ($role) => $role !== $dev_role->value);
-$user_pref_keys = UserPrefKey::getValues();
+$user_pref_keys = UserPrefKey::cases();
 
 return [
     'default' => 'default',
@@ -231,20 +231,20 @@ return [
         'constants' => [
             'DATABASE_ROLES' => $database_roles,
             'CLIENT_ROLES' => $client_roles,
-            'AVATAR_PROVIDERS' => AvatarProvider::getValues(),
-            'GUIDE_NAMES' => GuideName::getValues(),
-            'SHOW_TYPES' => ShowType::getValues(),
-            'SHOW_ORDERING' => ShowOrdering::getValues(),
-            'MLP_GENERATIONS' => MlpGeneration::getValues(),
-            'TAG_TYPES' => TagType::getValues(),
+            'AVATAR_PROVIDERS' => AvatarProvider::cases(),
+            'GUIDE_NAMES' => GuideName::cases(),
+            'SHOW_TYPES' => ShowType::cases(),
+            'SHOW_ORDERING' => ShowOrdering::cases(),
+            'MLP_GENERATIONS' => MlpGeneration::cases(),
+            'TAG_TYPES' => TagType::cases(),
             'USER_PREF_KEYS' => $user_pref_keys,
-            'SPRITE_SIZES' => SpriteSize::getValues(),
+            'SPRITE_SIZES' => SpriteSize::cases(),
             'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
-            'SOCIAL_PROVIDERS' => SocialProvider::getValues(),
-            'VECTOR_APPS' => VectorApp::getValues(),
+            'SOCIAL_PROVIDERS' => SocialProvider::cases(),
+            'VECTOR_APPS' => VectorApp::cases(),
             'ISO_STANDARD_DATE' => Core::carbonToIso(new Carbon()),
-            'GUIDE_SORT_FIELDS' => FullGuideSortField::getValues(),
-            'CUTIE_MARK_FACINGS' => CutieMarkFacing::getValues(),
+            'GUIDE_SORT_FIELDS' => FullGuideSortField::cases(),
+            'CUTIE_MARK_FACINGS' => CutieMarkFacing::cases(),
         ],
     ],
 ];

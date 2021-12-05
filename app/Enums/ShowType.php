@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -14,10 +13,11 @@ use OpenApi\Annotations as OA;
  *   example="episode",
  * )
  */
-final class ShowType extends Enum
+enum ShowType: string
 {
-    const Episode = 'episode';
-    const Movie = 'movie';
-    const Short = 'short';
-    const Special = 'special';
+    use ValuableEnum;
+    case Episode = 'episode';
+    case Movie = 'movie';
+    case Short = 'short';
+    case Special = 'special';
 }

@@ -2,10 +2,8 @@
 
 namespace App\Enums\Errors;
 
-use BenSampo\Enum\Enum;
-
-final class ColorGuideErrors extends Enum
+enum ColorGuideErrors: string
 {
-    const ElasticDown = 'colorGuide.elasticDown';
-    const AppearancePrivate = 'colorGuide.appearancePrivate';
+    case ElasticDown = 'colorGuide.elasticDown';
+    case AppearancePrivate = 'colorGuide.appearancePrivate';
 }

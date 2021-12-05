@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -21,12 +20,12 @@ use OpenApi\Annotations as OA;
  *   example="user",
  * )
  */
-final class Role extends Enum
+enum Role: string
 {
-    const User = 'user';
-    const Member = 'member';
-    const Assistant = 'assistant';
-    const Staff = 'staff';
-    const Admin = 'admin';
-    const Developer = 'developer';
+    case User = 'user';
+    case Member = 'member';
+    case Assistant = 'assistant';
+    case Staff = 'staff';
+    case Admin = 'admin';
+    case Developer = 'developer';
 }

@@ -9,10 +9,7 @@ use App\Enums\UserPrefKey;
 use App\Enums\VectorApp;
 use App\Models\User;
 use App\Models\UserPref;
-use BenSampo\Enum\Enum;
-use BenSampo\Enum\Rules\EnumValue;
-use Closure;
-use OpenApi\Annotations as OA;
+use BackedEnum;
 use RuntimeException;
 use TypeError;
 use Validator;
@@ -23,31 +20,31 @@ class UserPrefHelper
     public static function default(UserPrefKey $key)
     {
         switch ($key) {
-            case UserPrefKey::ColorGuide_ItemsPerPage():
+            case UserPrefKey::ColorGuide_ItemsPerPage:
                 return 7;
-            case UserPrefKey::ColorGuide_HideFullListPreviews():
-            case UserPrefKey::Admin_CanEarnPcgPoints():
-            case UserPrefKey::Admin_CanMakePcgAppearances():
-            case UserPrefKey::Admin_CanUploadPcgSprites():
-            case UserPrefKey::Admin_CanPostRequests():
-            case UserPrefKey::Admin_CanPostReservations():
-            case UserPrefKey::Admin_CanReservePosts():
+            case UserPrefKey::ColorGuide_HideFullListPreviews:
+            case UserPrefKey::Admin_CanEarnPcgPoints:
+            case UserPrefKey::Admin_CanMakePcgAppearances:
+            case UserPrefKey::Admin_CanUploadPcgSprites:
+            case UserPrefKey::Admin_CanPostRequests:
+            case UserPrefKey::Admin_CanPostReservations:
+            case UserPrefKey::Admin_CanReservePosts:
                 return true;
-            case UserPrefKey::ColorGuide_HideColorInfo():
-            case UserPrefKey::ColorGuide_HideSynonymTags():
-            case UserPrefKey::ColorGuide_NutshellNames():
-            case UserPrefKey::Personal_HideDiscord():
-            case UserPrefKey::Personal_PrivatePersonalGuide():
-            case UserPrefKey::Personal_HomeLastEpisode():
-            case UserPrefKey::Episode_HideSynopses():
-            case UserPrefKey::Episode_NoAppearancePreviews():
-            case UserPrefKey::Episode_ReverseStepButtons():
+            case UserPrefKey::ColorGuide_HideColorInfo:
+            case UserPrefKey::ColorGuide_HideSynonymTags:
+            case UserPrefKey::ColorGuide_NutshellNames:
+            case UserPrefKey::Personal_HideDiscord:
+            case UserPrefKey::Personal_PrivatePersonalGuide:
+            case UserPrefKey::Personal_HomeLastEpisode:
+            case UserPrefKey::Episode_HideSynopses:
+            case UserPrefKey::Episode_NoAppearancePreviews:
+            case UserPrefKey::Episode_ReverseStepButtons:
                 return false;
-            case UserPrefKey::Personal_AvatarProvider():
-                return AvatarProvider::DeviantArt();
-            case UserPrefKey::Personal_VectorApp():
-            case UserPrefKey::ColorGuide_DefaultGuide():
-            case UserPrefKey::Pcg_Slots():
+            case UserPrefKey::Personal_AvatarProvider:
+                return AvatarProvider::DeviantArt;
+            case UserPrefKey::Personal_VectorApp:
+            case UserPrefKey::ColorGuide_DefaultGuide:
+            case UserPrefKey::Pcg_Slots:
                 return null;
 
         }
@@ -62,44 +59,44 @@ class UserPrefHelper
     public static function type(UserPrefKey $key): array
     {
         switch ($key) {
-            case UserPrefKey::ColorGuide_ItemsPerPage():
+            case UserPrefKey::ColorGuide_ItemsPerPage:
                 return [
                     'type' => 'number',
                 ];
-            case UserPrefKey::Admin_CanEarnPcgPoints():
-            case UserPrefKey::Admin_CanMakePcgAppearances():
-            case UserPrefKey::Admin_CanUploadPcgSprites():
-            case UserPrefKey::Admin_CanPostRequests():
-            case UserPrefKey::Admin_CanPostReservations():
-            case UserPrefKey::Admin_CanReservePosts():
-            case UserPrefKey::ColorGuide_HideColorInfo():
-            case UserPrefKey::ColorGuide_HideFullListPreviews():
-            case UserPrefKey::ColorGuide_HideSynonymTags():
-            case UserPrefKey::ColorGuide_NutshellNames():
-            case UserPrefKey::Personal_HideDiscord():
-            case UserPrefKey::Personal_PrivatePersonalGuide():
-            case UserPrefKey::Personal_HomeLastEpisode():
-            case UserPrefKey::Episode_HideSynopses():
-            case UserPrefKey::Episode_NoAppearancePreviews():
-            case UserPrefKey::Episode_ReverseStepButtons():
+            case UserPrefKey::Admin_CanEarnPcgPoints:
+            case UserPrefKey::Admin_CanMakePcgAppearances:
+            case UserPrefKey::Admin_CanUploadPcgSprites:
+            case UserPrefKey::Admin_CanPostRequests:
+            case UserPrefKey::Admin_CanPostReservations:
+            case UserPrefKey::Admin_CanReservePosts:
+            case UserPrefKey::ColorGuide_HideColorInfo:
+            case UserPrefKey::ColorGuide_HideFullListPreviews:
+            case UserPrefKey::ColorGuide_HideSynonymTags:
+            case UserPrefKey::ColorGuide_NutshellNames:
+            case UserPrefKey::Personal_HideDiscord:
+            case UserPrefKey::Personal_PrivatePersonalGuide:
+            case UserPrefKey::Personal_HomeLastEpisode:
+            case UserPrefKey::Episode_HideSynopses:
+            case UserPrefKey::Episode_NoAppearancePreviews:
+            case UserPrefKey::Episode_ReverseStepButtons:
                 return [
                     'type' => 'boolean',
                 ];
-            case UserPrefKey::Personal_AvatarProvider():
+            case UserPrefKey::Personal_AvatarProvider:
                 return [
                     'ref' => '#/components/schemas/AvatarProvider',
                 ];
-            case UserPrefKey::Personal_VectorApp():
+            case UserPrefKey::Personal_VectorApp:
                 return [
                     'ref' => '#/components/schemas/VectorApp',
                     'nullable' => true,
                 ];
-            case UserPrefKey::ColorGuide_DefaultGuide():
+            case UserPrefKey::ColorGuide_DefaultGuide:
                 return [
                     'ref' => '#/components/schemas/GuideName',
                     'nullable' => true,
                 ];
-            case UserPrefKey::Pcg_Slots():
+            case UserPrefKey::Pcg_Slots:
                 return [
                     'type' => 'number',
                     'nullable' => true,
@@ -113,32 +110,32 @@ class UserPrefHelper
     public static function castRead(UserPrefKey $key, ?string $value)
     {
         switch ($key) {
-            case UserPrefKey::Pcg_Slots():
+            case UserPrefKey::Pcg_Slots:
                 return $value === null ? null : self::castInt($value);
-            case UserPrefKey::ColorGuide_ItemsPerPage():
+            case UserPrefKey::ColorGuide_ItemsPerPage:
                 return self::castInt($value);
-            case UserPrefKey::Admin_CanReservePosts():
-            case UserPrefKey::Admin_CanPostReservations():
-            case UserPrefKey::Admin_CanPostRequests():
-            case UserPrefKey::Admin_CanUploadPcgSprites():
-            case UserPrefKey::Admin_CanMakePcgAppearances():
-            case UserPrefKey::Admin_CanEarnPcgPoints():
-            case UserPrefKey::Episode_ReverseStepButtons():
-            case UserPrefKey::Episode_NoAppearancePreviews():
-            case UserPrefKey::Episode_HideSynopses():
-            case UserPrefKey::Personal_HomeLastEpisode():
-            case UserPrefKey::Personal_PrivatePersonalGuide():
-            case UserPrefKey::Personal_HideDiscord():
-            case UserPrefKey::ColorGuide_NutshellNames():
-            case UserPrefKey::ColorGuide_HideColorInfo():
-            case UserPrefKey::ColorGuide_HideFullListPreviews():
-            case UserPrefKey::ColorGuide_HideSynonymTags():
+            case UserPrefKey::Admin_CanReservePosts:
+            case UserPrefKey::Admin_CanPostReservations:
+            case UserPrefKey::Admin_CanPostRequests:
+            case UserPrefKey::Admin_CanUploadPcgSprites:
+            case UserPrefKey::Admin_CanMakePcgAppearances:
+            case UserPrefKey::Admin_CanEarnPcgPoints:
+            case UserPrefKey::Episode_ReverseStepButtons:
+            case UserPrefKey::Episode_NoAppearancePreviews:
+            case UserPrefKey::Episode_HideSynopses:
+            case UserPrefKey::Personal_HomeLastEpisode:
+            case UserPrefKey::Personal_PrivatePersonalGuide:
+            case UserPrefKey::Personal_HideDiscord:
+            case UserPrefKey::ColorGuide_NutshellNames:
+            case UserPrefKey::ColorGuide_HideColorInfo:
+            case UserPrefKey::ColorGuide_HideFullListPreviews:
+            case UserPrefKey::ColorGuide_HideSynonymTags:
                 return self::castBool($value);
-            case UserPrefKey::Personal_AvatarProvider():
+            case UserPrefKey::Personal_AvatarProvider:
                 return self::castEnum($value, AvatarProvider::class);
-            case UserPrefKey::Personal_VectorApp():
+            case UserPrefKey::Personal_VectorApp:
                 return $value === null ? null : self::castEnum($value, VectorApp::class);
-            case UserPrefKey::ColorGuide_DefaultGuide():
+            case UserPrefKey::ColorGuide_DefaultGuide:
                 return $value === null ? null : self::castEnum($value, GuideName::class);
         }
 
@@ -148,35 +145,35 @@ class UserPrefHelper
     public static function castWrite(UserPrefKey $key, $value)
     {
         switch ($key) {
-            case UserPrefKey::Pcg_Slots():
+            case UserPrefKey::Pcg_Slots:
                 /** @var ?int $value */
                 return $value === null ? null : (string) $value;
-            case UserPrefKey::ColorGuide_ItemsPerPage():
+            case UserPrefKey::ColorGuide_ItemsPerPage:
                 /** @var int $value */
                 return (string) $value;
-            case UserPrefKey::Admin_CanReservePosts():
-            case UserPrefKey::Admin_CanPostReservations():
-            case UserPrefKey::Admin_CanPostRequests():
-            case UserPrefKey::Admin_CanUploadPcgSprites():
-            case UserPrefKey::Admin_CanMakePcgAppearances():
-            case UserPrefKey::Admin_CanEarnPcgPoints():
-            case UserPrefKey::Episode_ReverseStepButtons():
-            case UserPrefKey::Episode_NoAppearancePreviews():
-            case UserPrefKey::Episode_HideSynopses():
-            case UserPrefKey::Personal_HomeLastEpisode():
-            case UserPrefKey::Personal_PrivatePersonalGuide():
-            case UserPrefKey::Personal_HideDiscord():
-            case UserPrefKey::ColorGuide_NutshellNames():
-            case UserPrefKey::ColorGuide_HideColorInfo():
-            case UserPrefKey::ColorGuide_HideFullListPreviews():
-            case UserPrefKey::ColorGuide_HideSynonymTags():
+            case UserPrefKey::Admin_CanReservePosts:
+            case UserPrefKey::Admin_CanPostReservations:
+            case UserPrefKey::Admin_CanPostRequests:
+            case UserPrefKey::Admin_CanUploadPcgSprites:
+            case UserPrefKey::Admin_CanMakePcgAppearances:
+            case UserPrefKey::Admin_CanEarnPcgPoints:
+            case UserPrefKey::Episode_ReverseStepButtons:
+            case UserPrefKey::Episode_NoAppearancePreviews:
+            case UserPrefKey::Episode_HideSynopses:
+            case UserPrefKey::Personal_HomeLastEpisode:
+            case UserPrefKey::Personal_PrivatePersonalGuide:
+            case UserPrefKey::Personal_HideDiscord:
+            case UserPrefKey::ColorGuide_NutshellNames:
+            case UserPrefKey::ColorGuide_HideColorInfo:
+            case UserPrefKey::ColorGuide_HideFullListPreviews:
+            case UserPrefKey::ColorGuide_HideSynonymTags:
                 /** @var bool $value */
                 return $value ? '1' : '0';
-            case UserPrefKey::Personal_AvatarProvider():
+            case UserPrefKey::Personal_AvatarProvider:
                 /** @var Enum $value */
                 return $value->value;
-            case UserPrefKey::Personal_VectorApp():
-            case UserPrefKey::ColorGuide_DefaultGuide():
+            case UserPrefKey::Personal_VectorApp:
+            case UserPrefKey::ColorGuide_DefaultGuide:
                 /** @var null|GuideName|VectorApp $value */
                 return $value === null ? null : $value->value;
         }
@@ -187,38 +184,38 @@ class UserPrefHelper
     public static function validate(UserPrefKey $key, $value)
     {
         switch ($key) {
-            case UserPrefKey::Pcg_Slots():
+            case UserPrefKey::Pcg_Slots:
                 $rules = ['integer', 'min:0'];
                 break;
-            case UserPrefKey::ColorGuide_ItemsPerPage():
+            case UserPrefKey::ColorGuide_ItemsPerPage:
                 $rules = ['required', 'integer', 'min:7', 'max:20'];
                 break;
-            case UserPrefKey::Admin_CanReservePosts():
-            case UserPrefKey::Admin_CanPostReservations():
-            case UserPrefKey::Admin_CanPostRequests():
-            case UserPrefKey::Admin_CanUploadPcgSprites():
-            case UserPrefKey::Admin_CanMakePcgAppearances():
-            case UserPrefKey::Admin_CanEarnPcgPoints():
-            case UserPrefKey::Episode_ReverseStepButtons():
-            case UserPrefKey::Episode_NoAppearancePreviews():
-            case UserPrefKey::Episode_HideSynopses():
-            case UserPrefKey::Personal_HomeLastEpisode():
-            case UserPrefKey::Personal_PrivatePersonalGuide():
-            case UserPrefKey::Personal_HideDiscord():
-            case UserPrefKey::ColorGuide_NutshellNames():
-            case UserPrefKey::ColorGuide_HideColorInfo():
-            case UserPrefKey::ColorGuide_HideFullListPreviews():
-            case UserPrefKey::ColorGuide_HideSynonymTags():
+            case UserPrefKey::Admin_CanReservePosts:
+            case UserPrefKey::Admin_CanPostReservations:
+            case UserPrefKey::Admin_CanPostRequests:
+            case UserPrefKey::Admin_CanUploadPcgSprites:
+            case UserPrefKey::Admin_CanMakePcgAppearances:
+            case UserPrefKey::Admin_CanEarnPcgPoints:
+            case UserPrefKey::Episode_ReverseStepButtons:
+            case UserPrefKey::Episode_NoAppearancePreviews:
+            case UserPrefKey::Episode_HideSynopses:
+            case UserPrefKey::Personal_HomeLastEpisode:
+            case UserPrefKey::Personal_PrivatePersonalGuide:
+            case UserPrefKey::Personal_HideDiscord:
+            case UserPrefKey::ColorGuide_NutshellNames:
+            case UserPrefKey::ColorGuide_HideColorInfo:
+            case UserPrefKey::ColorGuide_HideFullListPreviews:
+            case UserPrefKey::ColorGuide_HideSynonymTags:
                 $rules = ['required', 'boolean'];
                 break;
-            case UserPrefKey::Personal_AvatarProvider():
-                $rules = ['required', new EnumValue(AvatarProvider::class)];
+            case UserPrefKey::Personal_AvatarProvider:
+                $rules = ['required', Rule::in(AvatarProvider::values())];
                 break;
-            case UserPrefKey::Personal_VectorApp():
-                $rules = ['required', new EnumValue(VectorApp::class)];
+            case UserPrefKey::Personal_VectorApp:
+                $rules = ['required', Rule::in(VectorApp::values())];
                 break;
-            case UserPrefKey::ColorGuide_DefaultGuide():
-                $rules = [new EnumValue(ColorGuideHelper::class)];
+            case UserPrefKey::ColorGuide_DefaultGuide:
+                $rules = [Rule::in(GuideName::values())];
         }
 
         if (!isset($rules)) {
@@ -238,20 +235,19 @@ class UserPrefHelper
         return (int) $value;
     }
 
-    private static function castEnum(?string $value, string $class): ?Enum
+    private static function castEnum(?string $value, string $class): ?BackedEnum
     {
         if ($value === null) {
             return null;
         }
 
-        if (!class_exists($class) || !method_exists($class, 'fromValue')) {
+        if (!enum_exists($class) || !method_exists($class, 'from')) {
             throw new TypeError(sprintf(
-                "Argument 2 passed to %s must point to a class that extends %s",
-                __METHOD__,
-                Enum::class
+                "Argument 2 passed to %s must be a backed enum",
+                __METHOD__
             ));
         }
-        return $class::fromValue($value);
+        return $class::from($value);
     }
 
     /**
@@ -297,9 +293,9 @@ class UserPrefHelper
         }
 
         if ($keys !== null) {
-            $instances = array_map(fn (string $key): UserPrefKey => new UserPrefKey($key), $keys);
+            $instances = array_map(fn (string $key): UserPrefKey => UserPrefKey::from($key), $keys);
         } else {
-            $instances = UserPrefKey::getInstances();
+            $instances = UserPrefKey::cases();
         }
         foreach ($instances as $key) {
             if (!array_key_exists($key->value, $result)) {

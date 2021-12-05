@@ -15,12 +15,12 @@ use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
 use App\Utils\Permission;
 use App\Utils\UserPrefHelper;
-use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
 
@@ -155,16 +155,16 @@ class AppearancesController extends Controller
         }
 
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', new EnumValue(GuideName::class)],
+            'guide' => ['required', Rule::in(GuideName::values())],
             'size' => 'sometimes|numeric|between:7,20',
             'q' => 'sometimes|string|nullable',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
-        $guide_name = new GuideName($valid['guide']);
+        $guide_name = GuideName::from($valid['guide']);
         $appearances_per_page = $valid['size'] ?? UserPrefHelper::get(
             $request->user(),
-            UserPrefKey::ColorGuide_ItemsPerPage()
+            UserPrefKey::ColorGuide_ItemsPerPage
         );
         $query = !empty($valid['q']) ? $valid['q'] : null;
         $page = $valid['page'] ?? 1;
@@ -214,12 +214,12 @@ class AppearancesController extends Controller
     public function queryFullPublic(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', new EnumValue(GuideName::class)],
-            'sort' => [new EnumValue(FullGuideSortField::class)],
+            'guide' => ['required', Rule::in(GuideName::values())],
+            'sort' => [Rule::in(FullGuideSortField::values())],
         ])->validate();
 
-        $guide_name = new GuideName($valid['guide']);
-        $sort = !empty($valid['sort']) ? new FullGuideSortField($valid['sort']) : FullGuideSortField::Relevance();
+        $guide_name = GuideName::from($valid['guide']);
+        $sort = !empty($valid['sort']) ? FullGuideSortField::from($valid['sort']) : FullGuideSortField::Relevance;
 
         /**
          * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $builder
@@ -228,13 +228,13 @@ class AppearancesController extends Controller
         $get_by_guide = fn ($builder) => $builder->where('guide', $guide_name)->where('id', '!=', 0)->get();
 
         switch ($sort) {
-            case FullGuideSortField::Relevance():
+            case FullGuideSortField::Relevance:
                 $appearances = $get_by_guide(Appearance::ordered()->with('tags.synonymTo'));
                 break;
-            case FullGuideSortField::Alphabetically():
+            case FullGuideSortField::Alphabetically:
                 $appearances = $get_by_guide(Appearance::orderBy('label'));
                 break;
-            case FullGuideSortField::DateAdded():
+            case FullGuideSortField::DateAdded:
                 $appearances = $get_by_guide(Appearance::orderByDesc('created_at'));
                 break;
             default:
@@ -294,7 +294,7 @@ class AppearancesController extends Controller
 
     private static function _handlePrivateAppearanceCheck(Request $request, Appearance $appearance): ?JsonResponse
     {
-        if ($appearance->private && Permission::insufficient(Role::Staff())) {
+        if ($appearance->private && Permission::insufficient(Role::Staff)) {
             /** @var User $user */
             $user = Auth::user();
             if ($user && $appearance->owner_id === $user->id) {
@@ -424,9 +424,9 @@ class AppearancesController extends Controller
         }
 
         $params = Validator::make($request->only('size'), [
-            'size' => ['required', 'integer', new EnumValue(SpriteSize::class)],
+            'size' => ['required', 'integer', Rule::in(SpriteSize::values())],
         ])->valid();
-        $double_size = isset($params['size']) && $params['size'] === SpriteSize::Double();
+        $double_size = isset($params['size']) && $params['size'] === SpriteSize::Double;
 
         $sprite_file = $appearance->spriteFile();
         if ($sprite_file === null) {
@@ -542,7 +542,7 @@ class AppearancesController extends Controller
     public function pinned(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', new EnumValue(GuideName::class)],
+            'guide' => ['required', Rule::in(GuideName::values())],
         ])->validate();
 
         $pinned_appearances = PinnedAppearance::where('guide', $valid['guide'])
@@ -598,11 +598,11 @@ class AppearancesController extends Controller
     public function autocomplete(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', new EnumValue(GuideName::class)],
+            'guide' => ['required', Rule::in(GuideName::values())],
             'q' => 'sometimes|string|nullable',
         ])->validate();
 
-        $guide_name = new GuideName($valid['guide']);
+        $guide_name = GuideName::from($valid['guide']);
         $query = !empty($valid['q']) ? $valid['q'] : null;
         $page = 1;
         $autocomplete_count = 5;

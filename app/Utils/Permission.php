@@ -18,12 +18,12 @@ class Permission
 
         if (!$value_map) {
             $value_map = [
-                Role::User()->value => 1,
-                Role::Member()->value => 2,
-                Role::Assistant()->value => 3,
-                Role::Staff()->value => 3,
-                Role::Admin()->value => 3,
-                Role::Developer()->value => 255,
+                Role::User->value => 1,
+                Role::Member->value => 2,
+                Role::Assistant->value => 3,
+                Role::Staff->value => 3,
+                Role::Admin->value => 3,
+                Role::Developer->value => 255,
             ];
         }
 

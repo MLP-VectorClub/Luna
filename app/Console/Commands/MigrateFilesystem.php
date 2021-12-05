@@ -127,10 +127,10 @@ class MigrateFilesystem extends Command
 
     private function categorize(string $path): ?string
     {
-        if (strpos($path, "cm_source") !== false) {
+        if (str_contains($path, "cm_source")) {
             return self::CATEGORY_CUTIEMARKS;
         }
-        if (strpos($path, "sprites") !== false) {
+        if (str_contains($path, "sprites")) {
             return self::CATEGORY_SPRITES;
         }
 
@@ -157,6 +157,15 @@ class MigrateFilesystem extends Command
         }
     }
 
+    private function outputDiff(array $diff, array $db_ids, array $fs_ids): never {
+                    $this->output->newLine();
+            $this->info('Mismatching IDs found: '.implode(', ', $diff));
+            foreach ($diff as $id) {
+                $this->info(sprintf("$id: db=%b, fs=%b", \in_array($id, $db_ids, true), \in_array($id, $fs_ids, true)));
+            }
+            throw new RuntimeException('Database result count does not match file count, be sure to import database records first or delete files that belong to non-existent records.');
+    }
+
     /**
      * @param  SplFileInfo[]  $fileinfo
      * @return void
@@ -172,11 +181,11 @@ class MigrateFilesystem extends Command
             return (int) preg_replace('~^(\d+).*$~', '$1', $info->getFilename());
         })->sort();
         $cms = CutieMark::findMany($cm_ids)->keyBy('id');
-        $diff = array_diff($cm_ids->toArray(), $cms->keys()->toArray());
+        $db_ids = $cms->keys()->toArray();
+        $fs_ids = $cm_ids->toArray();
+        $diff = array_diff($fs_ids, $db_ids);
         if (count($diff) > 0) {
-            $this->output->newLine();
-            $this->info('IDs present in filesystem, but not the database: '.implode(', ', $diff));
-            throw new RuntimeException('Database result count does not match file count, be sure to import database records first or delete files that belong to non-existent records.');
+            $this->outputDiff($diff, $db_ids, $fs_ids);
         }
         /** @var CutieMark[] $records_mapped */
         $records_mapped = $cm_ids->map(function (int $id) use ($cms) {
@@ -221,11 +230,11 @@ class MigrateFilesystem extends Command
             return (int) preg_replace('~^(\d+).*$~', '$1', $info->getFilename());
         })->sort();
         $appearances = Appearance::findMany($appearance_ids)->keyBy('id');
-        $diff = array_diff($appearance_ids->toArray(), $appearances->keys()->toArray());
+        $fs_ids = $appearance_ids->toArray();
+        $db_ids = $appearances->keys()->toArray();
+        $diff = array_diff($fs_ids, $db_ids);
         if (count($diff) > 0) {
-            $this->output->newLine();
-            $this->info('IDs present in filesystem, but not the database: '.implode(', ', $diff));
-            throw new RuntimeException('Database result count does not match file count, be sure to import database records first or delete files that belong to non-existent records.');
+            $this->outputDiff($diff, $db_ids, $fs_ids);
         }
         /** @var Appearance[] $records_mapped */
         $records_mapped = $appearance_ids->map(function (int $id) use ($appearances) {

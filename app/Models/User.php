@@ -89,12 +89,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isStaff(): bool
     {
-        return perm(Role::Staff(), $this->role);
+        return perm(Role::Staff, $this->role);
     }
 
     public function getAvatarProviderAttribute(): AvatarProvider
     {
-        return UserPrefHelper::get($this, UserPrefKey::Personal_AvatarProvider());
+        return UserPrefHelper::get($this, UserPrefKey::Personal_AvatarProvider);
     }
 
     public function getAvatarUrlAttribute(): ?string
