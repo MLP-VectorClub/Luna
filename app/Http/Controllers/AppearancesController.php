@@ -238,6 +238,7 @@ class AppearancesController extends Controller
                 $appearances = $get_by_guide(Appearance::orderByDesc('created_at'));
                 break;
             default:
+                throw new \RuntimeException("Unhandled sort field {$sort->value}");
         }
 
         $results = $appearances->map(fn (Appearance $a) => ColorGuideHelper::mapAppearance($a, true));

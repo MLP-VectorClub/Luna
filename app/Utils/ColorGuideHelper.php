@@ -36,51 +36,6 @@ use OpenApi\Annotations as OA;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function is_array;
 
-$GROUP_TAG_IDS_ASSOC = [
-    GuideName::FriendshipIsMagic->value => [
-        664 => 'Main Cast',
-        45 => 'Cutie Mark Crusaders',
-        59 => 'Royalty',
-        666 => 'Student Six',
-        9 => 'Antagonists',
-        44 => 'Foals',
-        78 => 'Original Characters',
-        1 => 'Unicorns',
-        3 => 'Pegasi',
-        2 => 'Earth Ponies',
-        10 => 'Pets',
-        437 => 'Non-pony Characters',
-        385 => 'Creatures',
-        96 => 'Outfits & Clothing',
-        // add other tags here
-        64 => 'Objects',
-        0 => 'Other',
-    ],
-    GuideName::EquestriaGirls->value => [
-        76 => 'Humans',
-        0 => 'Other',
-    ],
-    GuideName::PonyLife->value => [
-        664 => 'Main Cast',
-        45 => 'Cutie Mark Crusaders',
-        59 => 'Royalty',
-        666 => 'Student Six',
-        9 => 'Antagonists',
-        44 => 'Foals',
-        78 => 'Original Characters',
-        1 => 'Unicorns',
-        3 => 'Pegasi',
-        2 => 'Earth Ponies',
-        10 => 'Pets',
-        437 => 'Non-pony Characters',
-        385 => 'Creatures',
-        96 => 'Outfits & Clothing',
-        // add other tags here
-        64 => 'Objects',
-        0 => 'Other',
-    ],
-];
-
 class ColorGuideHelper
 {
     public static function mapGuideToMlpGeneration(GuideName $guide_name): ?MlpGeneration
@@ -101,7 +56,7 @@ class ColorGuideHelper
     {
         try {
             $elastic_avail = Elasticsearch::connection()->ping();
-        } catch (NoNodesAvailableException | ServerErrorResponseException $e) {
+        } catch (NoNodesAvailableException|ServerErrorResponseException $e) {
             return false;
         }
 
@@ -156,7 +111,7 @@ class ColorGuideHelper
             $search_results = self::searchElastic($search_query->toArray(), $paginator);
         } catch (Missing404Exception $e) {
             $search_results = [];
-        } catch (ServerErrorResponseException | BadRequest400Exception $e) {
+        } catch (ServerErrorResponseException|BadRequest400Exception $e) {
             $message = $e->getMessage();
             if (!Str::contains($message, 'Result window is too large, from + size must be less than or equal to')
                 && !Str::contains($message, 'Failed to parse int parameter [from] with value')
@@ -216,6 +171,40 @@ class ColorGuideHelper
     }
 
     /**
+     * @param  GuideName  $guide
+     * @return string[]
+     */
+    private static function getGroupTagIds(GuideName $guide): array
+    {
+        return match ($guide) {
+            GuideName::FriendshipIsMagic, GuideName::PonyLife => [
+                664 => 'Main Cast',
+                45 => 'Cutie Mark Crusaders',
+                59 => 'Royalty',
+                666 => 'Student Six',
+                9 => 'Antagonists',
+                44 => 'Foals',
+                78 => 'Original Characters',
+                1 => 'Unicorns',
+                3 => 'Pegasi',
+                2 => 'Earth Ponies',
+                10 => 'Pets',
+                437 => 'Non-pony Characters',
+                385 => 'Creatures',
+                96 => 'Outfits & Clothing',
+                // add other tags here
+                64 => 'Objects',
+                0 => 'Other',
+            ],
+            GuideName::EquestriaGirls => [
+                76 => 'Humans',
+                0 => 'Other',
+            ],
+            default => throw new \RuntimeException("Unhandled guide {$guide->value}"),
+        };
+    }
+
+    /**
      * @OA\Schema(
      *   schema="GuideFullListGroupItem",
      *   type="object",
@@ -259,14 +248,14 @@ class ColorGuideHelper
         FullGuideSortField $sort_field,
         $appearances
     ): array {
-        global $GROUP_TAG_IDS_ASSOC;
-        switch ($sort_field->value) {
+        switch ($sort_field) {
             case FullGuideSortField::DateAdded:
                 // No grouping when sorting by date
                 return [];
             case FullGuideSortField::Relevance:
+                $group_tag_ids = self::getGroupTagIds($guide);
                 $group_items = [];
-                $ids_in_order = new Collection(array_keys($GROUP_TAG_IDS_ASSOC[$guide->value]));
+                $ids_in_order = new Collection(array_keys($group_tag_ids));
                 foreach ($appearances as $appearance) {
                     $tags = $appearance->tags->keyBy(fn (Tag $tag) => $tag->id);
                     $fit_somewhere = $ids_in_order->some(function (int $id) use ($tags, $appearance, &$group_items) {
@@ -283,7 +272,7 @@ class ColorGuideHelper
                 return $ids_in_order
                     ->filter(fn (int $id) => isset($group_items[$id]))
                     ->map(fn (int $id) => [
-                        'name' => $GROUP_TAG_IDS_ASSOC[$guide->value][$id],
+                        'name' => $group_tag_ids[$id],
                         'appearance_ids' => $group_items[$id],
                     ])
                     ->toArray();
@@ -302,7 +291,7 @@ class ColorGuideHelper
                     ->toArray();
         }
 
-        throw new \RuntimeException("Unhandled sort field $sort_field");
+        throw new \RuntimeException("Unhandled sort field $sort_field->value");
     }
 
     /**
