@@ -19,6 +19,7 @@ use OpenApi\Annotations as OA;
 enum VectorApp: string
 {
     use ValuableEnum;
+
     case Illustrator = 'illustrator';
     case Inkscape = 'inkscape';
     case Ponyscape = 'ponyscape';

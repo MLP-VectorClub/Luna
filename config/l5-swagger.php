@@ -20,10 +20,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use const OpenApi\UNDEFINED;
 
-$database_roles = Role::cases();
+$database_roles = Role::values();
 $dev_role = Role::Developer;
 $client_roles = array_filter($database_roles, fn ($role) => $role !== $dev_role->value);
-$user_pref_keys = UserPrefKey::cases();
+$user_pref_keys = UserPrefKey::values();
 
 return [
     'default' => 'default',
@@ -231,20 +231,20 @@ return [
         'constants' => [
             'DATABASE_ROLES' => $database_roles,
             'CLIENT_ROLES' => $client_roles,
-            'AVATAR_PROVIDERS' => AvatarProvider::cases(),
-            'GUIDE_NAMES' => GuideName::cases(),
-            'SHOW_TYPES' => ShowType::cases(),
-            'SHOW_ORDERING' => ShowOrdering::cases(),
-            'MLP_GENERATIONS' => MlpGeneration::cases(),
-            'TAG_TYPES' => TagType::cases(),
+            'AVATAR_PROVIDERS' => AvatarProvider::values(),
+            'GUIDE_NAMES' => GuideName::values(),
+            'SHOW_TYPES' => ShowType::values(),
+            'SHOW_ORDERING' => ShowOrdering::values(),
+            'MLP_GENERATIONS' => MlpGeneration::values(),
+            'TAG_TYPES' => TagType::values(),
             'USER_PREF_KEYS' => $user_pref_keys,
-            'SPRITE_SIZES' => SpriteSize::cases(),
+            'SPRITE_SIZES' => SpriteSize::values(),
             'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
-            'SOCIAL_PROVIDERS' => SocialProvider::cases(),
-            'VECTOR_APPS' => VectorApp::cases(),
+            'SOCIAL_PROVIDERS' => SocialProvider::values(),
+            'VECTOR_APPS' => VectorApp::values(),
             'ISO_STANDARD_DATE' => Core::carbonToIso(new Carbon()),
-            'GUIDE_SORT_FIELDS' => FullGuideSortField::cases(),
-            'CUTIE_MARK_FACINGS' => CutieMarkFacing::cases(),
+            'GUIDE_SORT_FIELDS' => FullGuideSortField::values(),
+            'CUTIE_MARK_FACINGS' => CutieMarkFacing::values(),
         ],
     ],
 ];

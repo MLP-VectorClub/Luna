@@ -16,6 +16,7 @@ use OpenApi\Annotations as OA;
 enum UserPrefKey: string
 {
     use ValuableEnum;
+
     case ColorGuide_ItemsPerPage = 'cg_itemsperpage';
     case ColorGuide_HideSynonymTags = 'cg_hidesynon';
     case ColorGuide_HideColorInfo = 'cg_hideclrinfo';

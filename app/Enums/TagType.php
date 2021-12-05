@@ -15,6 +15,8 @@ use OpenApi\Annotations as OA;
  */
 enum TagType: string
 {
+    use ValuableEnum;
+
     case Clothing = 'app';
     case Category = 'cat';
     case Gender = 'gen';

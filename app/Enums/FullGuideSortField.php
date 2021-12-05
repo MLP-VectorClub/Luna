@@ -17,6 +17,7 @@ use OpenApi\Annotations as OA;
 enum FullGuideSortField: string
 {
     use ValuableEnum;
+
     case Alphabetically = 'label';
     case DateAdded = 'added';
     case Relevance = 'relevance';

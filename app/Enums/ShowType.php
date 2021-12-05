@@ -16,6 +16,7 @@ use OpenApi\Annotations as OA;
 enum ShowType: string
 {
     use ValuableEnum;
+
     case Episode = 'episode';
     case Movie = 'movie';
     case Short = 'short';

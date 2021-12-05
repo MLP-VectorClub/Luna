@@ -15,6 +15,8 @@ use OpenApi\Annotations as OA;
  */
 enum MlpGeneration: string
 {
+    use ValuableEnum;
+
     case FriendshipIsMagic = 'pony';
     case PonyLife = 'pl';
 }

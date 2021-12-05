@@ -16,6 +16,7 @@ use OpenApi\Annotations as OA;
 enum SocialProvider: string
 {
     use ValuableEnum;
+
     case DeviantArt = 'deviantart';
     case Discord = 'discord';
 }

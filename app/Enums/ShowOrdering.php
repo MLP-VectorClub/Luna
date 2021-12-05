@@ -16,6 +16,7 @@ use OpenApi\Annotations as OA;
 enum ShowOrdering: string
 {
     use ValuableEnum;
+
     case Series = 'series';
     case Overall = 'overall';
 }

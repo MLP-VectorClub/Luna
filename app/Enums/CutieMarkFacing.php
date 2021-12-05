@@ -15,6 +15,8 @@ use OpenApi\Annotations as OA;
  */
 enum CutieMarkFacing: string
 {
+    use ValuableEnum;
+
     case Left = 'left';
     case Right = 'right';
 }

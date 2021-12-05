@@ -22,6 +22,8 @@ use OpenApi\Annotations as OA;
  */
 enum Role: string
 {
+    use ValuableEnum;
+
     case User = 'user';
     case Member = 'member';
     case Assistant = 'assistant';
