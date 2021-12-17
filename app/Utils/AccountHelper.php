@@ -241,10 +241,10 @@ class AccountHelper
 
         DB::transaction(function () use ($validated, $data, $register, &$user) {
             switch ($validated['provider']) {
-                case SocialProvider::DeviantArt:
+                case SocialProvider::DeviantArt->value:
                     $user = self::socialDeviantart($data, $register);
                     break;
-                case SocialProvider::Discord:
+                case SocialProvider::Discord->value:
                     $user = self::socialDiscord($data, $register);
                     break;
                 default:
