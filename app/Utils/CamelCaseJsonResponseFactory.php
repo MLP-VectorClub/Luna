@@ -9,7 +9,7 @@ use function is_array;
 use function is_object;
 
 /**
- * Convert response JSON key to camelCase
+ * Extends the base response factory with a method that converts JSON keys to camelCase
  */
 class CamelCaseJsonResponseFactory extends BaseResponseFactory
 {
@@ -24,8 +24,12 @@ class CamelCaseJsonResponseFactory extends BaseResponseFactory
      * @param $value
      * @return mixed
      */
-    public function encodeJson($value)
+    protected function encodeJson($value)
     {
+        if ($value instanceof \BackedEnum) {
+            return $value->value;
+        }
+
         if ($value instanceof Arrayable) {
             return $this->encodeArrayable($value);
         }
@@ -42,11 +46,11 @@ class CamelCaseJsonResponseFactory extends BaseResponseFactory
     }
 
     /**
-     * Encode a arrayable
+     * Encode an arrayable
      * @param  Arrayable  $arrayable
      * @return mixed
      */
-    public function encodeArrayable(Arrayable $arrayable)
+    protected function encodeArrayable(Arrayable $arrayable)
     {
         $array = $arrayable->toArray();
         return $this->encodeJson($array);
@@ -57,7 +61,7 @@ class CamelCaseJsonResponseFactory extends BaseResponseFactory
      * @param  array  $array
      * @return array
      */
-    public function encodeArray(array $array): array
+    protected function encodeArray(array $array): array
     {
         $newArray = [];
         foreach ($array as $key => $val) {
