@@ -13,6 +13,7 @@ use App\Utils\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Enum;
 use OpenApi\Annotations as OA;
 
 /**
@@ -146,7 +147,7 @@ class ColorGuideController extends Controller
     public function majorChanges(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', Rule::in(GuideName::values())],
+            'guide' => ['required', new Enum(GuideName::class)],
             'size' => 'sometimes|numeric|between:1,15',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();

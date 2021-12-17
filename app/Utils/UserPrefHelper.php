@@ -10,6 +10,7 @@ use App\Enums\VectorApp;
 use App\Models\User;
 use App\Models\UserPref;
 use BackedEnum;
+use Illuminate\Validation\Rules\Enum;
 use RuntimeException;
 use TypeError;
 use Validator;
@@ -209,13 +210,13 @@ class UserPrefHelper
                 $rules = ['required', 'boolean'];
                 break;
             case UserPrefKey::Personal_AvatarProvider:
-                $rules = ['required', Rule::in(AvatarProvider::values())];
+                $rules = ['required', new Enum(AvatarProvider::class)];
                 break;
             case UserPrefKey::Personal_VectorApp:
-                $rules = ['required', Rule::in(VectorApp::values())];
+                $rules = ['required', new Enum(VectorApp::class)];
                 break;
             case UserPrefKey::ColorGuide_DefaultGuide:
-                $rules = [Rule::in(GuideName::values())];
+                $rules = [new Enum(GuideName::class)];
         }
 
         if (!isset($rules)) {

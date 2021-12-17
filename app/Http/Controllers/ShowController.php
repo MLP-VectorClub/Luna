@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
 
@@ -203,8 +204,8 @@ class ShowController extends Controller
     {
         $valid = Validator::make($request->all(), [
             'types' => 'required|array|min:1',
-            'types.*' => ['string', Rule::in(ShowType::values())],
-            'order' =>  ['required', 'string', Rule::in(ShowOrdering::values())],
+            'types.*' => ['string', new Enum(ShowType::class)],
+            'order' =>  ['required', 'string', new Enum(ShowOrdering::class)],
             'page' => 'sometimes|required|int|min:1',
             'size' => 'sometimes|numeric|between:1,10',
         ])->validate();

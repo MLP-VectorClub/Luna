@@ -21,6 +21,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
 
@@ -155,7 +156,7 @@ class AppearancesController extends Controller
         }
 
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', Rule::in(GuideName::values())],
+            'guide' => ['required', new Enum(GuideName::class)],
             'size' => 'sometimes|numeric|between:7,20',
             'q' => 'sometimes|string|nullable',
             'page' => 'sometimes|required|int|min:1',
@@ -214,8 +215,8 @@ class AppearancesController extends Controller
     public function queryFullPublic(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', Rule::in(GuideName::values())],
-            'sort' => [Rule::in(FullGuideSortField::values())],
+            'guide' => ['required', new Enum(GuideName::class)],
+            'sort' => [new Enum(FullGuideSortField::class)],
         ])->validate();
 
         $guide_name = GuideName::from($valid['guide']);
@@ -425,7 +426,7 @@ class AppearancesController extends Controller
         }
 
         $params = Validator::make($request->only('size'), [
-            'size' => ['required', 'integer', Rule::in(SpriteSize::values())],
+            'size' => ['required', 'integer', new Enum(SpriteSize::class)],
         ])->valid();
         $double_size = isset($params['size']) && $params['size'] === SpriteSize::Double;
 
@@ -543,7 +544,7 @@ class AppearancesController extends Controller
     public function pinned(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', Rule::in(GuideName::values())],
+            'guide' => ['required', new Enum(GuideName::class)],
         ])->validate();
 
         $pinned_appearances = PinnedAppearance::where('guide', $valid['guide'])
@@ -599,7 +600,7 @@ class AppearancesController extends Controller
     public function autocomplete(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'guide' => ['required', Rule::in(GuideName::values())],
+            'guide' => ['required', new Enum(GuideName::class)],
             'q' => 'sometimes|string|nullable',
         ])->validate();
 

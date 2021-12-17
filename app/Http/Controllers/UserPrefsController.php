@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\TransientToken;
 use OpenApi\Annotations as OA;
@@ -51,7 +52,7 @@ class UserPrefsController extends Controller
     {
 
         $valid = Validator::make($request->all(), [
-            'keys' => ['sometimes', 'required', 'array', 'distinct', 'min:1', Rule::in(UserPrefKey::values())],
+            'keys' => ['sometimes', 'required', 'array', 'distinct', 'min:1', new Enum(UserPrefKey::class)],
         ])->validate();
 
         /** @var User $user */

@@ -6,6 +6,7 @@ use App\Enums\SocialProvider;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Enum;
 
 class SocialAuthRequest extends FormRequest
 {
@@ -25,7 +26,7 @@ class SocialAuthRequest extends FormRequest
     public function validator()
     {
         return Validator::make(['provider' => $this->route('provider')], [
-            'provider' => ['required', Rule::in(SocialProvider::values())],
+            'provider' => ['required', new Enum(SocialProvider::class)],
         ]);
     }
 
