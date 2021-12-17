@@ -52,7 +52,8 @@ class UserPrefsController extends Controller
     {
 
         $valid = Validator::make($request->all(), [
-            'keys' => ['sometimes', 'required', 'array', 'distinct', 'min:1', new Enum(UserPrefKey::class)],
+            'keys' => ['sometimes', 'required', 'array', 'distinct', 'min:1'],
+            'keys.*' => ['string', new Enum(UserPrefKey::class)],
         ])->validate();
 
         /** @var User $user */
