@@ -216,6 +216,12 @@ class AccountHelper
         return $app_user;
     }
 
+    private static function createRedirectUrl(string $provider, bool $register): string {
+        // TODO Handle on frontend
+        $register_param = $register ? '?register=true' : '';
+        return sprintf("%s/oauth/%s", config('app.frontend_url'), $provider) . $register_param;
+    }
+
     public static function socialRedirect(SocialAuthRequest $request, bool $register)
     {
         $validated = $request->validated();
@@ -228,16 +234,16 @@ class AccountHelper
                 $driver->setScopes(['identify', 'email']);
                 break;
         }
-        // TODO Handle on frontend
-        $register_param = $register ? '?register=true' : '';
-        $driver->redirectUrl(sprintf("%s/oauth/%s", config('app.frontend_url'), $validated['provider']) . $register_param);
+        $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
         return $driver->redirect();
     }
 
     public static function socialAuth(SocialAuthRequest $request, bool $register)
     {
         $validated = $request->validated();
-        $data = Socialite::driver($validated['provider'])->stateless()->user();
+        $driver = Socialite::driver($validated['provider'])->stateless();
+        $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
+        $data = $driver->user();
 
         DB::transaction(function () use ($validated, $data, $register, &$user) {
             switch ($validated['provider']) {
