@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="SpriteSize",
  *   type="number",
  *   description="List of available sprite sizes",
- *   enum=SPRITE_SIZES,
  *   example=300
  * )
  */

@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="MlpGeneration",
  *   type="string",
  *   description="List of recognized MLP generations",
- *   enum=MLP_GENERATIONS,
  *   example="pony"
  * )
  */

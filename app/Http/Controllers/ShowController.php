@@ -6,7 +6,6 @@ use App\Enums\ShowOrdering;
 use App\Enums\ShowType;
 use App\Models\Show;
 use App\Utils\Core;
-use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -95,9 +94,6 @@ class ShowController extends Controller
      *     description="Represents the timestamp of when the entry aired officially, typically this is official the U.S. air date on TV for episodes or the day of the theatrical U.S. release for movies. This is mostly for informational purposes and should not be relied on for accuracy.",
      *   ),
      * )
-     */
-
-    /**
      * @OA\Schema(
      *   schema="ShowList",
      *   type="object",

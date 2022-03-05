@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *     schema="VectorApp",
  *     type="string",
  *     description="List of available vector apps",
- *     enum=VECTOR_APPS,
  *     example="illustrator"
  * )
  * @method static self Illustrator()

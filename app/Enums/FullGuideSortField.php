@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="FullGuideSortField",
  *   type="string",
  *   description="List of possible sorting options for the full guide page",
- *   enum=GUIDE_SORT_FIELDS,
  *   default="relevance",
  *   example="label"
  * )

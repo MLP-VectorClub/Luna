@@ -3,18 +3,22 @@
 
 namespace App\Utils\Media;
 
-
-use App\Utils\Core;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Str;
 use Spatie\MediaLibrary\Conversions\Conversion;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class ConversionFileNamer extends \Spatie\MediaLibrary\Conversions\ConversionFileNamer
+class ConversionFileNamer extends \Spatie\MediaLibrary\Support\FileNamer\FileNamer
 {
-    public function getFileName(Conversion $conversion, Media $media): string
+    public function originalFileName(string $fileName): string
     {
-        $file_name = pathinfo($media->file_name, PATHINFO_FILENAME);
-        return "{$file_name}-{$conversion->getName()}";
+        return pathinfo($fileName, PATHINFO_FILENAME);
+    }
+
+    public function conversionFileName(string $fileName, Conversion $conversion): string
+    {
+        return "{$this->originalFileName($fileName)}-{$conversion->getName()}";
+    }
+
+    public function responsiveFileName(string $fileName): string
+    {
+        return $this->originalFileName($fileName);
     }
 }

@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="GuideName",
  *   type="string",
  *   description="List of available color guides",
- *   enum=GUIDE_NAMES,
  *   example="pony"
  * )
  */

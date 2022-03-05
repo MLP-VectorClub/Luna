@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Helpers\types;
+
 use OpenApi\Annotations as OA;
 
 # Generated OpenAPI annotations for the darkaonline/l5-swagger package
@@ -15,20 +17,21 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(
  *     property="pony",
  *     type="number",
- *     example=220,
+ *     example=53,
  *     minimum=0
  *   ),
  *   @OA\Property(
  *     property="eqg",
  *     type="number",
- *     example=85,
+ *     example=246,
  *     minimum=0
  *   ),
  *   @OA\Property(
  *     property="pl",
  *     type="number",
- *     example=190,
+ *     example=21,
  *     minimum=0
  *   ),
  * )
  */
+class GuideEntryCounts {}

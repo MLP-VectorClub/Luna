@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Helpers\types;
+
 use OpenApi\Annotations as OA;
 
 # Generated OpenAPI annotations for the darkaonline/l5-swagger package
@@ -105,3 +107,4 @@ use OpenApi\Annotations as OA;
  *   ),
  * )
  */
+class UserPrefs {}

@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="CutieMarkFacing",
  *   type="string",
  *   description="The direction the character is facing when this cutie mark should be used",
- *   enum=CUTIE_MARK_FACINGS,
  *   example="left"
  * )
  */

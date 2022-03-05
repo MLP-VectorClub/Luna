@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="AvatarProvider",
  *   type="string",
  *   description="List of supported avatar providers",
- *   enum=AVATAR_PROVIDERS,
  *   example="deviantart"
  * )
  */

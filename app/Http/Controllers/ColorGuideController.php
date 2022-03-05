@@ -16,29 +16,23 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Schema(
- *   schema="MajorChangeList",
- *   type="object",
- *   description="An array of major change items under the changes key",
- *   required={
- *     "changes"
- *   },
- *   additionalProperties=false,
- *   @OA\Property(
- *     property="changes",
- *     type="array",
- *     @OA\Items(ref="#/components/schemas/MajorChange")
- *   )
- * )
- */
-
-/**
- * Controller for miscellaneous color-guide related data unfit for other controllers
- */
 class ColorGuideController extends Controller
 {
     /**
+     * @OA\Schema(
+     *   schema="MajorChangeList",
+     *   type="object",
+     *   description="An array of major change items under the changes key",
+     *   required={
+     *     "changes"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="changes",
+     *     type="array",
+     *     @OA\Items(ref="#/components/schemas/MajorChange")
+     *   )
+     * )
      * @OA\Get(
      *   path="/color-guide",
      *   description="Get data about the color guides available on the server",

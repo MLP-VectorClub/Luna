@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="ShowOrdering",
  *   type="string",
  *   description="List of ordering options that can be used for show entries",
- *   enum=SHOW_ORDERING,
  *   example="series",
  * )
  */

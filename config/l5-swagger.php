@@ -2,8 +2,8 @@
 
 use App\Enums\AvatarProvider;
 use App\Enums\CutieMarkFacing;
-use App\Enums\GuideName;
 use App\Enums\FullGuideSortField;
+use App\Enums\GuideName;
 use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\ShowOrdering;
@@ -15,15 +15,13 @@ use App\Enums\UserPrefKey;
 use App\Enums\VectorApp;
 use App\Utils\Core;
 use App\Utils\SettingsHelper;
-use App\Utils\UserPrefHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
-use const OpenApi\UNDEFINED;
+use OpenApi\Annotations\Operation;
 
 $database_roles = Role::values();
 $dev_role = Role::Developer;
-$client_roles = array_filter($database_roles, fn ($role) => $role !== $dev_role->value);
-$user_pref_keys = UserPrefKey::values();
+$client_roles = array_filter($database_roles, fn($role) => $role !== $dev_role->value);
 
 return [
     'default' => 'default',
@@ -87,6 +85,46 @@ return [
             */
             'group_options' => [],
         ],
+        'scanOptions' => [
+            /**
+             * analyser: defaults to \OpenApi\StaticAnalyser .
+             *
+             * @see \OpenApi\scan
+             */
+            'analyser' => null,
+
+            /**
+             * analysis: defaults to a new \OpenApi\Analysis .
+             *
+             * @see \OpenApi\scan
+             */
+            'analysis' => null,
+
+            /**
+             * Custom query path processors classes.
+             *
+             * @link https://github.com/zircote/swagger-php/tree/master/Examples/schema-query-parameter-processor
+             * @see \OpenApi\scan
+             */
+            'processors' => [
+                \App\SwaggerProcessors\OperationIdProcessor::class,
+                \App\SwaggerProcessors\EnumsToValuesProcessor::class,
+            ],
+
+            /**
+             * pattern: string       $pattern File pattern(s) to scan (default: *.php) .
+             *
+             * @see \OpenApi\scan
+             */
+            'pattern' => null,
+
+            /*
+             * Absolute path to directories that should be exclude from scanning
+             * @note This option overwrites `paths.excludes`
+             * @see \OpenApi\scan
+            */
+            'exclude' => [],
+        ],
 
         'paths' => [
             /*
@@ -110,7 +148,7 @@ return [
             'swagger_ui_assets_path' => env('L5_SWAGGER_UI_ASSETS_PATH', 'vendor/swagger-api/swagger-ui/dist/'),
 
             /*
-             * Absolute path to directories that should be exclude from scanning
+             * Absolute path to directories that should be excluded from scanning
             */
             'excludes' => [],
         ],
@@ -231,20 +269,10 @@ return [
         'constants' => [
             'DATABASE_ROLES' => $database_roles,
             'CLIENT_ROLES' => $client_roles,
-            'AVATAR_PROVIDERS' => AvatarProvider::values(),
             'GUIDE_NAMES' => GuideName::values(),
-            'SHOW_TYPES' => ShowType::values(),
-            'SHOW_ORDERING' => ShowOrdering::values(),
-            'MLP_GENERATIONS' => MlpGeneration::values(),
-            'TAG_TYPES' => TagType::values(),
-            'USER_PREF_KEYS' => $user_pref_keys,
-            'SPRITE_SIZES' => SpriteSize::values(),
+            'USER_PREF_KEYS' => UserPrefKey::values(),
             'APP_SETTINGS' => array_keys(SettingsHelper::DEFAULT_SETTINGS),
-            'SOCIAL_PROVIDERS' => SocialProvider::values(),
-            'VECTOR_APPS' => VectorApp::values(),
             'ISO_STANDARD_DATE' => Core::carbonToIso(new Carbon()),
-            'GUIDE_SORT_FIELDS' => FullGuideSortField::values(),
-            'CUTIE_MARK_FACINGS' => CutieMarkFacing::values(),
         ],
     ],
 ];

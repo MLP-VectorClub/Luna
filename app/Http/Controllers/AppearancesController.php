@@ -10,7 +10,6 @@ use App\Enums\UserPrefKey;
 use App\Models\Appearance;
 use App\Models\PinnedAppearance;
 use App\Models\User;
-use App\Utils\Caching;
 use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
 use App\Utils\Permission;
@@ -25,65 +24,60 @@ use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Schema(
- *   schema="SlimAppearanceList",
- *   type="object",
- *   description="An array of less resource intensive appearances under the appearances key",
- *   required={
- *     "appearances"
- *   },
- *   additionalProperties=false,
- *   @OA\Property(
- *     property="appearances",
- *     type="array",
- *     @OA\Items(ref="#/components/schemas/SlimAppearance")
- *   )
- * )
- * @OA\Schema(
- *   schema="AppearanceList",
- *   type="object",
- *   description="An array of appearances under the appearances key",
- *   required={
- *     "appearances"
- *   },
- *   additionalProperties=false,
- *   @OA\Property(
- *     property="appearances",
- *     type="array",
- *     @OA\Items(ref="#/components/schemas/Appearance")
- *   )
- * )
- */
-
-/**
- * @OA\Schema(
- *   schema="Order",
- *   type="number",
- *   example=1,
- *   minimum=0,
- *   description="Used for displaying items in a specific order. The API guarantees that array return values are sorted in ascending order based on this property."
- * )
- * @OA\Schema(
- *   schema="ListOfColorGroups",
- *   type="object",
- *   description="Array of color groups under the `colorGroups` key",
- *   required={
- *     "colorGroups"
- *   },
- *   additionalProperties=false,
- *   @OA\Property(
- *     property="colorGroups",
- *     type="array",
- *     minItems=0,
- *     @OA\Items(ref="#/components/schemas/ColorGroup"),
- *    description="Array of color groups belonging to an appearance (may be an empty array)."
- *   )
- * )
- */
 class AppearancesController extends Controller
 {
     /**
+     * @OA\Schema(
+     *   schema="SlimAppearanceList",
+     *   type="object",
+     *   description="An array of less resource intensive appearances under the appearances key",
+     *   required={
+     *     "appearances"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="appearances",
+     *     type="array",
+     *     @OA\Items(ref="#/components/schemas/SlimAppearance")
+     *   )
+     * )
+     * @OA\Schema(
+     *   schema="AppearanceList",
+     *   type="object",
+     *   description="An array of appearances under the appearances key",
+     *   required={
+     *     "appearances"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="appearances",
+     *     type="array",
+     *     @OA\Items(ref="#/components/schemas/Appearance")
+     *   )
+     * )
+     * @OA\Schema(
+     *   schema="Order",
+     *   type="number",
+     *   example=1,
+     *   minimum=0,
+     *   description="Used for displaying items in a specific order. The API guarantees that array return values are sorted in ascending order based on this property."
+     * )
+     * @OA\Schema(
+     *   schema="ListOfColorGroups",
+     *   type="object",
+     *   description="Array of color groups under the `colorGroups` key",
+     *   required={
+     *     "colorGroups"
+     *   },
+     *   additionalProperties=false,
+     *   @OA\Property(
+     *     property="colorGroups",
+     *     type="array",
+     *     minItems=0,
+     *     @OA\Items(ref="#/components/schemas/ColorGroup"),
+     *    description="Array of color groups belonging to an appearance (may be an empty array)."
+     *   )
+     * )
      * @OA\Schema(
      *   schema="GuidePageSize",
      *   type="integer",

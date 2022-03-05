@@ -9,7 +9,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use const OpenApi\UNDEFINED;
 
 class GenerateEnumDocblocks extends Command
 {
@@ -93,6 +92,8 @@ class GenerateEnumDocblocks extends Command
         $docblock = <<<PHP
 <?php
 
+namespace App\\Helpers\\types;
+
 use OpenApi\Annotations as OA;
 
 {$this->getGenerationComment()}
@@ -107,6 +108,7 @@ use OpenApi\Annotations as OA;
 $properties
  * )
  */
+class UserPrefs {}
 
 PHP;
 
@@ -150,6 +152,8 @@ PHP;
         $docblock = <<<PHP
 <?php
 
+namespace App\\Helpers\\types;
+
 use OpenApi\Annotations as OA;
 
 {$this->getGenerationComment()}
@@ -164,6 +168,7 @@ use OpenApi\Annotations as OA;
 $properties
  * )
  */
+class GuideEntryCounts {}
 
 PHP;
 

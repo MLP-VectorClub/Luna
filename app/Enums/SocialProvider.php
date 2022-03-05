@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="SocialProvider",
  *   type="string",
  *   description="List of available social signin providers",
- *   enum=SOCIAL_PROVIDERS,
  *   example="deviantart"
  * )
  */

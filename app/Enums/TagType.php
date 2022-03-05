@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *     schema="TagType",
  *     type="string",
  *     description="List of types tags in the color guide can have",
- *     enum=TAG_TYPES,
  *     example="spec"
  * )
  */

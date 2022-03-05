@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *     schema="UserPrefKeys",
  *     type="string",
  *     description="List of available user preferences",
- *     enum=USER_PREF_KEYS,
  *     example="cg_itemsperpage"
  * )
  */

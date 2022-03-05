@@ -4,6 +4,18 @@ namespace App\Enums;
 
 use OpenApi\Annotations as OA;
 
+enum Role: string
+{
+    use ValuableEnum;
+
+    case User = 'user';
+    case Member = 'member';
+    case Assistant = 'assistant';
+    case Staff = 'staff';
+    case Admin = 'admin';
+    case Developer = 'developer';
+}
+
 /**
  * @OA\Schema(
  *   schema="DatabaseRole",
@@ -20,14 +32,4 @@ use OpenApi\Annotations as OA;
  *   example="user",
  * )
  */
-enum Role: string
-{
-    use ValuableEnum;
-
-    case User = 'user';
-    case Member = 'member';
-    case Assistant = 'assistant';
-    case Staff = 'staff';
-    case Admin = 'admin';
-    case Developer = 'developer';
-}
+class RoleC {}

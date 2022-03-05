@@ -9,7 +9,6 @@ use OpenApi\Annotations as OA;
  *   schema="ShowType",
  *   type="string",
  *   description="List of types that can be used for show entries",
- *   enum=SHOW_TYPES,
  *   example="episode",
  * )
  */
