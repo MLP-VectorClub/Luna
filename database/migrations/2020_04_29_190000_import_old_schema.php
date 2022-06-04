@@ -154,7 +154,6 @@ class ImportOldSchema extends Migration
             $table->jsonb('data');
             $table->timestampsTz($this->ts_precision);
             $table->timestampTz('read_at', $this->ts_precision)->nullable();
-            $table->string('read_action', 15)->nullable();
         });
 
         Schema::create('pcg_point_grants', function (Blueprint $table) {
@@ -193,7 +192,6 @@ class ImportOldSchema extends Migration
             $table->smallInteger('no')->nullable();
             $table->unsignedFloat('score', 2, 1)->default(0);
             $table->text('notes')->nullable();
-            $table->timestampTz('synopsis_last_checked', $this->ts_precision)->nullable();
             $table->addColumn(MlpGenerationType::MLP_GENERATION, 'generation')->nullable();
 
             $table->unique(['season', 'episode']);
