@@ -15,7 +15,7 @@ use OpenApi\Annotations as OA;
  *     version="0.2",
  *     description="A work-in-progress API for the [MLP Vector Club](https://mlpvector.club/)'s website.",
  *     @OA\License(name="MIT"),
- *     @OA\Contact(name="David Joseph Guzsik", url="https://seinopsys.dev", email="david@seinopsys.dev"),
+ *     @OA\Contact(name="WentTheFox", url="https://went.tf"),
  *   ),
  *   @OA\Server(url="/", description="Current Host"),
  *   @OA\Tag(name="authentication", description="Endpoints related to getting a user logged in or out, as well as checking logged in status"),

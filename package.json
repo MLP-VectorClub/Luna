@@ -4,7 +4,7 @@
   "dependencies": {
     "svgo": "^2.8.0"
   },
-  "author": "SeinopSys <david@seinopsys.dev> (https://seinopsys.dev)",
+  "author": "WentTheFox (https://went.tf)",
   "license": "MIT",
   "private": true
 }
