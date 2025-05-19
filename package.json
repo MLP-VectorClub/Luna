@@ -1,0 +1,10 @@
+{
+  "name": "@mlp-vectorclub/luna",
+  "version": "1.0.0",
+  "dependencies": {
+    "svgo": "^2.8.0"
+  },
+  "author": "WentTheFox (https://went.tf)",
+  "license": "MIT",
+  "private": true
+}

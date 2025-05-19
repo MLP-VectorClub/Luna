@@ -1,0 +1,21 @@
+/node_modules
+/public/hot
+/storage/*.key
+/storage/api-docs
+/vendor
+.env
+.env.backup
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+public/storage
+storage/media-library
+
+# laravel-ide-helper
+.phpstorm.meta.php
+_ide_helper*.php
+
+# php-cs-fixer
+.php_cs.cache
