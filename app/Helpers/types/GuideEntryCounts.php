@@ -25,13 +25,7 @@ use OpenApi\Annotations as OA;
  *     type="number",
  *     example=246,
  *     minimum=0
- *   ),
- *   @OA\Property(
- *     property="pl",
- *     type="number",
- *     example=21,
- *     minimum=0
- *   ),
+ *   )
  * )
  */
 class GuideEntryCounts {}

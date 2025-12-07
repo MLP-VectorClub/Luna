@@ -17,5 +17,4 @@ enum MlpGeneration: string
     use ValuableEnum;
 
     case FriendshipIsMagic = 'pony';
-    case PonyLife = 'pl';
 }

@@ -45,7 +45,6 @@ class ColorGuideHelper
         if (!$guide_map) {
             $guide_map = [
                 GuideName::FriendshipIsMagic->value => MlpGeneration::FriendshipIsMagic,
-                GuideName::PonyLife->value => MlpGeneration::PonyLife,
             ];
         }
 
@@ -177,7 +176,7 @@ class ColorGuideHelper
     private static function getGroupTagIds(GuideName $guide): array
     {
         return match ($guide) {
-            GuideName::FriendshipIsMagic, GuideName::PonyLife => [
+            GuideName::FriendshipIsMagic => [
                 664 => 'Main Cast',
                 45 => 'Cutie Mark Crusaders',
                 59 => 'Royalty',
