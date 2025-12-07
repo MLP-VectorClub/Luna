@@ -8,7 +8,7 @@ if [[ "$refname" ==  "$RUN_FOR_REF" ]]; then
     GIT="env -i git"
     CMD_CD="cd $(readlink -nf "$PWD/..")"
     CMD_FETCH="$GIT fetch"
-    CMD_COMPOSER="if [ -d vendor/ ]; then sudo chmod -R ug+rw vendor/; fi; sudo -u www-data composer install --optimize-autoloader --no-dev 2>&1"
+    CMD_COMPOSER="if [ -d vendor/ ]; then sudo chmod -R ug+rw vendor/; fi; sudo -u www-data composer install --optimize-autoloader --ignore-platform-reqs --no-dev 2>&1"
     CMD_MIGRATE="sudo -u www-data php artisan migrate --force"
     CMD_NPM="sudo -u www-data npm install --production --no-save"
     CMD_LARAVEL_OPTIMIZE="sudo -u www-data php artisan optimize"
