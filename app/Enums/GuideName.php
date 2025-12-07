@@ -18,5 +18,4 @@ enum GuideName: string
 
     case FriendshipIsMagic = 'pony';
     case EquestriaGirls = 'eqg';
-    case PonyLife = 'pl';
 }
