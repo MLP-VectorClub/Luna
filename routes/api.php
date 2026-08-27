@@ -60,7 +60,7 @@ Route::middleware('throttle:60,1')->group(function () {
             Route::get('/', [UsersController::class, 'list']);
         });
 
-        Route::get('{user}', [UsersController::class, 'getById']);
+        Route::get('{user}', [UsersController::class, 'getById'])->where('user', '[0-9]+');
         Route::get('da/{username}', [UsersController::class, 'getByName']);
     });
 
