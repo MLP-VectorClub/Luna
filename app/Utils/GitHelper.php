@@ -15,7 +15,18 @@ class GitHelper
 
     protected static function getCommitDataString(): string
     {
-        return rtrim(shell_exec('git log -1 --date=short --pretty="format:%h;%ct"'));
+        // git-deploy-toolkit leaves the deployed commit in this file on every deploy (sha, then the commit date),
+        // since the deployed tree has no .git of its own that would know which commit is running.
+        $file = base_path('.git-deploy-commit');
+        if (is_readable($file)) {
+            [$sha, $date] = array_pad(explode("\n", trim(file_get_contents($file))), 2, '');
+            $time = strtotime($date);
+            if (preg_match('/^[0-9a-f]{40}$/', $sha) === 1 && $time !== false) {
+                return substr($sha, 0, 7).';'.$time;
+            }
+        }
+
+        return rtrim((string) shell_exec('git log -1 --date=short --pretty="format:%h;%ct"'));
     }
 
     /**
