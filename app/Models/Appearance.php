@@ -60,7 +60,7 @@ class Appearance extends Model implements Sortable, HasMedia
         $disk = $this->owner_id === null ? 'public' : 'local';
         $this->addMediaCollection(self::SPRITES_COLLECTION)
             ->singleFile()
-            ->acceptsMimeTypes(['image/png'])
+            ->acceptsMimeTypes(['image/png', 'image/jpeg'])
             ->useDisk($disk);
 
         $double_convert = $this->addMediaConversion(self::DOUBLE_SIZE_CONVERSION)

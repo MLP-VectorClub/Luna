@@ -95,7 +95,12 @@ class Core
 
     public static function generateHashFilename(string $file_path): string
     {
-        $extension = pathinfo($file_path, PATHINFO_EXTENSION);
+        // Trust the actual image type over the file name (e.g. JPEG data saved with a .png extension)
+        $extension = match (mime_content_type($file_path)) {
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            default => pathinfo($file_path, PATHINFO_EXTENSION),
+        };
         return hash_file('sha512', $file_path).'.'.$extension;
     }
 
