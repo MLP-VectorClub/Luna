@@ -13,6 +13,7 @@ use App\Utils\UserPrefHelper;
 use Browser;
 use Creativeorange\Gravatar\Facades\Gravatar;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ use OpenApi\Annotations as OA;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable, HasProtectedFields;
+    use HasApiTokens, HasFactory, Notifiable, HasProtectedFields;
 
     /**
      * The attributes that are mass assignable.

@@ -190,7 +190,7 @@ class ImportOldSchema extends Migration
             $table->foreignId('posted_by')->index()->constrained('users')->onDelete('restrict')->onUpdate('cascade');
             $table->timestampTz('airs', $this->ts_precision)->nullable();
             $table->smallInteger('no')->nullable();
-            $table->unsignedFloat('score', 2, 1)->default(0);
+            $table->double('score')->default(0);
             $table->text('notes')->nullable();
             $table->addColumn(MlpGenerationType::MLP_GENERATION, 'generation')->nullable();
 

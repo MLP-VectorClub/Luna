@@ -29,6 +29,11 @@ class StrictEmail extends BaseRule
             return false;
         }
 
+        // Laravel's email rule considers an empty string as nothing to validate
+        if ($value === '') {
+            return false;
+        }
+
         return Validator::make(['email' => $value], ['email' => 'email:rfc,dns'])->passes();
     }
 
