@@ -13,9 +13,9 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 - OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves the docs at the route itself, no trailing filename)
 - Old migrations run on a fresh database again (`unsignedFloat` removed, activity_log no longer reads the removed package's config)
 - Test suite: PHPUnit 11, 30 tests (email rules, about endpoints, docs URL, signin/token/signout)
+- Deployed to production (`ffd40e0`), including the `expires_at` fix that unblocks successful signins (password login confirmed working on production)
 
 ### Left
-- **Deploy `fce3f9f` (`expires_at` on `personal_access_tokens`).** Sanctum 4 writes that column on every token insert, without it every successful password/OAuth signin returns a 500. Production is affected until this is deployed (the deploy runs `migrate --force`). After deploying, confirm a real signin gets a token
 - More tests: signup validation (422 cases), `AccountHelper::create` (first user becomes developer, later ones get 503), appearance detail and private appearances, search/autocomplete with the `Elasticsearch` facade mocked, user prefs, social signin
 - `StrictEmail` is now `email:rfc,dns`, the old package also blocked disposable domains and that is gone. The rule's DNS part is untested (needs network)
 - Untested against real data: sprite/cutie mark uploads (medialibrary 11), OAuth callbacks
