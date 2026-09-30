@@ -63,7 +63,7 @@ return [
             /*
              * Route for accessing parsed swagger annotations.
             */
-            'docs' => 'generated',
+            'docs' => 'generated/api-docs.json',
 
             /*
              * Route for Oauth2 authentication callback.
