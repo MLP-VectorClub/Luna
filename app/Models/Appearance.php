@@ -13,7 +13,7 @@ use Ramsey\Uuid\Uuid;
 use SeinopSys\RGBAColor;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
-use Spatie\Image\Manipulations;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -65,7 +65,7 @@ class Appearance extends Model implements Sortable, HasMedia
 
         $double_convert = $this->addMediaConversion(self::DOUBLE_SIZE_CONVERSION)
             ->keepOriginalImageFormat()
-            ->fit(Manipulations::FIT_CONTAIN, 1400, 600)
+            ->fit(Fit::Contain, 1400, 600)
             ->performOnCollections(self::SPRITES_COLLECTION);
     }
 

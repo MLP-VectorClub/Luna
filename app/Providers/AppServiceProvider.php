@@ -7,8 +7,7 @@ use App\EloquentFixes\DBAL\Types\MlpGenerationType;
 use Carbon\Carbon;
 use DateInterval;
 use DateTime;
-use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\Types\Type;
+use Illuminate\Database\Grammar;
 use Illuminate\Database\Query\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -20,43 +19,21 @@ class AppServiceProvider extends ServiceProvider
      * Register any application services.
      *
      * @return void
-     * @throws DBALException
      */
     public function register()
     {
-        if (!Type::hasType(CitextType::CITEXT)) {
-            Type::addType(CitextType::CITEXT, CitextType::class);
-        }
-        if (!Type::hasType(MlpGenerationType::MLP_GENERATION)) {
-            Type::addType(MlpGenerationType::MLP_GENERATION, MlpGenerationType::class);
-        }
+        // Custom column types, resolved by the schema grammar as `type<Name>` methods
+        Grammar::macro('typeCitext', fn() => CitextType::CITEXT);
+        Grammar::macro('typeMlp_generation', fn() => MlpGenerationType::MLP_GENERATION);
+
         $conn = DB::connection(DB::getDefaultConnection());
-        $platform = $conn->getDoctrineConnection()->getDatabasePlatform();
-        if (!$platform->hasDoctrineTypeMappingFor(CitextType::CITEXT)) {
-            $platform->registerDoctrineTypeMapping(CitextType::CITEXT, CitextType::CITEXT);
-        }
-        if (!$platform->hasDoctrineTypeMappingFor(MlpGenerationType::MLP_GENERATION)) {
-            $platform->registerDoctrineTypeMapping(
-                MlpGenerationType::MLP_GENERATION,
-                MlpGenerationType::MLP_GENERATION
-            );
-        }
-        $grammar = new class($platform->getDateTimeTzFormatString()) extends PostgresGrammar {
-            protected string $format_string;
-
-            public function __construct(string $format_string)
-            {
-                $this->format_string = $format_string;
-            }
-
+        $conn->setQueryGrammar(new class($conn) extends PostgresGrammar {
+            /** Store timestamps with fractional seconds and the timezone offset */
             public function getDateFormat()
             {
-                return $this->format_string;
+                return 'Y-m-d H:i:s.uP';
             }
-        };
-        $grammar::macro('typeCitext', fn() => CitextType::CITEXT);
-        $grammar::macro('typeMlp_generation', fn() => MlpGenerationType::MLP_GENERATION);
-        $conn->setQueryGrammar($grammar);
+        });
     }
 
     /**

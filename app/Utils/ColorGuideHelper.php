@@ -20,18 +20,14 @@ use App\Models\MajorChange;
 use App\Models\Tag;
 use App\Pagination;
 use App\ShowHelper;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\ServerResponseException;
+use Elastic\Transport\Exception\NoNodeAvailableException;
 use Elasticsearch;
-use Elasticsearch\Common\Exceptions\BadRequest400Exception;
-use Elasticsearch\Common\Exceptions\Missing404Exception;
-use Elasticsearch\Common\Exceptions\NoNodesAvailableException;
-use Elasticsearch\Common\Exceptions\ServerErrorResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use ONGR\ElasticsearchDSL;
-use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
-use ONGR\ElasticsearchDSL\Query\TermLevel\TermQuery;
 use OpenApi\Annotations as OA;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function is_array;
@@ -54,12 +50,10 @@ class ColorGuideHelper
     public static function isElasticAvailable(): bool
     {
         try {
-            $elastic_avail = Elasticsearch::connection()->ping();
-        } catch (NoNodesAvailableException|ServerErrorResponseException $e) {
+            return Elasticsearch::connection()->ping()->asBool();
+        } catch (NoNodeAvailableException|ServerResponseException $e) {
             return false;
         }
-
-        return $elastic_avail;
     }
 
 
@@ -69,8 +63,8 @@ class ColorGuideHelper
      * @param  GuideName  $guide
      * @param  string|null  $search_for
      * @return LengthAwarePaginator
-     * @throws BadRequest400Exception
-     * @throws ServerErrorResponseException
+     * @throws ClientResponseException
+     * @throws ServerResponseException
      */
     public static function searchGuide(
         int $page,
@@ -79,42 +73,42 @@ class ColorGuideHelper
         ?string $search_for = null
     ): LengthAwarePaginator {
         $paginator = new LengthAwarePaginator([], 0, $per_page, $page);
-        $search_query = new ElasticsearchDSL\Search();
+        $must = [
+            ['term' => ['guide' => $guide->value]],
+        ];
 
         // Search query exists
         if ($search_for !== null) {
             $search_for_sanitized = preg_replace("~[^\w\s*?'-]~", '', $search_for);
             if ($search_for_sanitized !== '') {
-                $multi_match = new ElasticsearchDSL\Query\FullText\MultiMatchQuery(
-                    ['label', 'tags'],
-                    $search_for_sanitized,
-                    [
+                array_unshift($must, [
+                    'multi_match' => [
+                        'query' => $search_for_sanitized,
+                        'fields' => ['label', 'tags'],
                         'type' => 'cross_fields',
                         'minimum_should_match' => '100%',
-                    ]
-                );
-                $search_query->addQuery($multi_match);
+                    ],
+                ]);
             }
         }
 
-        $sort = new ElasticsearchDSL\Sort\FieldSort('order', 'asc');
-        $search_query->addSort($sort);
-
-        $bool_query = new BoolQuery();
-        $bool_query->add(new TermQuery('guide', $guide->value), BoolQuery::MUST);
-        $search_query->addQuery($bool_query);
-
-        $search_query->setSource(false);
+        $search_query = [
+            'query' => ['bool' => ['must' => $must]],
+            'sort' => [['order' => ['order' => 'asc']]],
+            '_source' => false,
+        ];
 
         try {
-            $search_results = self::searchElastic($search_query->toArray(), $paginator);
-        } catch (Missing404Exception $e) {
-            $search_results = [];
-        } catch (ServerErrorResponseException|BadRequest400Exception $e) {
+            $search_results = self::searchElastic($search_query, $paginator);
+        } catch (ClientResponseException|ServerResponseException $e) {
+            $status = $e->getResponse()->getStatusCode();
             $message = $e->getMessage();
-            if (!Str::contains($message, 'Result window is too large, from + size must be less than or equal to')
-                && !Str::contains($message, 'Failed to parse int parameter [from] with value')
-            ) {
+            $is_paging_error = ($status === 400 || $e instanceof ServerResponseException)
+                && (Str::contains($message, 'Result window is too large, from + size must be less than or equal to')
+                    || Str::contains($message, 'Failed to parse int parameter [from] with value'));
+
+            // A missing index or an out-of-range page both just mean "no results"
+            if ($status !== 404 && !$is_paging_error) {
                 throw $e;
             }
 
@@ -166,7 +160,7 @@ class ColorGuideHelper
             'size' => $paginator->perPage(),
         ];
 
-        return Elasticsearch::connection()->search($params);
+        return Elasticsearch::connection()->search($params)->asArray();
     }
 
     /**

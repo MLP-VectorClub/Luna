@@ -2,7 +2,7 @@
 
 namespace App\Rules;
 
-use EmailValidator\Validator as EmailValidator;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Lax e-mail validator for logins, only checks for basic syntax
@@ -30,9 +30,7 @@ class Email extends BaseRule
             return false;
         }
 
-        $validator = new EmailValidator();
-
-        return $validator->isEmail($value);
+        return Validator::make(['email' => $value], ['email' => 'email:rfc'])->passes();
     }
 
     /**

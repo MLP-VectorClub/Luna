@@ -2,7 +2,7 @@
 
 namespace App\Rules;
 
-use EmailValidator\Validator as EmailValidator;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Strict e-mail validator for new registrations or e-mail changes
@@ -29,9 +29,7 @@ class StrictEmail extends BaseRule
             return false;
         }
 
-        $validator = new EmailValidator();
-
-        return $validator->isValid($value);
+        return Validator::make(['email' => $value], ['email' => 'email:rfc,dns'])->passes();
     }
 
     /**

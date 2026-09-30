@@ -1,7 +1,5 @@
 <?php
 
-use App\EloquentFixes\DBAL\Types\MlpGenerationType;
-
 return array(
 
     /*
