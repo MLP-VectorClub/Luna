@@ -7,6 +7,9 @@ use App\Models\DeviantartUser;
 use App\Models\User;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -450,6 +453,47 @@ class UsersController extends Controller
         }
 
         $token->delete();
+
+        return response()->noContent();
+    }
+
+    /**
+     * @OA\Put(
+     *   path="/users/{id}/role",
+     *   operationId="PutUsersIdRole",
+     *   description="Change the role of a user in the same or a lower level group than yours. Changing a developer's role changes the label that is shown for developers instead. Requires staff",
+     *   tags={"users"},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"value"}, @OA\Property(property="value", ref="#/components/schemas/DatabaseRole"))),
+     *   @OA\Response(response="200", description="The user already has this role", @OA\JsonContent(type="object", required={"alreadyIn"}, @OA\Property(property="alreadyIn", type="boolean"))),
+     *   @OA\Response(response="204", description="Changed"),
+     *   @OA\Response(response="403", description="Not allowed to change this user's role", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
+     * )
+     */
+    public function setRole(Request $request, int $id)
+    {
+        $target = User::findOrFail($id);
+        $actor = $request->user();
+        if ($target->id === $actor->id) {
+            throw new AuthorizationException('You cannot modify your own group');
+        }
+        if (!perm($target->role, $actor->role)) {
+            throw new AuthorizationException('You can only modify the group of users who are in the same or a lower-level group than you');
+        }
+
+        $valid = Validator::make($request->all(), ['value' => ['required', new Enum(Role::class)]], [
+            'value.required' => 'The new group is not specified',
+            'value.Illuminate\Validation\Rules\Enum' => 'The specified group does not exist',
+        ])->validate();
+        $new_role = Role::from($valid['value']);
+
+        if ($target->role === $new_role) {
+            return response()->json(['alreadyIn' => true]);
+        }
+
+        $target->updateRole($new_role);
 
         return response()->noContent();
     }

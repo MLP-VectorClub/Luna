@@ -78,6 +78,7 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::post('{id}/personal-guide/point-history/recalculation', [PersonalGuideController::class, 'recalculate'])->whereNumber('id')->middleware('role:developer');
             Route::get('{id}/personal-guide/points', [PersonalGuideController::class, 'points'])->whereNumber('id')->middleware('role:staff');
             Route::post('{id}/personal-guide/points', [PersonalGuideController::class, 'givePoints'])->whereNumber('id')->middleware('role:staff');
+            Route::put('{id}/role', [UsersController::class, 'setRole'])->whereNumber('id')->middleware('role:staff');
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);

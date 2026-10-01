@@ -8,6 +8,7 @@ use App\Enums\UserPrefKey;
 use App\Traits\HasEnumCasts;
 use App\Traits\HasProtectedFields;
 use App\Utils\Core;
+use App\Utils\LogWriter;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
 use Browser;
@@ -194,5 +195,35 @@ class User extends Authenticatable implements MustVerifyEmail
 
             $this->syncPcgSlotCount();
         });
+    }
+
+    /**
+     * Changes the role and records it like Winterchilla does. A developer's role is never stored differently:
+     * changing it changes the public label of the developer role instead.
+     */
+    public function updateRole(Role $new_role): void
+    {
+        $old_role = $this->role;
+        if ($old_role === Role::Developer) {
+            $old_label = SettingsHelper::get('dev_role_label');
+            if ($old_label === $new_role->value) {
+                return;
+            }
+            SettingsHelper::set('dev_role_label', $new_role->value);
+            $old_role_value = $old_label;
+        } else {
+            $this->role = $new_role;
+            $this->save();
+            $old_role_value = $old_role->value;
+        }
+
+        LogWriter::record('rolechange', ['target' => $this->id, 'oldrole' => $old_role_value, 'newrole' => $new_role->value]);
+
+        $was_staff = perm(Role::Staff, Role::from($old_role_value));
+        $is_staff = perm(Role::Staff, $new_role);
+        if ($was_staff !== $is_staff) {
+            PcgSlotHistory::record($this->id, $is_staff ? 'staff_join' : 'staff_leave');
+            $this->syncPcgSlotCount();
+        }
     }
 }
