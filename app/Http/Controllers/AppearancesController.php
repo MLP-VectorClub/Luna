@@ -173,7 +173,7 @@ class AppearancesController extends Controller
 
     /**
      * @OA\Get(
-     *   path="/appearances/all",
+     *   path="/appearances/full",
      *   description="Get a list of every appearance in the database (without color group data)",
      *   tags={"appearances"},
      *   security={},
