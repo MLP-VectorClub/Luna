@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\ColorGuideController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\Testing\TestLoginController;
+use App\Http\Controllers\NoticesController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserPrefsController;
@@ -89,7 +91,33 @@ Route::middleware('throttle:60,1')->group(function () {
     });
 
     Route::prefix('useful-links')->group(function () {
-        Route::get('sidebar', [UsefulLinksController::class, 'sidebar']);
+        Route::get('sidebar', [UsefulLinksController::class, 'sidebar'])->middleware('optional.auth');
+
+        Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
+            Route::get('/', [UsefulLinksController::class, 'index']);
+            Route::post('/', [UsefulLinksController::class, 'create']);
+            Route::put('order', [UsefulLinksController::class, 'order']);
+            Route::get('{id}', [UsefulLinksController::class, 'show'])->whereNumber('id');
+            Route::put('{id}', [UsefulLinksController::class, 'update'])->whereNumber('id');
+            Route::delete('{id}', [UsefulLinksController::class, 'destroy'])->whereNumber('id');
+        });
+    });
+
+    Route::prefix('notices')->group(function () {
+        Route::get('current', [NoticesController::class, 'current']);
+
+        Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
+            Route::get('/', [NoticesController::class, 'index']);
+            Route::post('/', [NoticesController::class, 'create']);
+            Route::get('{id}', [NoticesController::class, 'show'])->whereNumber('id');
+            Route::put('{id}', [NoticesController::class, 'update'])->whereNumber('id');
+            Route::delete('{id}', [NoticesController::class, 'destroy'])->whereNumber('id');
+        });
+    });
+
+    Route::middleware(['auth:sanctum', 'role:staff'])->prefix('settings')->group(function () {
+        Route::get('{key}', [SettingsController::class, 'show']);
+        Route::put('{key}', [SettingsController::class, 'update']);
     });
 
     Route::prefix('user-prefs')->group(function () {

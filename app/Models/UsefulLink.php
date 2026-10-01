@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
 use App\Traits\HasProtectedFields;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +12,11 @@ class UsefulLink extends Model implements Sortable
 {
     use HasFactory, SortableTrait, HasProtectedFields;
 
+    public $timestamps = false;
+
     protected $fillable = ['label', 'url', 'title', 'minrole', 'order'];
 
     protected $protected_fields = ['minrole'];
 
-    protected $casts = [
-        'minrole' => Role::class,
-    ];
+    // `minrole` is a plain string because it can also be `guest`, which is not a user role
 }

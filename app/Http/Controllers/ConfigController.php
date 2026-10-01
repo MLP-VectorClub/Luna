@@ -11,6 +11,7 @@ use OpenApi\Annotations as OA;
 class ConfigController extends Controller
 {
     public const ROLE_LABELS = [
+        'guest' => 'Guest',
         'user' => 'DeviantArt User',
         'member' => 'Club Member',
         'assistant' => 'Assistant',
