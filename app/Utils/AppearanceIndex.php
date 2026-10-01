@@ -3,6 +3,7 @@
 namespace App\Utils;
 
 use App\Models\Appearance;
+use App\Models\PinnedAppearance;
 use App\Models\Tag;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
@@ -53,6 +54,62 @@ class AppearanceIndex
         } catch (NoNodeAvailableException|ServerResponseException $e) {
             Log::error("ElasticSearch server was down when attempting to remove appearance {$appearance->id}");
         }
+    }
+
+    /**
+     * Drops and rebuilds the whole index (same mapping and analyzer as Winterchilla's) from every official, unpinned appearance
+     *
+     * @return int Number of indexed appearances
+     */
+    public static function rebuild(): int
+    {
+        $client = Elasticsearch::connection();
+        try {
+            $client->indices()->delete(['index' => self::INDEX]);
+        } catch (ClientResponseException $e) {
+            // The index does not exist yet
+            if ($e->getCode() !== 404) {
+                throw $e;
+            }
+        }
+
+        $client->indices()->create([
+            'index' => self::INDEX,
+            'body' => [
+                'mappings' => ['properties' => [
+                    'label' => ['type' => 'text', 'analyzer' => 'overkill'],
+                    'order' => ['type' => 'integer'],
+                    'guide' => ['type' => 'keyword'],
+                    'private' => ['type' => 'boolean'],
+                    'tags' => ['type' => 'text', 'analyzer' => 'overkill'],
+                ]],
+                'settings' => [
+                    // Single-node setup, replicas could never be allocated
+                    'number_of_replicas' => 0,
+                    'analysis' => [
+                        'analyzer' => ['overkill' => ['type' => 'custom', 'tokenizer' => 'overkill', 'filter' => ['lowercase']]],
+                        'tokenizer' => ['overkill' => ['type' => 'edge_ngram', 'min_gram' => 2, 'max_gram' => 30, 'token_chars' => ['letter', 'digit']]],
+                    ],
+                ],
+            ],
+        ]);
+
+        $count = 0;
+        $pinned = PinnedAppearance::pluck('appearance_id');
+        Appearance::whereNull('owner_id')->whereNotIn('id', $pinned)->chunkById(100, function ($appearances) use ($client, &$count) {
+            $body = [];
+            foreach ($appearances as $appearance) {
+                $body[] = ['index' => ['_index' => self::INDEX, '_id' => $appearance->id]];
+                $body[] = self::body($appearance);
+            }
+            $response = $client->bulk(['body' => $body])->asArray();
+            if (!empty($response['errors'])) {
+                throw new \RuntimeException('Bulk indexing reported errors: '.json_encode($response['items']));
+            }
+            $count += count($appearances);
+        });
+
+        return $count;
     }
 
     public static function body(Appearance $appearance): array

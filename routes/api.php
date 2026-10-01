@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppearanceManagementController;
 use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
@@ -144,6 +145,17 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
         Route::put('{id}', [ColorGroupsController::class, 'update'])->whereNumber('id');
         Route::delete('{id}', [ColorGroupsController::class, 'destroy'])->whereNumber('id');
     });
+
+    Route::middleware(['auth:sanctum', 'role:staff'])->prefix('admin')->group(function () {
+        Route::get('logs', [AdminController::class, 'logs']);
+        Route::get('logs/{id}', [AdminController::class, 'logDetail'])->whereNumber('id');
+    });
+
+    Route::middleware(['auth:sanctum', 'role:developer'])->prefix('color-guide')->group(function () {
+        Route::post('reindex', [AdminController::class, 'reindex']);
+        Route::get('export', [AdminController::class, 'export']);
+    });
+    Route::middleware('auth:sanctum')->post('notifications/{id}/read', [AdminController::class, 'readNotification'])->whereNumber('id');
 
     Route::prefix('tags')->group(function () {
         Route::get('/', [TagsController::class, 'index']);
