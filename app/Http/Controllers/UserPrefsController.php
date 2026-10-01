@@ -118,6 +118,9 @@ class UserPrefsController extends Controller
     public function update(Request $request, int $id, string $key)
     {
         [$user, $pref] = $this->resolve($request, $id, $key);
+        if ($pref === UserPrefKey::Pcg_Slots) {
+            throw new AuthorizationException("{$pref->value} is an internal setting and cannot be modified by users");
+        }
 
         $value = UserPrefHelper::fromInput($pref, $request->input('value'));
         UserPrefHelper::set($user, $pref, $value);

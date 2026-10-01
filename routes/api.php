@@ -13,6 +13,7 @@ use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\PersonalGuideController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\ShowManagementController;
 use App\Http\Controllers\TagsController;
@@ -69,7 +70,14 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
 
         Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
+        Route::get('{id}/personal-guide/appearances', [PersonalGuideController::class, 'appearances'])->whereNumber('id');
+
         Route::middleware('auth:sanctum')->group(function () {
+            Route::get('{id}/personal-guide/point-history', [PersonalGuideController::class, 'pointHistory'])->whereNumber('id');
+            Route::get('{id}/personal-guide/slots', [PersonalGuideController::class, 'slots'])->whereNumber('id');
+            Route::post('{id}/personal-guide/point-history/recalculation', [PersonalGuideController::class, 'recalculate'])->whereNumber('id')->middleware('role:developer');
+            Route::get('{id}/personal-guide/points', [PersonalGuideController::class, 'points'])->whereNumber('id')->middleware('role:staff');
+            Route::post('{id}/personal-guide/points', [PersonalGuideController::class, 'givePoints'])->whereNumber('id')->middleware('role:staff');
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);

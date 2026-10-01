@@ -182,7 +182,8 @@ class UserPrefHelper
     {
         switch ($key) {
             case UserPrefKey::Pcg_Slots:
-                $rules = ['integer', 'min:0'];
+                // Maintained by the application, the sum of the slot history can be negative
+                $rules = ['integer'];
                 break;
             case UserPrefKey::ColorGuide_ItemsPerPage:
                 $rules = ['required', 'integer', 'min:7', 'max:20'];

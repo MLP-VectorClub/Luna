@@ -27,6 +27,19 @@ class PcgSlotHistory extends Model
         'manual_take' => false,
     ];
 
+    public const CHANGE_DESC = [
+        'post_approved' => 'Post approved',
+        'post_unapproved' => 'Post un-approved',
+        'staff_member' => 'Being staff',
+        'staff_join' => 'Joined staff',
+        'staff_leave' => 'Left staff',
+        'appearance_del' => 'Appearance deleted',
+        'appearance_add' => 'Appearance created',
+        'free_trial' => 'Free slot',
+        'manual_give' => 'Manually given',
+        'manual_take' => 'Manually taken',
+    ];
+
     public const DEFAULT_CHANGE = [
         'post' => 1,
         'staff' => 10,
@@ -34,7 +47,7 @@ class PcgSlotHistory extends Model
         'free' => 10,
     ];
 
-    public static function record(int $user_id, string $change_type, ?int $change_amount = null, ?array $change_data = null): self
+    public static function record(int $user_id, string $change_type, ?int $change_amount = null, ?array $change_data = null, $created_at = null): self
     {
         if (!isset(self::VALID_CHANGE_TYPES[$change_type])) {
             throw new RuntimeException("Invalid change type: $change_type");
@@ -54,7 +67,14 @@ class PcgSlotHistory extends Model
             $change_amount *= -1;
         }
 
-        return self::create(compact('user_id', 'change_type', 'change_amount', 'change_data'));
+        $entry = new self(compact('user_id', 'change_type', 'change_amount', 'change_data'));
+        if ($created_at !== null) {
+            $entry->created_at = $created_at;
+            $entry->updated_at = $created_at;
+        }
+        $entry->save();
+
+        return $entry;
     }
 
     public static function sumFor(int $user_id): int

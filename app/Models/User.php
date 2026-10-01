@@ -12,6 +12,7 @@ use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
 use Browser;
 use Creativeorange\Gravatar\Facades\Gravatar;
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -152,18 +153,46 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Personal guide points the user can still spend. A user without any history yet gets the free trial slots.
-     * TODO: Winterchilla rebuilds the history from approved requests the first time, that needs the posts API first
+     * Personal guide points the user can still spend. The history is derived data, so it is built the first time it is needed.
      */
     public function pcgAvailablePoints(): int
     {
         if (UserPrefHelper::get($this, UserPrefKey::Pcg_Slots) === null) {
-            if (!PcgSlotHistory::where('user_id', $this->id)->exists()) {
-                PcgSlotHistory::record($this->id, 'free_trial');
-            }
-            $this->syncPcgSlotCount();
+            $this->recalculatePcgSlotHistory();
         }
 
         return (int) UserPrefHelper::get($this, UserPrefKey::Pcg_Slots);
+    }
+
+    /**
+     * Rebuilds the slot history from scratch: the free trial, approved finished requests, existing appearances and manual grants
+     */
+    public function recalculatePcgSlotHistory(): void
+    {
+        DB::transaction(function () {
+            PcgSlotHistory::where('user_id', $this->id)->delete();
+
+            // Free slot for everyone, the feature was introduced on 2017-12-16
+            PcgSlotHistory::record($this->id, 'free_trial', null, null, max(Carbon::parse('2017-12-16T13:36:59Z'), $this->created_at));
+
+            // Points for approved requests fulfilled for somebody else
+            $approved = DB::table('posts')->whereNotNull('requested_by')->where('requested_by', '!=', $this->id)->whereNotNull('deviation_id')
+                ->where('reserved_by', $this->id)->where('lock', true)->orderBy('finished_at')->get(['id']);
+            foreach ($approved as $post) {
+                $locked_at = DB::table('locked_posts')->where('post_id', $post->id)->value('created_at');
+                PcgSlotHistory::record($this->id, 'post_approved', null, ['id' => $post->id], $locked_at);
+            }
+
+            // Slots taken by the appearances that exist
+            foreach (Appearance::where('owner_id', $this->id)->orderBy('id')->get() as $appearance) {
+                PcgSlotHistory::record($this->id, 'appearance_add', null, ['id' => $appearance->id, 'label' => $appearance->label], $appearance->created_at);
+            }
+
+            foreach (PcgPointGrant::where('receiver_id', $this->id)->orderBy('id')->get() as $grant) {
+                $grant->makeRelatedEntries(false);
+            }
+
+            $this->syncPcgSlotCount();
+        });
     }
 }
