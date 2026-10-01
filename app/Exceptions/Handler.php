@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Http\Controllers\ConflictException;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -54,6 +55,10 @@ class Handler extends ExceptionHandler
         // The API contract wants every failure as `{message}` with the proper status code
         if ($exception instanceof NotFoundHttpException || $exception instanceof ModelNotFoundException) {
             return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if ($exception instanceof ConflictException) {
+            return response()->json(['message' => $exception->getMessage()] + $exception->extra, 409);
         }
 
         if ($exception instanceof AuthorizationException) {

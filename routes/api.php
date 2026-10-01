@@ -15,6 +15,7 @@ use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\EventsController;
 use App\Http\Controllers\PersonalGuideController;
+use App\Http\Controllers\PostManagementController;
 use App\Http\Controllers\PostsController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\ShowManagementController;
@@ -185,7 +186,34 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
         });
     });
 
-    Route::get('posts', [PostsController::class, 'index']);
+    Route::prefix('posts')->group(function () {
+        $manage = PostManagementController::class;
+        Route::get('/', [PostsController::class, 'index']);
+        Route::get('{id}/location', [$manage, 'location'])->whereNumber('id');
+
+        Route::middleware('auth:sanctum')->group(function () use ($manage) {
+            Route::post('/', [$manage, 'create']);
+            Route::post('check-image', [$manage, 'checkImageEndpoint']);
+            Route::get('{id}', [$manage, 'show'])->whereNumber('id');
+            Route::put('{id}', [$manage, 'update'])->whereNumber('id');
+            Route::put('{id}/image', [$manage, 'setImage'])->whereNumber('id');
+            Route::delete('requests/{id}', [$manage, 'destroyRequest'])->whereNumber('id');
+
+            Route::middleware('role:member')->group(function () use ($manage) {
+                Route::post('{id}/reservation', [$manage, 'reserve'])->whereNumber('id');
+                Route::delete('{id}/reservation', [$manage, 'unreserve'])->whereNumber('id');
+                Route::post('{id}/approval', [$manage, 'approve'])->whereNumber('id');
+                Route::delete('{id}/approval', [$manage, 'unapprove'])->whereNumber('id');
+                Route::put('{id}/finish', [$manage, 'finish'])->whereNumber('id');
+                Route::delete('{id}/finish', [$manage, 'unfinish'])->whereNumber('id');
+            });
+
+            Route::middleware('role:staff')->group(function () use ($manage) {
+                Route::post('reservations', [$manage, 'addReservation']);
+                Route::post('{id}/unbreak', [$manage, 'unbreak'])->whereNumber('id');
+            });
+        });
+    });
 
     Route::prefix('events')->group(function () {
         Route::get('/', [EventsController::class, 'index']);
