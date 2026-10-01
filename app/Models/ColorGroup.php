@@ -15,6 +15,9 @@ class ColorGroup extends Model implements Sortable
 
     use SortableTrait;
 
+    // Order is assigned per appearance / color group by the controllers, not globally
+    public $sortable = ['sort_when_creating' => false];
+
     protected $fillable = [
         'appearance_id',
         'label',

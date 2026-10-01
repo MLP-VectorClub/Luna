@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\ColorGuideController;
+use App\Http\Controllers\ColorGroupsController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
@@ -107,6 +108,13 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::put('{id}', [UsefulLinksController::class, 'update'])->whereNumber('id');
             Route::delete('{id}', [UsefulLinksController::class, 'destroy'])->whereNumber('id');
         });
+    });
+
+    Route::middleware('auth:sanctum')->prefix('color-groups')->group(function () {
+        Route::post('/', [ColorGroupsController::class, 'create']);
+        Route::get('{id}', [ColorGroupsController::class, 'show'])->whereNumber('id');
+        Route::put('{id}', [ColorGroupsController::class, 'update'])->whereNumber('id');
+        Route::delete('{id}', [ColorGroupsController::class, 'destroy'])->whereNumber('id');
     });
 
     Route::prefix('tags')->group(function () {
