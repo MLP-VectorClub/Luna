@@ -144,10 +144,25 @@ Luna-specific behavior (policies, Sanctum, throttles); the contract tests assert
 
 Run `php artisan l5-swagger:generate && php scripts/diff-contract.php --by-tag` for the live count.
 
-- 2026-10-01: schema alignment migration (`2026_10_01_000000_align_schema_with_winterchilla`), foundation (`/config`, `role:` and `optional.auth` middleware,
-  `{message}` errors, `POST /test/login/{id}` under `APP_ENV=testing`, `/users/me` in the contract shape), settings, notices, useful links. 94 of 129 operations left.
-  Luna's own tests for these are in `tests/Feature/ContractFoundationTest.php` and `SiteAdminTest.php`; the Winterchilla contract run is blocked on `contract-seed.sql`.
-- Next: tags (needs `Appearance` ES reindexing hooks and a `Log` writer first), then appearances, shows, posts, events, users, notifications, personal guide, Discord.
+**Running Winterchilla's contract suite against Luna** (needs Winterchilla's `contract-seed.sql`, a Redis-less run, nothing touches production):
+
+```
+scripts/load-contract-seed.sh /path/to/contract-seed.sql   # builds the luna_contract DB: migrate, relax avatar_url, load seed
+scripts/serve-contract.sh                                   # Luna on :8766, APP_ENV=testing, response cache off (restart after code changes)
+cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_PATH= CONTRACT_AUTH=bearer \
+  'CONTRACT_LOGIN_URL=/test/login/{id}' vendor/bin/pest tests/Browser/Api/TagApiTest.php
+```
+
+- 2026-10-01: schema alignment migration, foundation (`/config`, `role:` / `optional.auth` middleware, `{message}` errors, `POST /test/login/{id}`, `/users/me` in the contract shape),
+  settings, notices, useful links, user preferences, tags (incl. ElasticSearch index updates through `AppearanceIndex`), and the existing appearance / show / color-guide reads
+  aligned with the contract (ownerId, canEdit, related appearances and shows, private appearances through optional auth, show season/episode filters). 83 of 127 operations left.
+  Passing contract files: Config, Settings, Notices, ColorGuideRead, ShowList, SiteRead; Tag, PublicAppearances, UsersRead pass except the parts that need what is listed below.
+- Known contract failures that are not Luna's to fix: `viewUrl` must start with `/cg/cutiemark/` (Winterchilla route), `GET /appearances/{id}/preview` needs Winterchilla's PNG generator,
+  and the tests of `x-internal` endpoints (`/tags/autocomplete`, `/about/upcoming`, the HTML `tags` field on tag creation).
+- Next: appearances writes, color groups, cutie marks and sprites (need an SVG sanitizer, see below), shows, posts, events, users (profile, contributions, role), notifications,
+  personal guide, Discord.
+- Decision needed before cutie marks / sprites: Winterchilla sanitizes uploaded SVG with the `svgo` Node binary (`/appearances/{id}/sanitize-svg`, cutie mark upload). Luna has no
+  equivalent; options are shipping svgo as a dependency of Luna's deploy, or sanitizing in PHP (e.g. `enshrined/svg-sanitize`) which would not minify.
 
 ## 8. Things the migration found that Winterchilla (or Luna) had missed
 
