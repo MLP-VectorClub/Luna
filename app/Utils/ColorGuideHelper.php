@@ -327,6 +327,7 @@ class ColorGuideHelper
             'id' => $a->id,
             'label' => $a->label,
             'guide' => $a->guide,
+            'owner_id' => $a->owner_id,
             'previewData' => $a->preview_data,
         ];
     }
@@ -585,8 +586,6 @@ class ColorGuideHelper
         }
 
         $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a, $double_size_sprite), [
-            'owner_id' => $a->owner_id,
-            'order' => $a->order,
             'has_cutie_marks' => $a->has_cutie_marks,
             'created_at' => $a->created_at->toISOString(),
         ]);
@@ -603,10 +602,9 @@ class ColorGuideHelper
             $appearance['notes'] = $a->notes_rend;
             $appearance['color_groups'] = self::getColorGroups($a);
         } else {
-            $appearance['character_tag_names'] = $a->tags
-                ->filter(fn (Tag $tag) => $tag->type === TagType::Character)
-                ->flatMap(fn (Tag $tag) => [$tag, ...$tag->synonymTo])
-                ->pluck('name');
+            // The full list shows tags and notes too, but not the color groups. Only regular tags, synonyms stay hidden here
+            $appearance['tags'] = $a->tags->whereNull('synonym_of')->sortBy([['type', 'asc'], ['name', 'asc']])->values()->map(fn (Tag $t) => self::mapTag($t));
+            $appearance['notes'] = $a->notes_rend;
         }
 
         return $appearance;
@@ -846,17 +844,11 @@ class ColorGuideHelper
      */
     public static function mapTag(Tag $t)
     {
-        $tag = [
+        return [
             'id' => $t->id,
             'name' => $t->name,
+            'type' => $t->type,
         ];
-        if ($t->type !== null) {
-            $tag['type'] = $t->type;
-        }
-        if ($t->synonym_of !== null) {
-            $tag['synonym_of'] = $t->synonym_of;
-        }
-        return $tag;
     }
 
     /**

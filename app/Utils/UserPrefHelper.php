@@ -43,6 +43,7 @@ class UserPrefHelper
             case UserPrefKey::Personal_AvatarProvider:
                 return AvatarProvider::DeviantArt;
             case UserPrefKey::Personal_VectorApp:
+                return '';
             case UserPrefKey::ColorGuide_DefaultGuide:
             case UserPrefKey::Pcg_Slots:
                 return null;
@@ -132,7 +133,7 @@ class UserPrefHelper
             case UserPrefKey::Personal_AvatarProvider:
                 return self::castEnum($value, AvatarProvider::class) ?? self::default($key);
             case UserPrefKey::Personal_VectorApp:
-                return $value === null ? null : self::castEnum($value, VectorApp::class);
+                return $value === null ? '' : (self::castEnum($value, VectorApp::class) ?? '');
             case UserPrefKey::ColorGuide_DefaultGuide:
                 return $value === null ? null : self::castEnum($value, GuideName::class);
         }
@@ -357,7 +358,8 @@ class UserPrefHelper
             'value' => $default_value,
         ]);
 
-        if ($value === $default_value) {
+        // An empty vector app and no vector app are the same thing
+        if ($value === $default_value || ($default_value === '' && $value === null)) {
             return $pref->delete();
         }
 
