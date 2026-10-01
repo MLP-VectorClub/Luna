@@ -139,3 +139,24 @@ Luna-specific behavior (policies, Sanctum, throttles); the contract tests assert
 
 - Login seam (confirmed): Luna serves `POST /api/v0/test/login/{id}` → `{"token": "..."}` (testing env only); run the contract suite with `CONTRACT_AUTH=bearer CONTRACT_LOGIN_URL=/test/login/{id}`. `ApiClient` reads `json['token']`, sends `Authorization: Bearer`, no CSRF echo.
 - Does the dump load cleanly before Luna's migrations (uses Winterchilla schema incl. `show.generation`)? Plan assumes load, then `artisan migrate`; verify in step 0.
+
+## 7. Progress log
+
+Run `php artisan l5-swagger:generate && php scripts/diff-contract.php --by-tag` for the live count.
+
+- 2026-10-01: schema alignment migration (`2026_10_01_000000_align_schema_with_winterchilla`), foundation (`/config`, `role:` and `optional.auth` middleware,
+  `{message}` errors, `POST /test/login/{id}` under `APP_ENV=testing`, `/users/me` in the contract shape), settings, notices, useful links. 94 of 129 operations left.
+  Luna's own tests for these are in `tests/Feature/ContractFoundationTest.php` and `SiteAdminTest.php`; the Winterchilla contract run is blocked on `contract-seed.sql`.
+- Next: tags (needs `Appearance` ES reindexing hooks and a `Log` writer first), then appearances, shows, posts, events, users, notifications, personal guide, Discord.
+
+## 8. Things the migration found that Winterchilla (or Luna) had missed
+
+- Winterchilla dropped the unique key on `show (season, episode)` when it dropped `show.generation`; Luna's migration restores it.
+- Luna's `UsefulLink` cast `minrole` to the `Role` enum, but production has 4 rows with `guest`, so the sidebar would have thrown for any signed-in user. Fixed.
+- Luna's sidebar response lacked `minRole` and exposed `order`; the contract wants `{id, label, url, title, minRole}`. Fixed.
+- `dev_role_label` default was `staff` in Luna and is `developer` in Winterchilla (production stores `staff` explicitly, so nothing changes there). Aligned to `developer`.
+- Luna's `Show` model still listed a removed `synopsis_last_checked` column. Removed.
+- Username rule: Winterchilla `[A-Za-z\-\d]{1,20}`, Luna's `Username` rule allows `_` and any length. Not changed yet.
+- Contract oddities to settle with Winterchilla: `Pagination.currentPage` description in api.json contains a leaked docblock; `GET /tags/autocomplete?action=synon` answers 409
+  (a GET that reports state through an error) and prefixes `type` with `typ-` when searching; `Tag.synonymOf` is an id while `TagListItem.synonymOf` is `{id, name}`;
+  `TagListItem.type` enum lacks `warn`; `DELETE /tags/{id}/synonym` answers 200 or 204 depending on whether the tag was a synonym.
