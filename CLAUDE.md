@@ -12,13 +12,40 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 - Elasticsearch moved to the ES 8 client (`mailerlite/laravel-elasticsearch`), queries in `ColorGuideHelper` are plain arrays. Prod runs ES 8.19, index `appearances` is created by Winterchilla
 - OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves the docs at the route itself, no trailing filename)
 - Old migrations run on a fresh database again (`unsignedFloat` removed, activity_log no longer reads the removed package's config)
-- Test suite: PHPUnit 11, 30 tests (email rules, about endpoints, docs URL, signin/token/signout)
+- Test suite: PHPUnit 11, now 120 tests (see the Winterchilla contract section)
 - Deployed to production (`ffd40e0`), including the `expires_at` fix that unblocks successful signins (password login confirmed working on production)
 
 ### Left
 - More tests: signup validation (422 cases), `AccountHelper::create` (first user becomes developer, later ones get 503), appearance detail and private appearances, search/autocomplete with the `Elasticsearch` facade mocked, user prefs, social signin
 - `StrictEmail` is now `email:rfc,dns`, the old package also blocked disposable domains and that is gone. The rule's DNS part is untested (needs network)
 - Untested against real data: sprite/cutie mark uploads (medialibrary 11), OAuth callbacks
+
+## Winterchilla contract (as of 2026-10-01)
+
+Luna is being built to implement Winterchilla's `/api/v0` contract (its `public/dist/api.json`) so Celestia can replace Winterchilla's Twig front end. The plan, decisions, findings and
+progress log are in `docs/winterchilla-contract-plan.md`. Nothing from this work is deployed, and no migration has run on production.
+
+### Built (116 of 127 contract operations)
+- Schema alignment migration `2026_10_01_000000_align_schema_with_winterchilla` (drops `show_videos` and `show.generation`, restores `UNIQUE(season, episode)`, discriminator smallint, FK and timestamp fixes, dead rows)
+- Foundation: `GET /config`, `role:` and `optional.auth` middleware, `{message}` error bodies (`ConflictException` adds extra fields to a 409), `POST /test/login/{id}` (APP_ENV=testing only), `/users/me` as `{user, sessionUpdating}`
+- Settings, notices, useful links, user preferences (+ `PUT /users/{id}/role`), tags, color groups, appearances (reads and all management except cutie marks), sprites, shows (incl. votes, next, latest, prefill), admin logs, notification read, color guide export and reindex, personal guide (slots, points, history), post lists, post write flows (create, edit, reserve, finish, approve, delete, change image, unbreak, direct reservations), user profile and contributions, event reads, and the disabled event writes (501 like Winterchilla)
+- Image links go through `App\Utils\ImageProvider` and `DeviantArt` (oEmbed, Derpibooru, Imgur, Lightshot, club gallery check), always via Laravel's `Http` client so tests fake them
+- `App\Utils\AppearanceIndex` keeps the shared ElasticSearch `appearances` index in sync; `LogWriter` writes the shared `logs` table
+- 120 Luna tests (`php artisan test`)
+
+### Left (11 operations)
+- Cutie marks and SVG sanitizing: `GET|PUT /appearances/{id}/cutie-marks`, `POST /appearances/{id}/sanitize-svg`. Needs a decision: ship the `svgo` Node binary with the deploy (what Winterchilla uses) or sanitize in PHP (`enshrined/svg-sanitize`, no minifying)
+- Discord: `POST /users/{user_id}/discord/sync`, `DELETE /users/{user_id}/discord`
+- Event entries, intentionally skipped (disabled in Winterchilla, unused by Celestia): `GET|PUT|DELETE /events/{id}/entries`, `/event-entries/{entryid}`. Ask Winterchilla to mark them disabled
+- Not done and not in the contract: notes cross references (`#id`, episode ids) stay plain text, `GET /appearances/{id}/preview` (internal), the real ElasticSearch reindex is untested
+- Before Winterchilla can use Luna's database: run the new migration against a rehearsal copy of production, re-run `fs:migrate`, and the user decides how to load/adopt the production data
+
+### Running the contract suite against Luna
+1. `scripts/load-contract-seed.sh <contract-seed.sql>` builds the `luna_contract` DB (the seed comes from Winterchilla's `scripts/dump-contract-seed.sh`, do not run that against the shared test DB)
+2. `scripts/serve-contract.sh` serves Luna on :8766 (APP_ENV=testing, response cache off, restart after code changes)
+3. In Winterchilla: `env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_PATH= CONTRACT_AUTH=bearer 'CONTRACT_LOGIN_URL=/test/login/{id}' vendor/bin/pest tests/Browser/Api/<File>.php`
+- Remaining failures are tests that assert Winterchilla UI fields (`li`, `url`, `goto`, `cgs`, `newhtml`...), tests of `x-internal` endpoints, and Winterchilla-only file checks
+- `php artisan l5-swagger:generate && php scripts/diff-contract.php [--by-tag]` lists the contract operations Luna still lacks
 
 ## Local setup
 
@@ -28,6 +55,10 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 - Tests use the `luna_test` database (`DB_DATABASE` is forced in `phpunit.xml`); `tests/TestCase.php` refuses to run against any database not ending in `_test`. Build it with `createdb luna_test`, `psql -f setup/create_extensions.pg.sql`, then `DB_DATABASE=luna_test php artisan migrate`
 
 ## Gotchas
+
+- Test models: `User::factory()->create()` leaves `role` null until refreshed, pass `['role' => Role::User]`
+- `php artisan serve` keeps opcache between requests, use `scripts/serve-contract.sh` to restart after edits
+- `Http::fake()` calls stack and the first match wins: reset the factory between fakes (see `tests/Feature/PostManagementTest.php`), and let `cloudflare.com` requests through
 
 - `GET /about/sleep` sleeps for an hour outside production, never hit it
 - `AboutController::serverInfo` reads `$_SERVER` directly, tests have to set the superglobals themselves
