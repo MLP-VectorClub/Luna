@@ -142,4 +142,28 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         return $data;
     }
+
+    /**
+     * Stores the sum of the slot history as the `pcg_slots` preference (what the personal guide checks against)
+     */
+    public function syncPcgSlotCount(): void
+    {
+        UserPrefHelper::set($this, UserPrefKey::Pcg_Slots, PcgSlotHistory::sumFor($this->id));
+    }
+
+    /**
+     * Personal guide points the user can still spend. A user without any history yet gets the free trial slots.
+     * TODO: Winterchilla rebuilds the history from approved requests the first time, that needs the posts API first
+     */
+    public function pcgAvailablePoints(): int
+    {
+        if (UserPrefHelper::get($this, UserPrefKey::Pcg_Slots) === null) {
+            if (!PcgSlotHistory::where('user_id', $this->id)->exists()) {
+                PcgSlotHistory::record($this->id, 'free_trial');
+            }
+            $this->syncPcgSlotCount();
+        }
+
+        return (int) UserPrefHelper::get($this, UserPrefKey::Pcg_Slots);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Utils\HtmlSanitizer;
 use App\Enums\GuideName;
 use App\Traits\HasEnumCasts;
 use App\Traits\Sorted;
@@ -112,12 +113,23 @@ class Appearance extends Model implements Sortable, HasMedia
         return $this->getFirstMedia(self::SPRITES_COLLECTION);
     }
 
-    public function setNotesSrcAttribute(string $notes_src): string
+    /**
+     * Stores the raw notes and renders them the way Winterchilla does: sanitized HTML with Derpibooru post references
+     * (`>>123`) turned into links. References to shows, episodes and other appearances are left as text for now, their
+     * URLs depend on the front end.
+     */
+    public function setNotesSrcAttribute(?string $notes_src): void
     {
-        # TODO Process notes
-        $this->notes_rend = $notes_src;
+        $this->attributes['notes_src'] = $notes_src;
+        if ($notes_src === null) {
+            $this->attributes['notes_rend'] = null;
 
-        return $notes_src;
+            return;
+        }
+
+        $rendered = HtmlSanitizer::sanitize($notes_src);
+        $rendered = preg_replace('/(\s)(&gt;&gt;(\d+))(\D|$)/', "$1<a href='https://derpibooru.org/$3'>$2</a>$4", $rendered);
+        $this->attributes['notes_rend'] = str_replace('\#', '#', $rendered);
     }
 
     public function hasSprite(): bool

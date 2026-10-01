@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\AppearanceManagementController;
 use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
@@ -90,6 +91,32 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
         Route::get('{appearance}/locate', [AppearancesController::class, 'locate']);
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite'])->name('appearance_sprite');
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'colorGroups']);
+    });
+
+    Route::middleware('auth:sanctum')->prefix('appearances')->group(function () {
+        $manage = AppearanceManagementController::class;
+        Route::post('/', [$manage, 'create']);
+        Route::put('order', [$manage, 'order'])->middleware('role:staff');
+        Route::get('{id}/metadata', [$manage, 'metadata'])->whereNumber('id');
+        Route::put('{id}', [$manage, 'update'])->whereNumber('id');
+        Route::delete('{id}', [$manage, 'destroy'])->whereNumber('id');
+        Route::post('{id}/sprite', [$manage, 'uploadSprite'])->whereNumber('id');
+        Route::delete('{id}/sprite', [$manage, 'deleteSprite'])->whereNumber('id');
+        Route::post('{id}/template', [$manage, 'template'])->whereNumber('id');
+        Route::delete('{id}/contents', [$manage, 'clear'])->whereNumber('id');
+        Route::get('{id}/color-groups/order', [$manage, 'colorGroupOrder'])->whereNumber('id');
+        Route::put('{id}/color-groups/order', [$manage, 'setColorGroupOrder'])->whereNumber('id');
+        Route::get('{id}/relations', [$manage, 'relations'])->whereNumber('id');
+        Route::put('{id}/relations', [$manage, 'setRelations'])->whereNumber('id');
+        Route::get('{id}/tags', [$manage, 'tags'])->whereNumber('id');
+        Route::put('{id}/tags', [$manage, 'setTags'])->whereNumber('id');
+
+        Route::middleware('role:staff')->group(function () use ($manage) {
+            Route::get('{id}/shows', [$manage, 'shows'])->whereNumber('id');
+            Route::put('{id}/shows', [$manage, 'setShows'])->whereNumber('id');
+            Route::post('{id}/pin', [$manage, 'pin'])->whereNumber('id');
+            Route::delete('{id}/pin', [$manage, 'pin'])->whereNumber('id');
+        });
     });
 
     Route::prefix('color-guide')->group(function () {
