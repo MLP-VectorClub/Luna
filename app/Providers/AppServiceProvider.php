@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\EloquentFixes\DBAL\Types\CitextType;
-use App\EloquentFixes\DBAL\Types\MlpGenerationType;
 use Carbon\Carbon;
 use DateInterval;
 use DateTime;
@@ -24,7 +23,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // Custom column types, resolved by the schema grammar as `type<Name>` methods
         Grammar::macro('typeCitext', fn() => CitextType::CITEXT);
-        Grammar::macro('typeMlp_generation', fn() => MlpGenerationType::MLP_GENERATION);
 
         $conn = DB::connection(DB::getDefaultConnection());
         $conn->setQueryGrammar(new class($conn) extends PostgresGrammar {

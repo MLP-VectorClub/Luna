@@ -1,7 +1,6 @@
 <?php
 
 use App\EloquentFixes\DBAL\Types\CitextType;
-use App\EloquentFixes\DBAL\Types\MlpGenerationType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -174,11 +173,6 @@ class ImportOldSchema extends Migration
             $table->timestampsTz($this->ts_precision);
         });
 
-        // No references to enums or other constants here because refactoring can mess with historical migrations
-        $generation_type_name = 'mlp_generation';
-        DB::statement(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS {$generation_type_name}");
-        DB::statement(/** @lang PostgreSQL */ "CREATE TYPE {$generation_type_name} AS ENUM ('pony', 'pl')");
-
         Schema::create('show', function (Blueprint $table) {
             $table->id();
             $table->string('type', 10);
@@ -192,7 +186,6 @@ class ImportOldSchema extends Migration
             $table->smallInteger('no')->nullable();
             $table->double('score')->default(0);
             $table->text('notes')->nullable();
-            $table->addColumn(MlpGenerationType::MLP_GENERATION, 'generation')->nullable();
 
             $table->unique(['season', 'episode']);
         });
@@ -413,6 +406,6 @@ class ImportOldSchema extends Migration
         Schema::dropIfExists('failed_auth_attempts');
         Schema::dropIfExists('logs');
 
-        DB::statement(sprintf(/** @lang PostgreSQL */ "DROP TYPE IF EXISTS %s", MlpGenerationType::MLP_GENERATION));
+        DB::statement(/** @lang PostgreSQL */ 'DROP TYPE IF EXISTS mlp_generation');
     }
 }

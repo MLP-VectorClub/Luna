@@ -30,7 +30,6 @@ class ShowController extends Controller
      *     "episode",
      *     "parts",
      *     "no",
-     *     "generation",
      *     "airs",
      *   },
      *   @OA\Property(
@@ -81,13 +80,6 @@ class ShowController extends Controller
      *     description="Overall number placing entries in a coherent order relative to each other (not a fixed value)\n\nFor episodes this is the overall episode number, for all other entry types this is mostly a sequential value incremented for each new entry.",
      *   ),
      *   @OA\Property(
-     *     property="generation",
-     *     ref="#/components/schemas/MlpGeneration",
-     *     nullable=true,
-     *     example="pony",
-     *     description="Which generation of the MLP franchise this entry belongs to. `null` for non-episode entries.",
-     *   ),
-     *   @OA\Property(
      *     property="airs",
      *     ref="#/components/schemas/IsoStandardDate",
      *     nullable=true,
@@ -121,7 +113,6 @@ class ShowController extends Controller
             'episode' => $show->episode,
             'parts' => $show->parts,
             'no' => $show->no,
-            'generation' => $show->generation,
             'airs' => $show->airs !== null ? $show->airs->toISOString() : null,
         ];
     }
@@ -156,7 +147,7 @@ class ShowController extends Controller
      *     name="order",
      *     required=false,
      *     @OA\Schema(ref="#/components/schemas/ShowOrdering"),
-     *     description="What method to use for ordering results. Overall sorting is based only on the `no` field (default), while series sorting is meant for episodes and uses the `generation`, `season` and `episode` fields to keep them in chronological order."
+     *     description="What method to use for ordering results. Overall sorting is based only on the `no` field (default), while series sorting is meant for episodes and uses the `season` and `episode` fields to keep them in chronological order."
      *   ),
      *   @OA\Parameter(
      *     in="query",
@@ -212,7 +203,7 @@ class ShowController extends Controller
 
         switch ($valid['order']) {
             case ShowOrdering::Series:
-                $query = $query->orderBy('generation', 'desc')->orderBy('season', 'desc')->orderBy('episode', 'desc');
+                $query = $query->orderBy('season', 'desc')->orderBy('episode', 'desc');
                 break;
             case ShowOrdering::Overall:
             default:

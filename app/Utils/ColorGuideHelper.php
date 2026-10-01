@@ -7,7 +7,6 @@ use App\CoreUtils;
 use App\DB;
 use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
-use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\TagType;
 use App\Enums\UserPrefKey;
@@ -34,19 +33,6 @@ use function is_array;
 
 class ColorGuideHelper
 {
-    public static function mapGuideToMlpGeneration(GuideName $guide_name): ?MlpGeneration
-    {
-        static $guide_map;
-
-        if (!$guide_map) {
-            $guide_map = [
-                GuideName::FriendshipIsMagic->value => MlpGeneration::FriendshipIsMagic,
-            ];
-        }
-
-        return $guide_map[$guide_name->value] ?? null;
-    }
-
     public static function isElasticAvailable(): bool
     {
         try {

@@ -37,7 +37,6 @@ class UserPrefHelper
             case UserPrefKey::Personal_HideDiscord:
             case UserPrefKey::Personal_PrivatePersonalGuide:
             case UserPrefKey::Personal_HomeLastEpisode:
-            case UserPrefKey::Episode_HideSynopses:
             case UserPrefKey::Episode_NoAppearancePreviews:
             case UserPrefKey::Episode_ReverseStepButtons:
                 return false;
@@ -77,7 +76,6 @@ class UserPrefHelper
             case UserPrefKey::Personal_HideDiscord:
             case UserPrefKey::Personal_PrivatePersonalGuide:
             case UserPrefKey::Personal_HomeLastEpisode:
-            case UserPrefKey::Episode_HideSynopses:
             case UserPrefKey::Episode_NoAppearancePreviews:
             case UserPrefKey::Episode_ReverseStepButtons:
                 return [
@@ -123,7 +121,6 @@ class UserPrefHelper
             case UserPrefKey::Admin_CanEarnPcgPoints:
             case UserPrefKey::Episode_ReverseStepButtons:
             case UserPrefKey::Episode_NoAppearancePreviews:
-            case UserPrefKey::Episode_HideSynopses:
             case UserPrefKey::Personal_HomeLastEpisode:
             case UserPrefKey::Personal_PrivatePersonalGuide:
             case UserPrefKey::Personal_HideDiscord:
@@ -160,7 +157,6 @@ class UserPrefHelper
             case UserPrefKey::Admin_CanEarnPcgPoints:
             case UserPrefKey::Episode_ReverseStepButtons:
             case UserPrefKey::Episode_NoAppearancePreviews:
-            case UserPrefKey::Episode_HideSynopses:
             case UserPrefKey::Personal_HomeLastEpisode:
             case UserPrefKey::Personal_PrivatePersonalGuide:
             case UserPrefKey::Personal_HideDiscord:
@@ -199,7 +195,6 @@ class UserPrefHelper
             case UserPrefKey::Admin_CanEarnPcgPoints:
             case UserPrefKey::Episode_ReverseStepButtons:
             case UserPrefKey::Episode_NoAppearancePreviews:
-            case UserPrefKey::Episode_HideSynopses:
             case UserPrefKey::Personal_HomeLastEpisode:
             case UserPrefKey::Personal_PrivatePersonalGuide:
             case UserPrefKey::Personal_HideDiscord:

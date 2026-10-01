@@ -4,7 +4,6 @@ use App\Enums\AvatarProvider;
 use App\Enums\CutieMarkFacing;
 use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
-use App\Enums\MlpGeneration;
 use App\Enums\Role;
 use App\Enums\ShowOrdering;
 use App\Enums\ShowType;

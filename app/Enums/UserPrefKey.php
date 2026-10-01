@@ -27,7 +27,6 @@ enum UserPrefKey: string
     case Personal_HideDiscord = 'p_hidediscord';
     case Personal_PrivatePersonalGuide = 'p_hidepcg';
     case Personal_HomeLastEpisode = 'p_homelastep';
-    case Episode_HideSynopses = 'ep_hidesynopses';
     case Episode_NoAppearancePreviews = 'ep_noappprev';
     case Episode_ReverseStepButtons = 'ep_revstepbtn';
     case Admin_CanEarnPcgPoints = 'a_pcgearn';
