@@ -600,6 +600,9 @@ class AppearancesController extends Controller
 
         $guide_name = GuideName::from($valid['guide']);
         $query = !empty($valid['q']) ? $valid['q'] : null;
+        if ($query === null) {
+            return response()->json([]);
+        }
         $page = 1;
         $autocomplete_count = 5;
         $pagination = ColorGuideHelper::searchGuide($page, $autocomplete_count, $guide_name, $query);

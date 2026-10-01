@@ -74,6 +74,24 @@ class Appearance extends Model implements Sortable, HasMedia
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    public function relatedAppearances()
+    {
+        return $this->belongsToMany(self::class, 'related_appearances', 'source_id', 'target_id')->orderBy('target_id');
+    }
+
+    public function shows()
+    {
+        return $this->belongsToMany(Show::class, 'show_appearances');
+    }
+
+    /**
+     * Staff can manage everything, owners can manage their own (personal guide) appearances
+     */
+    public function canBeManagedBy(?User $user): bool
+    {
+        return $user !== null && ($user->isStaff() || ($this->owner_id !== null && $this->owner_id === $user->id));
+    }
+
     public function cutiemarks()
     {
         return $this->hasMany(CutieMark::class);
@@ -128,7 +146,7 @@ class Appearance extends Model implements Sortable, HasMedia
         } else {
             $cached_data = $this->getPreviewData($delimiter);
         }
-        return explode($delimiter, $cached_data);
+        return $cached_data === '' ? [] : explode($delimiter, $cached_data);
     }
 
     public function getIsPrivateAttribute(): bool

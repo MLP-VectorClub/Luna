@@ -11,6 +11,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class CutieMark extends Model implements HasMedia
 {
+    // The table has no created_at / updated_at columns
+    public $timestamps = false;
+
     use InteractsWithMedia;
 
     protected $table = 'cutiemarks';

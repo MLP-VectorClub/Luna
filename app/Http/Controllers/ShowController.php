@@ -190,16 +190,29 @@ class ShowController extends Controller
     public function index(Request $request)
     {
         $valid = Validator::make($request->all(), [
-            'types' => 'required|array|min:1',
-            'types.*' => ['string', new Enum(ShowType::class)],
+            'types' => ['required', 'array', 'min:1', function ($attribute, $value, $fail) {
+                foreach ($value as $type) {
+                    if (!is_string($type) || ShowType::tryFrom($type) === null) {
+                        $fail('The selected types are invalid.');
+                        return;
+                    }
+                }
+            }],
             'order' =>  ['required', 'string', new Enum(ShowOrdering::class)],
             'page' => 'sometimes|required|int|min:1',
             'size' => 'sometimes|numeric|between:1,10',
+            'season' => 'sometimes|integer|min:0',
+            'episode' => 'sometimes|integer|min:0',
         ])->validate();
 
         $per_page = $valid['size'] ?? 8;
 
         $query = Show::whereIn('type', $valid['types']);
+        foreach (['season', 'episode'] as $column) {
+            if (isset($valid[$column])) {
+                $query = $query->where($column, $valid[$column]);
+            }
+        }
 
         switch ($valid['order']) {
             case ShowOrdering::Series:

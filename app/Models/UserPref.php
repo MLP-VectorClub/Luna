@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserPref extends Model
 {
+    public $timestamps = false;
+
     protected $fillable = ['user_id', 'key', 'value'];
 
     protected $casts = [

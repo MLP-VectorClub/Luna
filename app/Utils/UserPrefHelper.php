@@ -130,7 +130,7 @@ class UserPrefHelper
             case UserPrefKey::ColorGuide_HideSynonymTags:
                 return self::castBool($value);
             case UserPrefKey::Personal_AvatarProvider:
-                return self::castEnum($value, AvatarProvider::class);
+                return self::castEnum($value, AvatarProvider::class) ?? self::default($key);
             case UserPrefKey::Personal_VectorApp:
                 return $value === null ? null : self::castEnum($value, VectorApp::class);
             case UserPrefKey::ColorGuide_DefaultGuide:
@@ -221,6 +221,41 @@ class UserPrefHelper
         Validator::make(['value' => $value], ['value' => [...$rules]])->validate();
     }
 
+    /**
+     * Validates a raw request value and converts it into the type {@see self::set()} expects
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public static function fromInput(UserPrefKey $key, $raw)
+    {
+        if ($raw === '') {
+            $raw = null;
+        }
+        self::validate($key, $raw);
+
+        $default = self::default($key);
+        if (is_bool($default)) {
+            return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
+        }
+        if (is_int($default) || $key === UserPrefKey::Pcg_Slots) {
+            return $raw === null ? null : (int) $raw;
+        }
+
+        return match ($key) {
+            UserPrefKey::Personal_AvatarProvider => AvatarProvider::from($raw),
+            UserPrefKey::Personal_VectorApp => $raw === null ? null : VectorApp::from($raw),
+            UserPrefKey::ColorGuide_DefaultGuide => $raw === null ? null : GuideName::from($raw),
+        };
+    }
+
+    /**
+     * The JSON representation of a preference value
+     */
+    public static function toOutput($value)
+    {
+        return $value instanceof BackedEnum ? $value->value : $value;
+    }
+
     private static function castBool(?string $value): bool
     {
         return $value === '1';
@@ -243,7 +278,8 @@ class UserPrefHelper
                 __METHOD__
             ));
         }
-        return $class::from($value);
+        // Stored values the application no longer knows (production still has `cg_defaultguide = pl`) read as unset
+        return $class::tryFrom($value);
     }
 
     /**
@@ -311,14 +347,14 @@ class UserPrefHelper
      */
     public static function set(User $user, UserPrefKey $key, $value)
     {
+        self::validate($key, $value);
+
         $default_value = self::default($key);
 
         /** @var UserPref $pref */
         $pref = $user->prefs()->firstOrCreate(['key' => $key], [
             'value' => $default_value,
         ]);
-
-        self::validate($key, $value);
 
         if ($value === $default_value) {
             return $pref->delete();

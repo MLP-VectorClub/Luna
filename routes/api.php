@@ -57,7 +57,7 @@ Route::prefix('about')->group(function () {
     Route::get('members', [AboutController::class, 'members']);
 });
 
-Route::middleware($throttle(60))->group(function () {
+Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
     Route::prefix('users')->group(function () {
         // Route::get('oauth/signup/{provider}', [SignupController::class, 'socialiteRedirect']);
         Route::get('oauth/signin/{provider}', [SigninController::class, 'socialiteRedirect']);
@@ -65,12 +65,14 @@ Route::middleware($throttle(60))->group(function () {
         Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
         Route::middleware('auth:sanctum')->group(function () {
+            Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
+            Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('tokens', [UsersController::class, 'tokens']);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);
 
-            Route::get('/', [UsersController::class, 'list']);
+            Route::get('/', [UsersController::class, 'list'])->middleware('role:staff');
         });
 
         Route::get('{user}', [UsersController::class, 'getById'])->where('user', '[0-9]+');

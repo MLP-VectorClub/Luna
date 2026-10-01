@@ -10,6 +10,9 @@ use Spatie\EloquentSortable\SortableTrait;
 
 class ColorGroup extends Model implements Sortable
 {
+    // The table has no created_at / updated_at columns
+    public $timestamps = false;
+
     use SortableTrait;
 
     protected $fillable = [

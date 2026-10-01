@@ -9,7 +9,7 @@ return [
     /*
      * Determine if the response cache middleware should be enabled.
      */
-    'enabled' => env('APP_ENV') !== 'local',
+    'enabled' => env('RESPONSE_CACHE_ENABLED', env('APP_ENV') !== 'local'),
 
     /*
      *  The given class will determinate if a request should be cached. The

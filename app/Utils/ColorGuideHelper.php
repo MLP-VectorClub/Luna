@@ -7,6 +7,8 @@ use App\CoreUtils;
 use App\DB;
 use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
+use App\Http\Controllers\ShowController;
+use App\Models\Show;
 use App\Enums\Role;
 use App\Enums\TagType;
 use App\Enums\UserPrefKey;
@@ -583,8 +585,10 @@ class ColorGuideHelper
         }
 
         $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a, $double_size_sprite), [
+            'owner_id' => $a->owner_id,
             'order' => $a->order,
             'has_cutie_marks' => $a->has_cutie_marks,
+            'created_at' => $a->created_at->toISOString(),
         ]);
 
         if (!$compact) {
@@ -595,7 +599,6 @@ class ColorGuideHelper
             }
 
             $tag_mapper = fn (Tag $t) => self::mapTag($t);
-            $appearance['created_at'] = $a->created_at->toISOString();
             $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
             $appearance['color_groups'] = self::getColorGroups($a);
@@ -639,10 +642,23 @@ class ColorGuideHelper
      */
     public static function mapDetailedAppearance(Appearance $a): array
     {
+        $user = Auth::user();
         $appearance = array_merge(self::mapAppearance($a, false, true), [
-            'cutie_marks' => $a->cutiemarks()->chunkMap(
-                fn (CutieMark $cutiemark) => self::mapCutiemark($cutiemark)
-            )->toArray(),
+            'can_edit' => $a->canBeManagedBy($user),
+            'related_appearances' => $a->relatedAppearances()->get()
+                ->filter(fn (Appearance $related) => $related->owner_id === null || $related->canBeManagedBy($user))
+                ->map(fn (Appearance $related) => self::mapPreviewAppearance($related))
+                ->values()
+                ->toArray(),
+            'related_shows' => $a->shows()->orderBy('show.id')->get()
+                ->map(fn (Show $show) => ShowController::mapShowListItem($show))
+                ->toArray(),
+            // Cutie marks whose file is missing cannot be displayed, so they are left out
+            'cutie_marks' => $a->cutiemarks()->get()
+                ->filter(fn (CutieMark $cutiemark) => $cutiemark->vectorFile() !== null)
+                ->map(fn (CutieMark $cutiemark) => self::mapCutiemark($cutiemark))
+                ->values()
+                ->toArray(),
         ]);
 
         return $appearance;
