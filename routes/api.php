@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\ColorGuideController;
+use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserPrefsController;
@@ -34,6 +36,12 @@ Route::middleware('throttle:12,1')->group(function () {
         Route::post('/oauth/signin/{provider}', [SigninController::class, 'viaSocialite']);
     });
 });
+
+if (App::environment('testing')) {
+    Route::post('test/login/{id}', [TestLoginController::class, 'login'])->where('id', '[0-9]+');
+}
+
+Route::get('config', [ConfigController::class, 'get']);
 
 Route::prefix('about')->group(function () {
     if (!App::isProduction()) {

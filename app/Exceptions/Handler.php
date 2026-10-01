@@ -3,10 +3,11 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Support\Facades\App;
 use Psr\Container\NotFoundExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
@@ -50,13 +51,17 @@ class Handler extends ExceptionHandler
      */
     public function render($request, \Throwable $exception)
     {
+        // The API contract wants every failure as `{message}` with the proper status code
         if ($exception instanceof NotFoundHttpException || $exception instanceof ModelNotFoundException) {
-            if (App::isProduction()) {
-                return response()->json(status: 404);
-            }
+            return response()->json(['message' => 'Not found'], 404);
+        }
 
-            // Return the exception as JSON response if not in production
-            return response()->json($this->prepareJsonResponse($request, $exception), 404);
+        if ($exception instanceof AuthorizationException) {
+            return response()->json(['message' => $exception->getMessage() ?: 'You do not have permission to do this'], 403);
+        }
+
+        if ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() === 403) {
+            return response()->json(['message' => $exception->getMessage() ?: 'You do not have permission to do this'], 403);
         }
 
         return parent::render($request, $exception);

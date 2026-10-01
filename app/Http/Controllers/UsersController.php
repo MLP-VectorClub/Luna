@@ -98,6 +98,18 @@ class UsersController extends Controller
      *     )
      *   }
      * )
+     * @OA\Schema(
+     *   schema="CurrentUser",
+     *   type="object",
+     *   description="The signed in user as returned by `GET /users/me`, never includes the e-mail address",
+     *   required={"id", "name", "role", "avatarUrl", "avatarProvider"},
+     *   additionalProperties=false,
+     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
+     *   @OA\Property(property="name", type="string", example="example"),
+     *   @OA\Property(property="role", ref="#/components/schemas/DatabaseRole"),
+     *   @OA\Property(property="avatarUrl", type="string", format="uri", nullable=true),
+     *   @OA\Property(property="avatarProvider", ref="#/components/schemas/AvatarProvider"),
+     * )
      * @OA\Get(
      *   path="/users/me",
      *   description="Get information about the currently logged in user",
@@ -106,7 +118,13 @@ class UsersController extends Controller
      *   @OA\Response(
      *     response="200",
      *     description="Query successful",
-     *     @OA\JsonContent(ref="#/components/schemas/User")
+     *     @OA\JsonContent(
+     *       type="object",
+     *       required={"user", "sessionUpdating"},
+     *       additionalProperties=false,
+     *       @OA\Property(property="user", ref="#/components/schemas/CurrentUser"),
+     *       @OA\Property(property="sessionUpdating", type="boolean", description="Always false in Luna")
+     *     )
      *   ),
      *   @OA\Response(
      *     response="401",
@@ -121,7 +139,18 @@ class UsersController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        return response()->camelJson($user->toArrayWithProtected());
+
+        return response()->camelJson([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role,
+                'avatar_url' => $user->avatar_url,
+                'avatar_provider' => $user->avatar_provider,
+            ],
+            // Luna has no DeviantArt session to refresh in the background
+            'session_updating' => false,
+        ]);
     }
 
     /**

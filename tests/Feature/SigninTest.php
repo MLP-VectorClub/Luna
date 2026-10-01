@@ -59,8 +59,10 @@ class SigninTest extends TestCase
         // The token must actually authenticate, that goes through Sanctum's token guard
         $this->withToken($token)->getJson('/users/me')
             ->assertOk()
-            ->assertJsonPath('name', $user->name)
-            ->assertJsonPath('email', $user->email);
+            ->assertJsonPath('user.id', $user->id)
+            ->assertJsonPath('user.name', $user->name)
+            ->assertJsonPath('sessionUpdating', false)
+            ->assertJsonMissingPath('user.email');
     }
 
     public function testTokenLifecycle(): void
