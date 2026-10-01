@@ -28,7 +28,10 @@ use Illuminate\Support\Facades\App;
 |
 */
 
-Route::middleware('throttle:12,1')->group(function () {
+// The contract suite fires hundreds of requests, rate limits only apply outside the testing environment
+$throttle = fn(int $per_minute) => App::environment('testing') ? 'throttle:100000,1' : "throttle:$per_minute,1";
+
+Route::middleware($throttle(12))->group(function () {
     Route::prefix('users')->group(function () {
         Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
 
@@ -54,7 +57,7 @@ Route::prefix('about')->group(function () {
     Route::get('members', [AboutController::class, 'members']);
 });
 
-Route::middleware('throttle:60,1')->group(function () {
+Route::middleware($throttle(60))->group(function () {
     Route::prefix('users')->group(function () {
         // Route::get('oauth/signup/{provider}', [SignupController::class, 'socialiteRedirect']);
         Route::get('oauth/signin/{provider}', [SigninController::class, 'socialiteRedirect']);
