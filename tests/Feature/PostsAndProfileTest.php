@@ -110,7 +110,7 @@ class PostsAndProfileTest extends TestCase
         $this->assertEqualsCanonicalizing(['finished-posts'], array_column($guest->json('contributions'), 'type'));
 
         $this->actingAs($user, 'sanctum');
-        $this->getJson("/users/{$user->id}/profile")->assertJsonPath('sameUser', true)->assertJsonPath('canEdit', false)->assertJsonPath('previousUsernames', []);
+        $this->getJson("/users/{$user->id}/profile")->assertJsonPath('sameUser', true)->assertJsonPath('canEdit', false)->assertJsonPath('previousUsernames', null);
 
         $this->actingAs($this->user(Role::Admin), 'sanctum');
         $staff = $this->getJson("/users/{$user->id}/profile")->assertJsonPath('canEdit', true);
