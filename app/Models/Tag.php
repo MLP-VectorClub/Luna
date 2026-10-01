@@ -30,4 +30,20 @@ class Tag extends Model
     {
         return $this->belongsToMany(Appearance::class, 'tagged');
     }
+
+    public function synonymTarget()
+    {
+        return $this->belongsTo(__CLASS__, 'synonym_of');
+    }
+
+    /**
+     * Recounts how many appearances the tag is applied to and stores it
+     */
+    public function updateUses(): int
+    {
+        $uses = $this->appearances()->count();
+        $this->forceFill(['uses' => $uses])->save();
+
+        return $uses;
+    }
 }

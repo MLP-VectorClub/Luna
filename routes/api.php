@@ -11,6 +11,7 @@ use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShowController;
+use App\Http\Controllers\TagsController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserPrefsController;
 use App\Http\Controllers\UsersController;
@@ -105,6 +106,20 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::get('{id}', [UsefulLinksController::class, 'show'])->whereNumber('id');
             Route::put('{id}', [UsefulLinksController::class, 'update'])->whereNumber('id');
             Route::delete('{id}', [UsefulLinksController::class, 'destroy'])->whereNumber('id');
+        });
+    });
+
+    Route::prefix('tags')->group(function () {
+        Route::get('/', [TagsController::class, 'index']);
+
+        Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
+            Route::post('/', [TagsController::class, 'create']);
+            Route::post('recount-uses', [TagsController::class, 'recountUses']);
+            Route::get('{id}', [TagsController::class, 'show'])->whereNumber('id');
+            Route::put('{id}', [TagsController::class, 'update'])->whereNumber('id');
+            Route::delete('{id}', [TagsController::class, 'destroy'])->whereNumber('id');
+            Route::put('{id}/synonym', [TagsController::class, 'makeSynonym'])->whereNumber('id');
+            Route::delete('{id}/synonym', [TagsController::class, 'removeSynonym'])->whereNumber('id');
         });
     });
 
