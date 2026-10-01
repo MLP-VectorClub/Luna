@@ -24,6 +24,7 @@ class UserPrefHelper
             case UserPrefKey::ColorGuide_ItemsPerPage:
                 return 7;
             case UserPrefKey::ColorGuide_HideFullListPreviews:
+            case UserPrefKey::ColorGuide_HideSynonymTags:
             case UserPrefKey::Admin_CanEarnPcgPoints:
             case UserPrefKey::Admin_CanMakePcgAppearances:
             case UserPrefKey::Admin_CanUploadPcgSprites:
@@ -32,7 +33,6 @@ class UserPrefHelper
             case UserPrefKey::Admin_CanReservePosts:
                 return true;
             case UserPrefKey::ColorGuide_HideColorInfo:
-            case UserPrefKey::ColorGuide_HideSynonymTags:
             case UserPrefKey::ColorGuide_NutshellNames:
             case UserPrefKey::Personal_HideDiscord:
             case UserPrefKey::Personal_PrivatePersonalGuide:
