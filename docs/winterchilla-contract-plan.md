@@ -153,14 +153,14 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
   'CONTRACT_LOGIN_URL=/test/login/{id}' vendor/bin/pest tests/Browser/Api/TagApiTest.php
 ```
 
-- 2026-10-01: schema alignment migration, foundation (`/config`, `role:` / `optional.auth` middleware, `{message}` errors, `POST /test/login/{id}`, `/users/me` in the contract shape),
-  settings, notices, useful links, user preferences, tags (incl. ElasticSearch index updates through `AppearanceIndex`), and the existing appearance / show / color-guide reads
-  aligned with the contract (ownerId, canEdit, related appearances and shows, private appearances through optional auth, show season/episode filters). 83 of 127 operations left.
-  Passing contract files: Config, Settings, Notices, ColorGuideRead, ShowList, SiteRead; Tag, PublicAppearances, UsersRead pass except the parts that need what is listed below.
-- Known contract failures that are not Luna's to fix: `viewUrl` must start with `/cg/cutiemark/` (Winterchilla route), `GET /appearances/{id}/preview` needs Winterchilla's PNG generator,
-  and the tests of `x-internal` endpoints (`/tags/autocomplete`, `/about/upcoming`, the HTML `tags` field on tag creation).
-- Next: appearances writes, color groups, cutie marks and sprites (need an SVG sanitizer, see below), shows, posts, events, users (profile, contributions, role), notifications,
-  personal guide, Discord.
+- 2026-10-01: schema alignment migration, foundation (`/config`, middleware, `{message}` errors, test login, `/users/me`), settings, notices, useful links, user preferences, tags (with
+  ElasticSearch index updates through `AppearanceIndex`), color groups, appearance management (create / update / delete / pin / relations / tags / shows / order / template / selective clear /
+  sprites), shows (details, create, update, delete, votes, next, latest, prefill, appearance links), admin logs, notification read, color guide export and reindex, personal guide
+  (appearances, slots, points, point history, recalculation) and `PUT /users/{id}/role`. **91 of 127 operations done, 36 left.** Luna's own suite has 92 tests.
+- Left: posts (16), events and entries (13), user profile and contributions (2, they need the post mapping), Discord link/sync (2), cutie marks and SVG sanitizing (3).
+  The post and event flows call external image providers (DeviantArt, Derpibooru and others) and the DeviantArt API, which Luna has no client for yet; that is the main design question.
+- Contract tests that still fail for Winterchilla-UI reasons (not Luna's to fix): `goto`/`message`/`url`/`cgs`/`notes`/`newhtml`/`section`/`html` fields, tests of `x-internal` endpoints,
+  the default-sprite fallback and the staff-only cutie mark file checks.
 - Decision needed before cutie marks / sprites: Winterchilla sanitizes uploaded SVG with the `svgo` Node binary (`/appearances/{id}/sanitize-svg`, cutie mark upload). Luna has no
   equivalent; options are shipping svgo as a dependency of Luna's deploy, or sanitizing in PHP (e.g. `enshrined/svg-sanitize`) which would not minify.
 
