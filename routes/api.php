@@ -13,6 +13,7 @@ use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShowController;
+use App\Http\Controllers\ShowManagementController;
 use App\Http\Controllers\TagsController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserPrefsController;
@@ -180,6 +181,24 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
     });
 
     Route::prefix('show')->group(function () {
+        $manage = ShowManagementController::class;
         Route::get('/', [ShowController::class, 'index']);
+        Route::get('latest', [$manage, 'latest']);
+        Route::get('next', [$manage, 'next']);
+        Route::get('{id}', [$manage, 'show'])->whereNumber('id');
+        Route::get('{id}/vote', [$manage, 'votes'])->whereNumber('id');
+
+        Route::middleware('auth:sanctum')->group(function () use ($manage) {
+            Route::post('{id}/vote', [$manage, 'vote'])->whereNumber('id');
+
+            Route::middleware('role:staff')->group(function () use ($manage) {
+                Route::get('prefill', [$manage, 'prefill']);
+                Route::post('/', [$manage, 'create']);
+                Route::put('{id}', [$manage, 'update'])->whereNumber('id');
+                Route::delete('{id}', [$manage, 'destroy'])->whereNumber('id');
+                Route::get('{id}/appearances', [$manage, 'appearances'])->whereNumber('id');
+                Route::put('{id}/appearances', [$manage, 'setAppearances'])->whereNumber('id');
+            });
+        });
     });
 });
