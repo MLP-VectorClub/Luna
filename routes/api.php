@@ -13,11 +13,14 @@ use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\EventsController;
 use App\Http\Controllers\PersonalGuideController;
+use App\Http\Controllers\PostsController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\ShowManagementController;
 use App\Http\Controllers\TagsController;
 use App\Http\Controllers\UsefulLinksController;
+use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\UserPrefsController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +73,8 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
 
         Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
+        Route::get('{id}/profile', [UserProfileController::class, 'profile'])->whereNumber('id');
+        Route::get('{id}/contributions/{type}', [UserProfileController::class, 'contributions'])->whereNumber('id');
         Route::get('{id}/personal-guide/appearances', [PersonalGuideController::class, 'appearances'])->whereNumber('id');
 
         Route::middleware('auth:sanctum')->group(function () {
@@ -178,6 +183,22 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::put('{id}/synonym', [TagsController::class, 'makeSynonym'])->whereNumber('id');
             Route::delete('{id}/synonym', [TagsController::class, 'removeSynonym'])->whereNumber('id');
         });
+    });
+
+    Route::get('posts', [PostsController::class, 'index']);
+
+    Route::prefix('events')->group(function () {
+        Route::get('/', [EventsController::class, 'index']);
+        Route::get('{id}', [EventsController::class, 'show'])->whereNumber('id');
+
+        // Managing events and receiving entries is switched off in Winterchilla, so these only answer 501 after the permission checks
+        Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
+            Route::post('/', [EventsController::class, 'disabled']);
+            Route::put('{id}', [EventsController::class, 'disabled'])->whereNumber('id');
+            Route::delete('{id}', [EventsController::class, 'disabled'])->whereNumber('id');
+            Route::post('{id}/finalize', [EventsController::class, 'disabled'])->whereNumber('id');
+        });
+        Route::post('{id}/entries/check', [EventsController::class, 'disabled'])->whereNumber('id')->middleware('auth:sanctum');
     });
 
     Route::prefix('notices')->group(function () {

@@ -10,6 +10,11 @@ use Laravel\Sanctum\HasApiTokens;
 
 class DeviantartUser extends Model
 {
+    // The primary key is a UUID
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     /**
      * The attributes that are mass assignable.
      *
