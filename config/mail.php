@@ -42,6 +42,8 @@ return [
             'scheme' => env('MAIL_SCHEME'),
             // set to false for a local mail server (localhost:25) with a self-signed certificate, where STARTTLS would otherwise fail
             'verify_peer' => env('MAIL_VERIFY_PEER', true),
+            // set to false when the server advertises STARTTLS but cannot complete it (production's local mail server answers "454 TLS not available")
+            'auto_tls' => env('MAIL_AUTO_TLS', true),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
         ],
