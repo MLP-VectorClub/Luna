@@ -40,6 +40,8 @@ return [
             'port' => env('MAIL_PORT', 587),
             // null lets the transport use STARTTLS when the server offers it, set to `smtps` for implicit TLS (port 465)
             'scheme' => env('MAIL_SCHEME'),
+            // set to false for a local mail server (localhost:25) with a self-signed certificate, where STARTTLS would otherwise fail
+            'verify_peer' => env('MAIL_VERIFY_PEER', true),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
         ],
