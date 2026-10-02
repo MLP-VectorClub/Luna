@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Requests per minute and client: reads (GET, HEAD) and everything else. Sign-in and sign-up have their own, stricter limit in routes/api.php
+    'throttle_reads' => (int) env('THROTTLE_READS', 1200),
+    'throttle_writes' => (int) env('THROTTLE_WRITES', 60),
+
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
 
     'asset_url' => env('ASSET_URL', null),

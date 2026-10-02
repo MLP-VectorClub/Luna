@@ -72,7 +72,7 @@ Route::prefix('about')->group(function () {
     Route::get('members', [AboutController::class, 'members']);
 });
 
-Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
+Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle:api', 'optional.auth'])->group(function () {
     Route::prefix('users')->group(function () {
         // Route::get('oauth/signup/{provider}', [SignupController::class, 'socialiteRedirect']);
         Route::get('oauth/signin/{provider}', [SigninController::class, 'socialiteRedirect']);
