@@ -3,6 +3,7 @@
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppearanceManagementController;
+use App\Http\Controllers\CutieMarksController;
 use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
@@ -127,6 +128,9 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
         Route::put('{id}/relations', [$manage, 'setRelations'])->whereNumber('id');
         Route::get('{id}/tags', [$manage, 'tags'])->whereNumber('id');
         Route::put('{id}/tags', [$manage, 'setTags'])->whereNumber('id');
+        Route::get('{id}/cutie-marks', [CutieMarksController::class, 'index'])->whereNumber('id');
+        Route::put('{id}/cutie-marks', [CutieMarksController::class, 'replace'])->whereNumber('id');
+        Route::post('{id}/sanitize-svg', [CutieMarksController::class, 'sanitize'])->whereNumber('id');
 
         Route::middleware('role:staff')->group(function () use ($manage) {
             Route::get('{id}/shows', [$manage, 'shows'])->whereNumber('id');
