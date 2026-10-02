@@ -168,6 +168,10 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
   **121 of 127 operations done**; the 6 left are the event entry operations (disabled in Winterchilla, skipped). Luna's suite has 131 tests.
   Discord calls go through `Http` (discord.com API v10); `DISCORD_SKIP_REVOKE=true` (set by `scripts/serve-contract.sh`) skips the revoke call so the contract test can unlink seeded users.
   Seed caveat: `last_synced` of the seeded synced Discord user (9004) is time based, load the seed shortly before running `DiscordApiTest`, otherwise the sync hits Discord and unlinks the user.
+- 2026-10-02: **cutover rehearsal** with `scripts/rehearse-cutover.sh` (copies `prod_copy`, a Winterchilla-schema copy at phinx 20260930160000, into `luna_rehearsal`, marks the Luna migrations for tables Winterchilla already owns as run, runs the rest).
+  Result: clean. Adds only `migrations`, `personal_access_tokens`, `password_resets`, `failed_jobs`, `activity_log`, `media` and the `show (season, episode)` unique index (the copy lacked it, no duplicates);
+  no existing table or column changed, so Winterchilla's schema is untouched. Luna served config, guides, shows, tags, events and members from the copy. `fs:migrate` could not be rehearsed:
+  the only `fs/` available is Winterchilla's dev one, whose orphan test files make the command abort (as designed). It needs a copy of the production `fs/`.
 
 ## 8. Things the migration found that Winterchilla (or Luna) had missed
 

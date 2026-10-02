@@ -37,7 +37,7 @@ progress log are in `docs/winterchilla-contract-plan.md`. Nothing from this work
 - Cutie mark gaps: no svgo, colors are not tokenized (the file is stored sanitized, `sanitize-svg` only warns about colors missing from the `Cutie Mark` color group), attribution by username/deviation needs the DeviantArt user to exist already (no DeviantArt API lookup to create unknown users), the `preview` HTML of Winterchilla is not returned
 - Event entries, intentionally skipped (disabled in Winterchilla, unused by Celestia): `GET|PUT|DELETE /events/{id}/entries`, `/event-entries/{entryid}`. Ask Winterchilla to mark them disabled
 - Not done and not in the contract: notes cross references (`#id`, episode ids) stay plain text, `GET /appearances/{id}/preview` (internal), the real ElasticSearch reindex is untested
-- Before Winterchilla can use Luna's database: run the new migration against a rehearsal copy of production, re-run `fs:migrate`, and the user decides how to load/adopt the production data
+- Before Winterchilla can use Luna's database: the migration rehearsal passed (`scripts/rehearse-cutover.sh`, see the plan). Still open: rehearse `fs:migrate` with a copy of the production `fs/`, and the user decides how to load/adopt the production data
 
 ### Running the contract suite against Luna
 1. `scripts/load-contract-seed.sh <contract-seed.sql>` builds the `luna_contract` DB (the seed comes from Winterchilla's `scripts/dump-contract-seed.sh`, do not run that against the shared test DB)
