@@ -17,7 +17,7 @@ use Tests\TestCase;
 /**
  * Winterchilla renders HTML pages that Celestia has to replace, so every one of its GET page routes (config/routes/pages.php in the
  * Winterchilla repo) is accounted for here: either the Luna endpoint(s) that feed the page are smoke tested, or the route is listed as
- * Celestia-only, a legacy redirect, deliberately dropped, or a known gap. Adding a page to Winterchilla without listing it here fails the inventory test.
+ * Celestia-only, a legacy redirect, verified dead (dropped), or an open gap that needs a decision. Adding a page to Winterchilla without listing it here fails the inventory test.
  *
  * Smoke format: "GET /path => status @role" (status 2xx accepts any success, e.g. 204 for empty content), with {placeholders} filled from the seeded data.
  */
@@ -41,7 +41,7 @@ class WinterchillaPagesTest extends TestCase
         $about = [self::API, 'Member list and server info', ['GET /about/members => 200']];
         $guides = [self::API, 'Guide listing', ['GET /appearances?guide=pony => 200', 'GET /color-guide => 200']];
         $appearance = [self::API, 'Appearance page data', ['GET /appearances/{appearance} => 200', 'GET /appearances/{appearance}/color-groups => 200']];
-        $appearance_file = [self::DROPPED, 'Palette and image exports (.png .svg .json .gpl): palettes are composed client side from colorGroups, images come from the sprite, preview and cutie mark URLs'];
+        $appearance_file = [self::GAP, 'Appearance exports: the Download swatch file button (.json for Illustrator, .gpl for Inkscape, URLs are shown in the UI instructions), palette .png and preview/facing .svg. Celestia plans to compose them client side from colorGroups, not decided by the user'];
         $legacy_user = [self::REDIRECT, 'Old @name URL, Celestia redirects after resolving the name', ['GET /users/da/{username} => 200']];
         $show = [self::API, 'Show page data', ['GET /show/{show} => 200', 'GET /posts?showId={show}&kind=request => 200']];
         $personal = [self::API, 'Personal guide', ['GET /users/{user}/personal-guide/appearances => 200', 'GET /users/{user}/personal-guide/slots => 2xx @user']];
@@ -62,7 +62,7 @@ class WinterchillaPagesTest extends TestCase
             '/admin/logs/[i]?' => [self::API, 'Log list and entry', ['GET /admin/logs => 200 @staff', 'GET /admin/logs/{log} => 200 @staff']],
             '/admin/usefullinks' => [self::API, 'Useful links management', ['GET /useful-links => 200 @staff']],
             '/admin/wsdiag' => $celestia('Websocket diagnostics, Luna has no websocket server'),
-            '/admin/pcg-appearances/[i]?' => [self::DROPPED, 'Staff list of all personal guide appearances: Celestia does not plan it, per user GET /users/{id}/personal-guide/appearances exists'],
+            '/admin/pcg-appearances/[i]?' => [self::GAP, 'Staff list of all personal guide appearances: linked from the admin dashboard, a real staff feature. Celestia does not plan it, not decided by the user'],
             '/admin/notices' => [self::API, 'Notice management', ['GET /notices => 200 @staff', 'GET /notices/{notice} => 200 @staff']],
             '/blending' => $celestia('Client side tool'),
             '/[cg]/blending' => $celestia('Client side tool'),
@@ -87,7 +87,7 @@ class WinterchillaPagesTest extends TestCase
             '/docs' => [self::API, 'API docs', ['GET /generated/api-docs.json => 200']],
             '/[cg]/[guide:guide]?/tags/[i]?' => [self::API, 'Tag list', ['GET /tags => 200 @staff', 'GET /tags/{tag} => 200 @staff']],
             '/[cg]/cutiemark/[i:id].svg' => [self::API, 'Cutie mark file, Luna exposes the file URL (viewUrl) on the appearance and `rendered` on GET /appearances/{id}/cutie-marks', ['GET /appearances/{appearance}/cutie-marks => 200 @staff']],
-            '/[cg]/cutiemark/download/[i:id][adi]?' => [self::DROPPED, 'Cutie mark source download: Celestia only uses viewUrl / rendered'],
+            '/[cg]/cutiemark/download/[i:id][adi]?' => [self::GAP, 'Cutie mark download button (source or tokenized SVG): Celestia would link the viewUrl file instead, not decided by the user'],
             '/da-auth' => $oauth,
             '/da-auth/begin' => $oauth,
             '/da-auth/end' => $oauth,
@@ -111,7 +111,7 @@ class WinterchillaPagesTest extends TestCase
             '/users' => [self::API, 'Member list', ['GET /users => 200 @staff', 'GET /about/members => 200']],
             '/users/[i:user_id](-[uc]?)?' => $profile,
             '/[sett]' => [self::API, 'Own profile shortcut', ['GET /users/me => 200 @user']],
-            '/u/[uuid:uuid]' => [self::DROPPED, 'Profile by DeviantArt UUID: developer-only redirect, not used (see Winterchilla docs/api-path-alignment.md, "Not provided, on purpose")'],
+            '/u/[uuid:uuid]' => [self::GAP, 'Profile by DeviantArt UUID: developer-only redirect, low value, not decided by the user'],
             '/users/[i:user_id]/contrib/[ad:type]/[i]?' => [self::API, 'Contributions list', ['GET /users/{user}/contributions/finished-posts => 200']],
             '/users/[i:id]?/account' => [self::API, 'Account settings', ['GET /users/me => 200 @user', 'GET /users/{user}/preferences/cg_itemsperpage => 200 @user', 'GET /users/tokens => 200 @user']],
             '/users/verify' => [self::API, 'E-mail verification link', ['GET /users/email/verify/{user}/invalid => 403 @user']],
@@ -232,6 +232,6 @@ class WinterchillaPagesTest extends TestCase
             }
         }
         $this->assertNotEmpty($gaps);
-        $this->markTestSkipped("Winterchilla pages without a Luna equivalent, dropped on purpose or open (".count($gaps)."):\n  ".implode("\n  ", $gaps));
+        $this->markTestSkipped("Winterchilla pages without a Luna equivalent: open gaps and verified dead pages (".count($gaps)."):\n  ".implode("\n  ", $gaps));
     }
 }
