@@ -176,7 +176,7 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
 - Luna's sidebar response lacked `minRole` and exposed `order`; the contract wants `{id, label, url, title, minRole}`. Fixed.
 - `dev_role_label` default was `staff` in Luna and is `developer` in Winterchilla (production stores `staff` explicitly, so nothing changes there). Aligned to `developer`.
 - Luna's `Show` model still listed a removed `synopsis_last_checked` column. Removed.
-- Username rule: Winterchilla `[A-Za-z\-\d]{1,20}`, Luna's `Username` rule allows `_` and any length. Not changed yet (existing accounts may break).
+- Username rule: tightened in Luna to Winterchilla's `[A-Za-z\-\d]{1,20}` (no underscores). Existing accounts with `_` keep working, only new signups are checked.
 - Contract oddities to settle with Winterchilla: `Pagination.currentPage` description in api.json contains a leaked docblock; `GET /tags/autocomplete?action=synon` answers 409
   (a GET that reports state through an error) and prefixes `type` with `typ-` when searching; `Tag.synonymOf` is an id while `TagListItem.synonymOf` is `{id, name}`;
   `TagListItem.type` enum lacks `warn`; `DELETE /tags/{id}/synonym` answers 200 or 204 depending on whether the tag was a synonym.

@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Rule;
 
 class Username implements Rule
 {
-    const PATTERN = '~^[A-Za-z\d_-]+$~';
+    const PATTERN = '~^[A-Za-z\d-]{1,20}$~D';
 
     /**
      * Determine if the validation rule passes.
