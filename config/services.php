@@ -43,6 +43,8 @@ return [
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'bot_token' => env('DISCORD_BOT_TOKEN'),
         'guild_id' => env('DISCORD_SERVER_ID'),
+        // Only for the contract test server: skips the call to Discord when revoking access
+        'skip_revoke' => (bool) env('DISCORD_SKIP_REVOKE', false),
         'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord->value)
     ],
 

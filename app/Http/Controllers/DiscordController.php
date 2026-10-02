@@ -82,7 +82,7 @@ class DiscordController extends Controller
         $member = $this->target($request, $user_id);
         $same_user = $request->user()->id === $user_id;
 
-        if ($member->access !== null) {
+        if ($member->access !== null && !config('services.discord.skip_revoke')) {
             $response = Http::asForm()->post(self::API.'/oauth2/token/revoke', [
                 'token' => $member->refresh,
                 'token_type_hint' => 'refresh_token',

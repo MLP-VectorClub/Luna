@@ -4,5 +4,5 @@
 cd "$(dirname "$0")/.."
 fuser -k 8766/tcp >/dev/null 2>&1 || true
 sleep 1
-RESPONSE_CACHE_ENABLED=false APP_ENV=testing DB_DATABASE=luna_contract setsid php artisan serve --port=8766 > "${TMPDIR:-/tmp}/luna-contract-serve.log" 2>&1 &
+DISCORD_SKIP_REVOKE=true RESPONSE_CACHE_ENABLED=false APP_ENV=testing DB_DATABASE=luna_contract setsid php artisan serve --port=8766 > "${TMPDIR:-/tmp}/luna-contract-serve.log" 2>&1 &
 sleep 2
