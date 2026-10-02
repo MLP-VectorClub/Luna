@@ -157,6 +157,25 @@ class MigrateFilesystem extends Command
         }
     }
 
+    /**
+     * Files whose database record does not exist (e.g. leftovers of test runs) are reported and left out instead of aborting the import
+     *
+     * @param  SplFileInfo[]  $fileinfo
+     * @param  callable(int[]): int[]  $existing_ids
+     * @return SplFileInfo[]
+     */
+    private function skipOrphans(array $fileinfo, callable $existing_ids, string $what): array
+    {
+        $id_of = fn (SplFileInfo $info) => (int) preg_replace('~^(\d+).*$~', '$1', $info->getFilename());
+        $existing = $existing_ids(array_map($id_of, array_values($fileinfo)));
+        $kept = array_filter($fileinfo, fn (SplFileInfo $info) => in_array($id_of($info), $existing, true));
+        foreach (array_diff_key($fileinfo, $kept) as $info) {
+            $this->warn("Skipping $what file {$info->getFilename()}: no matching database record");
+        }
+
+        return array_values($kept);
+    }
+
     private function outputDiff(array $diff, array $db_ids, array $fs_ids): never {
                     $this->output->newLine();
             $this->info('Mismatching IDs found: '.implode(', ', $diff));
@@ -173,6 +192,7 @@ class MigrateFilesystem extends Command
      */
     private function importCutiemarks(array $fileinfo): void
     {
+        $fileinfo = $this->skipOrphans($fileinfo, fn (array $ids) => CutieMark::whereIn('id', $ids)->pluck('id')->all(), 'cutie mark');
         $cm_file_count = count($fileinfo);
         $this->line("Importing $cm_file_count cutie mark ".Str::plural('file', $cm_file_count)."…");
         $this->output->progressStart($cm_file_count);
@@ -222,6 +242,7 @@ class MigrateFilesystem extends Command
      */
     private function importSprites(array $fileinfo): void
     {
+        $fileinfo = $this->skipOrphans($fileinfo, fn (array $ids) => Appearance::whereIn('id', $ids)->pluck('id')->all(), 'sprite');
         $sprite_file_count = count($fileinfo);
         $this->line("Importing $sprite_file_count sprite ".Str::plural('file', $sprite_file_count)."…");
         $this->output->progressStart($sprite_file_count);
