@@ -38,7 +38,8 @@ return [
             'transport' => 'smtp',
             'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
             'port' => env('MAIL_PORT', 587),
-            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+            // null lets the transport use STARTTLS when the server offers it, set to `smtps` for implicit TLS (port 465)
+            'scheme' => env('MAIL_SCHEME'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
         ],
@@ -74,8 +75,9 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        // MAIL_FROM is what Winterchilla calls it, so the same .env block works for both apps
+        'address' => env('MAIL_FROM_ADDRESS', env('MAIL_FROM', 'hello@example.com')),
+        'name' => env('MAIL_FROM_NAME', 'Penny Curve'),
     ],
 
     /*
