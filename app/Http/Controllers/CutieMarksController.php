@@ -21,7 +21,7 @@ use OpenApi\Annotations as OA;
 
 class CutieMarksController extends Controller
 {
-    private const MAX_CUTIE_MARKS = 4;
+    private const MAX_CUTIE_MARKS = 2;
     private const MAX_SVG_BYTES = 1048576;
 
     /**
@@ -59,11 +59,11 @@ class CutieMarksController extends Controller
      * @OA\Put(
      *   path="/appearances/{id}/cutie-marks",
      *   operationId="PutAppearancesIdCutieMarks",
-     *   description="Replace the cutie marks of an appearance (up to 4). Cutie marks missing from the list are removed. The user must have permission to manage the appearance.",
+     *   description="Replace the cutie marks of an appearance (up to 2). Cutie marks missing from the list are removed. The user must have permission to manage the appearance.",
      *   tags={"appearances"},
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"cutieMarks"},
-     *     @OA\Property(property="cutieMarks", type="array", description="List of cutie mark definitions, max 4 items", @OA\Items(type="object", required={"attribution", "rotation"},
+     *     @OA\Property(property="cutieMarks", type="array", maxItems=2, description="List of cutie mark definitions, max 2 items", @OA\Items(type="object", required={"attribution", "rotation"},
      *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId", description="ID of an existing cutie mark to update; omit to create a new one"),
      *       @OA\Property(property="svgdata", ref="#/components/schemas/SVGFile", description="Required when creating a new cutie mark, max 1MB"),
      *       @OA\Property(property="label", type="string", nullable=true, minLength=1, maxLength=32, description="Unique-per-appearance display label"),

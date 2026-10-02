@@ -91,7 +91,7 @@ class CutieMarksTest extends TestCase
         foreach ([['rotation' => 90], ['attribution' => 'nonsense'], ['facing' => 'sideways'], ['svgdata' => 'nope'], ['svgdata' => ''], ['label' => str_repeat('a', 33)], ['attribution' => 'user'], ['attribution' => 'user', 'username' => 'No Such_User']] as $bad) {
             $this->putCms($appearance, [$bad + $base])->assertJsonValidationErrors('cutiemarks');
         }
-        $this->putCms($appearance, array_fill(0, 5, $base))->assertJsonValidationErrors('cutiemarks');
+        $this->putCms($appearance, array_fill(0, 3, $base))->assertJsonValidationErrors('cutiemarks');
         $this->putCms($appearance, [['id' => 99999] + $base])->assertJsonValidationErrors('cutiemarks');
         $this->putCms($appearance, [['label' => 'Same'] + $base, ['label' => 'Same'] + $base])->assertJsonValidationErrors('cutiemarks');
         $this->putJson("/appearances/{$appearance->id}/cutie-marks", [])->assertJsonValidationErrors('cutieMarks');
