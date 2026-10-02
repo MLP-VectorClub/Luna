@@ -25,29 +25,6 @@ class UserProfileController extends Controller
     public const CONTRIBUTION_TYPES = ['cms-provided', 'requests', 'reservations', 'finished-posts', 'fulfilled-requests'];
 
     /**
-     * @OA\Schema(
-     *   schema="UserProfile",
-     *   description="Everything the profile page shows about a user, with what the current visitor may do with it",
-     *   type="object",
-     *   required={"user", "sameUser", "canEdit", "devOnDev", "editableRoles", "discordServerMember", "previousUsernames", "contributions", "contributionsCacheDuration", "personalGuides", "awaitingApproval"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="user", ref="#/components/schemas/CurrentUser"),
-     *   @OA\Property(property="sameUser", type="boolean", description="Whether the visitor is looking at their own profile"),
-     *   @OA\Property(property="canEdit", type="boolean", description="Whether the visitor may change this user's role"),
-     *   @OA\Property(property="devOnDev", type="boolean", description="Whether a developer is looking at a developer (may change the displayed role label)"),
-     *   @OA\Property(property="editableRoles", type="object", nullable=true, description="Roles the visitor may assign, key to label", additionalProperties=@OA\AdditionalProperties(type="string")),
-     *   @OA\Property(property="discordServerMember", type="boolean"),
-     *   @OA\Property(property="previousUsernames", type="array", nullable=true, description="Only sent to the user themselves and to staff", @OA\Items(type="string")),
-     *   @OA\Property(property="contributions", type="array", @OA\Items(type="object", required={"type", "count", "noun", "verb"},
-     *     @OA\Property(property="type", type="string"), @OA\Property(property="count", type="integer"), @OA\Property(property="noun", type="string"), @OA\Property(property="verb", type="string")
-     *   )),
-     *   @OA\Property(property="contributionsCacheDuration", type="string", example="1 hour"),
-     *   @OA\Property(property="personalGuides", type="array", nullable=true, description="Null when the user keeps their personal guide section private from the visitor", @OA\Items(type="object", required={"id", "label", "private", "previewData"},
-     *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"), @OA\Property(property="private", type="boolean"),
-     *     @OA\Property(property="previewData", type="array", @OA\Items(type="string"))
-     *   )),
-     *   @OA\Property(property="awaitingApproval", type="array", nullable=true, description="Finished posts waiting for approval; null when the user is not a member", @OA\Items(ref="#/components/schemas/PostItem"))
-     * )
      * @OA\Get(
      *   path="/users/{id}/profile",
      *   operationId="GetUsersIdProfile",

@@ -84,21 +84,6 @@ class AdminController extends Controller
     }
 
     /**
-     * @OA\Schema(
-     *   schema="LogItem",
-     *   type="object",
-     *   required={"id", "type", "typeLabel", "initiator", "ip", "createdAt", "hasDetails"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="type", type="string", example="rolechange"),
-     *   @OA\Property(property="typeLabel", type="string", example="User group change"),
-     *   @OA\Property(property="initiator", type="object", nullable=true, description="Null when the web server itself made the change", required={"id", "name"},
-     *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="name", type="string")
-     *   ),
-     *   @OA\Property(property="ip", type="string", nullable=true),
-     *   @OA\Property(property="createdAt", type="string", format="date-time"),
-     *   @OA\Property(property="hasDetails", type="boolean", description="Whether GET /admin/logs/{id} has anything to show")
-     * )
      * @OA\Get(
      *   path="/admin/logs",
      *   operationId="GetAdminLogs",

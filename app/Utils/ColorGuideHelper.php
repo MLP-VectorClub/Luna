@@ -190,7 +190,7 @@ class ColorGuideHelper
      *   schema="GuideFullListGroupItem",
      *   type="object",
      *   required={
-     *     "label",
+     *     "name",
      *     "appearanceIds"
      *   },
      *   additionalProperties=false,
@@ -285,39 +285,6 @@ class ColorGuideHelper
      *   example={"#FF0000","#00FF00","#0000FF"},
      *   @OA\Items(type="string")
      * )
-     * @OA\Schema(
-     *   schema="PreviewAppearance",
-     *   type="object",
-     *   description="Minimal set of properties to display an appearance link, optionally with a colored preview",
-     *   required={
-     *     "id",
-     *     "label",
-     *     "guide",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="The name of the appearance",
-     *     example="Twinkle Sprinkle",
-     *   ),
-     *   @OA\Property(
-     *     property="guide",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/GuideName")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="previewData",
-     *     ref="#/components/schemas/AppearancePreviewData",
-     *   ),
-     * )
      * @param  Appearance  $a
      * @return array
      */
@@ -367,32 +334,6 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="Sprite",
-     *   type="object",
-     *   description="Data related to an appearance's sprite file. The actual file is available from a different endpoint.",
-     *   required={
-     *     "path",
-     *     "aspectRatio",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="path",
-     *     type="string",
-     *     format="URL",
-     *     description="The full URL of the current sprite image"
-     *   ),
-     *   @OA\Property(
-     *     property="aspectRatio",
-     *     type="array",
-     *     items={
-     *       "type": "number",
-     *     },
-     *     minItems=2,
-     *     maxItems=2,
-     *     description="The width and height of the sprite expressed in the smallest numbers possible while retaining the same aspect ratio. Useful for calculating placeholder element sizes."
-     *   ),
-     * )
      * @param  Appearance  $a
      * @param  bool  $double_size
      * @param  Media|null  $sprite_file
@@ -417,50 +358,6 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="MajorChange",
-     *   type="object",
-     *   description="The details for the major change entry",
-     *   required={
-     *     "id",
-     *     "reason",
-     *     "appearance",
-     *     "user",
-     *     "createdAt",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/OneBasedId")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="reason",
-     *     type="string",
-     *     description="The reason for the change",
-     *     example="Updated coat colors"
-     *   ),
-     *   @OA\Property(
-     *     property="appearance",
-     *     description="The appearance the change was made on",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/PreviewAppearance")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="user",
-     *     description="The identifier for the user who created the appearance",
-     *     nullable=true,
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/BarePublicUser")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="createdAt",
-     *     ref="#/components/schemas/IsoStandardDate"
-     *   ),
-     * )
      * @param  MajorChange  $mc
      * @param  bool  $is_staff
      * @return array
@@ -521,19 +418,6 @@ class ColorGuideHelper
      *   )
      * )
      * @OA\Schema(
-     *   schema="SlimAppearance",
-     *   type="object",
-     *   description="A less heavy version of the regular Appearance schema",
-     *   required={
-     *     "characterTagNames",
-     *   },
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
-     *     @OA\Schema(ref="#/components/schemas/SlimAppearanceOnly")
-     *   }
-     * )
-     * @OA\Schema(
      *   schema="AppearanceOnly",
      *   type="object",
      *   description="Represents properties that belong to the full appearance object only",
@@ -561,17 +445,6 @@ class ColorGuideHelper
      *     minItems=0,
      *     @OA\Items(ref="#/components/schemas/SlimGuideTag")
      *   )
-     * )
-     * @OA\Schema(
-     *   schema="Appearance",
-     *   type="object",
-     *   description="Represents an entry in the color guide",
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/CommonAppearance"),
-     *     @OA\Schema(ref="#/components/schemas/AppearanceOnly"),
-     *     @OA\Schema(ref="#/components/schemas/ListOfColorGroups")
-     *   }
      * )
      * @param  Appearance  $a
      * @param  bool  $compact
@@ -611,29 +484,6 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="DetailedAppearance",
-     *   type="object",
-     *   description="An appearance object containing the full range of information available",
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/Appearance"),
-     *     @OA\Schema(
-     *       type="object",
-     *       required={
-     *         "cutieMarks",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="cutieMarks",
-     *         type="array",
-     *         description="The list of cutie mark object associated with this appearance",
-     *         @OA\Items(ref="#/components/schemas/CutieMark"),
-     *         minItems=0,
-     *       )
-     *     )
-     *   }
-     * )
      * @param  Appearance  $a
      *
      * @return array
@@ -663,39 +513,6 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="Color",
-     *   type="object",
-     *   description="A color entry",
-     *   required={
-     *     "id",
-     *     "label",
-     *     "order",
-     *     "hex"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="The name of the color",
-     *     example="Fill"
-     *   ),
-     *   @OA\Property(
-     *     property="order",
-     *     ref="#/components/schemas/Order"
-     *   ),
-     *   @OA\Property(
-     *     property="hex",
-     *     type="string",
-     *     format="#RRGGBB",
-     *     description="The color value in uppercase hexadecimal form, including a # prefix",
-     *     example="#6181B6"
-     *   )
-     * )
      * @param  Color  $c
      *
      * @return array
@@ -725,58 +542,6 @@ class ColorGuideHelper
      *   minimum=-45,
      *   maximum=45,
      *   default=0
-     * )
-     * @OA\Schema(
-     *   schema="CutieMark",
-     *   type="object",
-     *   description="A cutie mark entry",
-     *   required={
-     *     "id",
-     *     "viewUrl",
-     *     "facing",
-     *     "rotation",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="viewUrl",
-     *     type="string",
-     *     description="The URL used for displaying the cutie mark SVG file.",
-     *   ),
-     *   @OA\Property(
-     *     property="facing",
-     *     nullable=true,
-     *     description="The direction the character is facing when this cutie mark should be used. `null` is used to indicate when the image is the same on both sides, meaning it's symmetrical.",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/CutieMarkFacing")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="favMe",
-     *     description="Optional link to a deviation on DeviantArt that is the original source of this cutie mark vector, for the sake of giving credit.",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/FavMe")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="rotation",
-     *     ref="#/components/schemas/CutieMarkRotation"
-     *   ),
-     *   @OA\Property(
-     *     property="contributor",
-     *     description="Optional details of the DeviantArt user who contributed this cutie mark.",
-     *     allOf={
-     *       @OA\Schema(ref="#/components/schemas/PublicUser")
-     *     }
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="Optional label in case the cutie mark warrants additional information, e.g. only used for certain kind of characters. Should be given higher priority on the UI than the facing information.",
-     *   ),
      * )
      *
      * @param  CutieMark  $cm
@@ -809,35 +574,6 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="SlimGuideTag",
-     *   type="object",
-     *   additionalProperties=false,
-     *   required={
-     *     "id",
-     *     "name",
-     *   },
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="name",
-     *     type="string",
-     *     minLength=1,
-     *     maxLength=255,
-     *     example="mane six",
-     *     description="Tag name (all lowercase)"
-     *   ),
-     *   @OA\Property(
-     *     property="type",
-     *     ref="#/components/schemas/TagType"
-     *   ),
-     *   @OA\Property(
-     *     property="synonymOf",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     * )
      * @param  Tag  $t
      *
      * @return array

@@ -38,39 +38,6 @@ class UsefulLinksController extends Controller
     }
 
     /**
-     * @OA\Schema(
-     *   schema="SidebarUsefulLink",
-     *   description="A useful link as listed in the sidebar and in the management list",
-     *   type="object",
-     *   required={"id", "label", "url", "minRole"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="label", type="string", description="The link text to display on the page", example="Color Picker"),
-     *   @OA\Property(property="url", type="string", description="The URL this link points to", example="/cg/color-picker"),
-     *   @OA\Property(property="title", type="string", nullable=true, description="Additional context about why the link is useful"),
-     *   @OA\Property(property="minRole", type="string", description="The lowest role that can see this link, `guest` is every signed in user")
-     * )
-     * @OA\Schema(
-     *   schema="UsefulLink",
-     *   type="object",
-     *   required={"label", "url", "title", "minRole"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="label", type="string", minLength=3, maxLength=35),
-     *   @OA\Property(property="url", type="string", minLength=3, maxLength=255),
-     *   @OA\Property(property="title", type="string", maxLength=255),
-     *   @OA\Property(property="minRole", type="string")
-     * )
-     * @OA\Schema(
-     *   schema="UsefulLinkInput",
-     *   description="Used to create or update a useful link. `title` is optional and defaults to an empty string",
-     *   type="object",
-     *   required={"label", "url", "minRole"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="label", type="string", minLength=3, maxLength=35),
-     *   @OA\Property(property="url", type="string", minLength=3, maxLength=255),
-     *   @OA\Property(property="title", type="string", maxLength=255),
-     *   @OA\Property(property="minRole", type="string")
-     * )
      * @OA\Get(
      *   path="/useful-links/sidebar",
      *   operationId="GetUsefulLinksSidebar",

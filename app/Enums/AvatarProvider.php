@@ -4,14 +4,6 @@ namespace App\Enums;
 
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Schema(
- *   schema="AvatarProvider",
- *   type="string",
- *   description="List of supported avatar providers",
- *   example="deviantart"
- * )
- */
 enum AvatarProvider: string
 {
     use ValuableEnum;

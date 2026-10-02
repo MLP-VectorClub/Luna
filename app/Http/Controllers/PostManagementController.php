@@ -145,17 +145,6 @@ class PostManagementController extends Controller
      *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="409", description="The post is approved", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
      * )
-     * @OA\Schema(
-     *   schema="Post",
-     *   description="The editable fields of a post",
-     *   type="object",
-     *   required={"label"},
-     *   @OA\Property(property="label", type="string", nullable=true),
-     *   @OA\Property(property="type", type="string", enum={"chr", "obj", "bg"}, description="Requests only"),
-     *   @OA\Property(property="reservedAt", type="string", format="date-time", description="Developers only"),
-     *   @OA\Property(property="postedAt", type="string", format="date-time", description="Developers only"),
-     *   @OA\Property(property="finishedAt", type="string", format="date-time", description="Developers only")
-     * )
      */
     public function show(Request $request, int $id): JsonResponse
     {

@@ -4,14 +4,6 @@ namespace App\Enums;
 
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Schema(
- *   schema="GuideName",
- *   type="string",
- *   description="List of available color guides",
- *   example="pony"
- * )
- */
 enum GuideName: string
 {
     use ValuableEnum;

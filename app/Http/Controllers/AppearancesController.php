@@ -28,41 +28,6 @@ class AppearancesController extends Controller
 {
     /**
      * @OA\Schema(
-     *   schema="SlimAppearanceList",
-     *   type="object",
-     *   description="An array of less resource intensive appearances under the appearances key",
-     *   required={
-     *     "appearances"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="appearances",
-     *     type="array",
-     *     @OA\Items(ref="#/components/schemas/SlimAppearance")
-     *   )
-     * )
-     * @OA\Schema(
-     *   schema="AppearanceList",
-     *   type="object",
-     *   description="An array of appearances under the appearances key",
-     *   required={
-     *     "appearances"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="appearances",
-     *     type="array",
-     *     @OA\Items(ref="#/components/schemas/Appearance")
-     *   )
-     * )
-     * @OA\Schema(
-     *   schema="Order",
-     *   type="number",
-     *   example=1,
-     *   minimum=0,
-     *   description="Used for displaying items in a specific order. The API guarantees that array return values are sorted in ascending order based on this property."
-     * )
-     * @OA\Schema(
      *   schema="ListOfColorGroups",
      *   type="object",
      *   description="Array of color groups under the `colorGroups` key",
@@ -77,14 +42,6 @@ class AppearancesController extends Controller
      *     @OA\Items(ref="#/components/schemas/ColorGroup"),
      *    description="Array of color groups belonging to an appearance (may be an empty array)."
      *   )
-     * )
-     * @OA\Schema(
-     *   schema="GuidePageSize",
-     *   type="integer",
-     *   minimum=7,
-     *   maximum=20,
-     *   default=7,
-     *   description="The number of results to return per page"
      * )
      * @OA\Get(
      *   path="/appearances",

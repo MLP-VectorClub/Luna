@@ -21,23 +21,6 @@ class ColorGroupsController extends Controller
 {
     /**
      * @OA\Schema(
-     *   schema="PrivateColorGroup",
-     *   description="A color group with every color, as returned to people allowed to manage it",
-     *   type="object",
-     *   required={"id", "appearanceId", "order", "label", "colors"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="appearanceId", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="order", type="integer"),
-     *   @OA\Property(property="label", type="string"),
-     *   @OA\Property(property="colors", type="array", @OA\Items(type="object", required={"id", "order", "label", "hex"},
-     *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *     @OA\Property(property="order", type="integer"),
-     *     @OA\Property(property="label", type="string"),
-     *     @OA\Property(property="hex", type="string", nullable=true)
-     *   ))
-     * )
-     * @OA\Schema(
      *   schema="ColorGroupInput",
      *   type="object",
      *   required={"label", "colors"},

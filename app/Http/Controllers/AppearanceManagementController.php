@@ -51,16 +51,6 @@ class AppearanceManagementController extends Controller
 
     /**
      * @OA\Schema(
-     *   schema="PrivateAppearance",
-     *   description="The editable fields of an appearance",
-     *   type="object",
-     *   required={"label", "notes", "private"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="label", type="string"),
-     *   @OA\Property(property="notes", type="string", nullable=true, description="Raw (markdown) notes"),
-     *   @OA\Property(property="private", type="boolean")
-     * )
-     * @OA\Schema(
      *   schema="AppearanceInput",
      *   type="object",
      *   required={"label"},

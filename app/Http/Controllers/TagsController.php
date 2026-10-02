@@ -19,34 +19,6 @@ class TagsController extends Controller
 {
     /**
      * @OA\Schema(
-     *   schema="Tag",
-     *   description="Represents a color guide tag",
-     *   type="object",
-     *   required={"id", "name", "title", "type", "uses", "synonymOf"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="name", type="string"),
-     *   @OA\Property(property="title", type="string", nullable=true, description="Optional human-friendly title for the tag"),
-     *   @OA\Property(property="type", type="string", nullable=true, description="The tag's type/category"),
-     *   @OA\Property(property="uses", type="integer", minimum=0, description="Number of appearances this tag is applied to"),
-     *   @OA\Property(property="synonymOf", type="integer", nullable=true, description="ID of the tag this one is a synonym of, if any")
-     * )
-     * @OA\Schema(
-     *   schema="TagListItem",
-     *   type="object",
-     *   required={"id", "name", "type", "title", "uses", "synonymOf"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="name", type="string"),
-     *   @OA\Property(property="type", type="string", nullable=true, enum={"app", "cat", "gen", "spec", "char", "warn", null}),
-     *   @OA\Property(property="title", type="string", nullable=true),
-     *   @OA\Property(property="uses", type="integer", minimum=0),
-     *   @OA\Property(property="synonymOf", type="object", nullable=true, required={"id", "name"},
-     *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *     @OA\Property(property="name", type="string")
-     *   )
-     * )
-     * @OA\Schema(
      *   schema="TagInput",
      *   type="object",
      *   required={"name"},

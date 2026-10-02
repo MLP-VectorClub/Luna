@@ -4,14 +4,6 @@ namespace App\Enums;
 
 use OpenApi\Annotations as OA;
 
-/**
- * @OA\Schema(
- *   schema="SpriteSize",
- *   type="number",
- *   description="List of available sprite sizes",
- *   example=300
- * )
- */
 enum SpriteSize: int
 {
     use ValuableEnum;

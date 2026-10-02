@@ -50,7 +50,7 @@ class UsersController extends Controller
      *   @OA\Property(
      *     property="role",
      *     description="The publicly visible role for the user",
-     *     ref="#/components/schemas/Role",
+     *     ref="#/components/schemas/UserRole",
      *   ),
      * )
      * @OA\Schema(
@@ -75,32 +75,6 @@ class UsersController extends Controller
      *       @OA\Property(
      *         property="avatarProvider",
      *         ref="#/components/schemas/AvatarProvider"
-     *       ),
-     *     )
-     *   }
-     * )
-     * @OA\Schema(
-     *   schema="User",
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/PublicUser"),
-     *     @OA\Schema(
-     *       type="object",
-     *       description="Represents an authenticated user",
-     *       required={
-     *         "email",
-     *         "role",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="email",
-     *         type="string",
-     *         example="user@example.com",
-     *         nullable=true,
-     *       ),
-     *       @OA\Property(
-     *         property="role",
-     *         description="The database-level role for the user",
-     *         ref="#/components/schemas/DatabaseRole",
      *       ),
      *     )
      *   }

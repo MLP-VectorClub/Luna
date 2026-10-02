@@ -44,14 +44,6 @@ class ConfigController extends Controller
     ];
 
     /**
-     * @OA\Schema(
-     *   schema="RegexPattern",
-     *   type="object",
-     *   required={"source", "flags"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="source", type="string", description="Pattern without delimiters, usable in both PHP and JavaScript"),
-     *   @OA\Property(property="flags", type="string", example="i")
-     * )
      * @OA\Get(
      *   path="/config",
      *   description="Constants, validation patterns and client settings that the front end needs before it can render forms. The same for every visitor.",
