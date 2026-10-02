@@ -29,6 +29,13 @@ class ConfigController extends Controller
         TagType::Warning->value => 'Warning',
     ];
 
+    public const VECTOR_APP_LABELS = [
+        '' => "(don't show)",
+        'illustrator' => 'Adobe Illustrator',
+        'inkscape' => 'Inkscape',
+        'ponyscape' => 'Ponyscape',
+    ];
+
     public const SHOW_TYPE_LABELS = [
         ShowType::Episode->value => 'Episode',
         ShowType::Movie->value => 'Movie',
@@ -56,11 +63,12 @@ class ConfigController extends Controller
      *     description="OK",
      *     @OA\JsonContent(
      *       type="object",
-     *       required={"tagTypes", "roles", "showTypes", "maxUploadSize", "patterns", "wsServerHost", "discordInviteLink"},
+     *       required={"tagTypes", "roles", "showTypes", "vectorApps", "maxUploadSize", "patterns", "wsServerHost", "discordInviteLink"},
      *       additionalProperties=false,
      *       @OA\Property(property="tagTypes", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Tag type key to label"),
      *       @OA\Property(property="roles", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Role key to label"),
      *       @OA\Property(property="showTypes", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Show type key to label"),
+     *       @OA\Property(property="vectorApps", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Choices for the `p_vectorapp` preference, key to label; the empty key means none"),
      *       @OA\Property(property="maxUploadSize", type="string", example="2 MB"),
      *       @OA\Property(
      *         property="patterns",
@@ -84,6 +92,7 @@ class ConfigController extends Controller
             'tag_types' => self::TAG_TYPE_LABELS,
             'roles' => self::ROLE_LABELS,
             'show_types' => self::SHOW_TYPE_LABELS,
+            'vector_apps' => self::VECTOR_APP_LABELS,
             'max_upload_size' => $this->maxUploadSize(),
             'patterns' => [
                 'printable_ascii' => ['source' => '^[ -~\n]+$', 'flags' => ''],

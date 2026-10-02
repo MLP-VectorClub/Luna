@@ -186,6 +186,13 @@ class AppearanceManagementController extends Controller
 
         $data = $this->validated($request, $appearance, $appearance->guide, $appearance->owner_id !== null);
         unset($data['guide']);
+        // Omitted notes/private are left unchanged, notes sent empty are cleared
+        if (!$request->has('notes')) {
+            unset($data['notes_src'], $data['notes_rend']);
+        }
+        if (!$request->has('private') || $request->input('private') === null) {
+            unset($data['private']);
+        }
         if (($data['private'] ?? false) === true) {
             $data['last_cleared'] = now();
         }
