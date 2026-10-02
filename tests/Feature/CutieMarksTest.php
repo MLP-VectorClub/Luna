@@ -94,7 +94,7 @@ class CutieMarksTest extends TestCase
         $this->putCms($appearance, array_fill(0, 5, $base))->assertJsonValidationErrors('cutiemarks');
         $this->putCms($appearance, [['id' => 99999] + $base])->assertJsonValidationErrors('cutiemarks');
         $this->putCms($appearance, [['label' => 'Same'] + $base, ['label' => 'Same'] + $base])->assertJsonValidationErrors('cutiemarks');
-        $this->putJson("/appearances/{$appearance->id}/cutie-marks", [])->assertJsonValidationErrors('cutiemarks');
+        $this->putJson("/appearances/{$appearance->id}/cutie-marks", [])->assertJsonValidationErrors('cutieMarks');
         $this->assertSame(0, CutieMark::count());
     }
 

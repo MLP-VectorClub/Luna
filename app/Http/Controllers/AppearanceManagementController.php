@@ -862,6 +862,10 @@ class AppearanceManagementController extends Controller
     private function validated(Request $request, ?Appearance $existing, ?GuideName $guide, bool $personal): array
     {
         $input = $request->all();
+        // Form style booleans
+        if (isset($input['private']) && in_array($input['private'], ['true', 'false'], true)) {
+            $input['private'] = $input['private'] === 'true';
+        }
         $guide_input = $request->input('guide');
         if (!$personal && $existing === null && $guide === null) {
             $this->fail('guide', "Guide is invalid: $guide_input");

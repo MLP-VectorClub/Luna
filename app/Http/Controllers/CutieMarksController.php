@@ -89,13 +89,13 @@ class CutieMarksController extends Controller
 
         $items = $request->input('cutieMarks');
         if ($items === null || $items === '') {
-            $this->fail('Cutie mark data is missing');
+            $this->fail('Cutie mark data is missing', 'cutieMarks');
         }
         if (is_string($items)) {
             $items = json_decode($items, true);
         }
         if (!is_array($items) || ($items !== [] && !array_is_list($items))) {
-            $this->fail('Cutie mark data is invalid');
+            $this->fail('Cutie mark data is invalid', 'cutieMarks');
         }
         if (count($items) > self::MAX_CUTIE_MARKS) {
             $this->fail('Appearances can only have a maximum of '.self::MAX_CUTIE_MARKS.' cutie marks.');
@@ -338,8 +338,8 @@ class CutieMarksController extends Controller
         return $user;
     }
 
-    private function fail(string $message): never
+    private function fail(string $message, string $field = 'cutiemarks'): never
     {
-        throw ValidationException::withMessages(['cutiemarks' => $message]);
+        throw ValidationException::withMessages([$field => $message]);
     }
 }
