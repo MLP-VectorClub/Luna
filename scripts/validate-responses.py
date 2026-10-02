@@ -90,6 +90,8 @@ SKIP = {'/about/sleep', '/sanctum/csrf-cookie', '/users/oauth/signin/{provider}'
 
 def main():
     tk = tokens()
+    # A second login leaves a token that was never used, which the token list has to describe too
+    tokens()
     problems = 0
     checked = 0
     for path, item in sorted(DOC['paths'].items()):

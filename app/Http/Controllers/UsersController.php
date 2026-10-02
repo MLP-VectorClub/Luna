@@ -387,7 +387,9 @@ class UsersController extends Controller
      *   ),
      *   @OA\Property(
      *     property="lastUsedAt",
-     *     ref="#/components/schemas/IsoStandardDate"
+     *     nullable=true,
+     *     description="Null for a token that was never used",
+     *     oneOf={@OA\Schema(ref="#/components/schemas/IsoStandardDate")}
      *   ),
      *   @OA\Property(
      *     property="createdAt",
