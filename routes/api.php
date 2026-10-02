@@ -95,6 +95,7 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);
+            Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('tokens', [UsersController::class, 'tokens']);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);

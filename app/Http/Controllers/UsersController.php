@@ -13,6 +13,10 @@ use Illuminate\Validation\Rules\Enum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use Valorin\Pwned\Pwned;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -301,6 +305,53 @@ class UsersController extends Controller
             'name' => $u->name,
             'role' => $fetch_role,
         ]));
+    }
+
+    /**
+     * @OA\Post(
+     *   path="/users/me/password",
+     *   operationId="PostUsersMePassword",
+     *   description="Sets a new password for the currently signed in user. Requires staff permission. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.",
+     *   tags={"users"},
+     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"newPassword"},
+     *     @OA\Property(property="currentPassword", type="string", description="The user's current password, required if a password is already set"),
+     *     @OA\Property(property="newPassword", type="string", minLength=8, maxLength=300, description="The new password to set")
+     *   )),
+     *   @OA\Response(response="200", description="Password successfully changed", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permission (staff required)", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="422", description="Invalid new password, or the current password is missing or incorrect", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
+     * )
+     */
+    public function setPassword(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if ($user->password !== null) {
+            $current = $request->input('currentPassword');
+            if (!is_string($current) || $current === '') {
+                throw ValidationException::withMessages(['currentPassword' => 'The current password is required']);
+            }
+            if (!Hash::check($current, $user->password)) {
+                throw ValidationException::withMessages(['currentPassword' => 'The current password is incorrect']);
+            }
+        }
+
+        $valid = Validator::make($request->only('newPassword'), [
+            'newPassword' => ['required', 'string', 'min:8', 'max:300', new Pwned],
+        ], [
+            'newPassword.required' => 'The new password is required',
+            'newPassword.min' => 'The new password must be between 8 and 300 characters long',
+            'newPassword.max' => 'The new password must be between 8 and 300 characters long',
+        ])->validate();
+
+        DB::transaction(function () use ($user, $valid) {
+            $user->forceFill(['password' => Hash::make($valid['newPassword'])])->save();
+            $user->tokens()->delete();
+        });
+
+        return response()->json(['message' => 'Your new password has been set successfully. As a security precaution your existing sessions have been deleted, so you will need to log in again.']);
     }
 
     /**
