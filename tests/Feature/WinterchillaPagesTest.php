@@ -17,7 +17,7 @@ use Tests\TestCase;
 /**
  * Winterchilla renders HTML pages that Celestia has to replace, so every one of its GET page routes (config/routes/pages.php in the
  * Winterchilla repo) is accounted for here: either the Luna endpoint(s) that feed the page are smoke tested, or the route is listed as
- * Celestia-only, a legacy redirect, verified dead (dropped), or an open gap that needs a decision. Adding a page to Winterchilla without listing it here fails the inventory test.
+ * Celestia-only, a legacy redirect, an unfinished placeholder to keep, or an open gap that needs a decision. Adding a page to Winterchilla without listing it here fails the inventory test.
  *
  * Smoke format: "GET /path => status @role" (status 2xx accepts any success, e.g. 204 for empty content), with {placeholders} filled from the seeded data.
  */
@@ -31,7 +31,7 @@ class WinterchillaPagesTest extends TestCase
     private const GAP = 'gap';
     private const TEST_ONLY = 'test-only';
     private const EXTERNAL = 'external';
-    private const DROPPED = 'dropped';
+    private const PLACEHOLDER = 'placeholder';
 
     /**
      * @return array<string, array{0: string, 1: string, 2?: string[]}> route pattern => [kind, note, smokes]
@@ -79,7 +79,7 @@ class WinterchillaPagesTest extends TestCase
             '/[cg]/[guide:guide]?/[v]/[i:id]-[adi]' => $appearance,
             '/[cg]/[guide:guide]?/[v]/[adi]-[i:id]' => $appearance,
             '/[cg]/[guide:guide]?/[v]/[i:id][cgimg:type]?.[cgext:ext]' => $appearance_file,
-            '/[cg]/[guide:guide]?/tag-changes/[i:id][adi]?' => [self::DROPPED, 'Tag change history: the Winterchilla page is an unfinished stub that always 404s'],
+            '/[cg]/[guide:guide]?/tag-changes/[i:id][adi]?' => [self::PLACEHOLDER, 'Tag change history: unfinished feature in Winterchilla ("TODO Finish feature", the page answers 404 before doing anything). Kept as a placeholder, not dropped: the tag_changes data is preserved and the route stays reserved until the feature is finished'],
             '/users/[i:user_id]/[cg]/[guide:guide]?/[v]/[i:id](-[adi]?)' => $appearance,
             '/users/[i:user_id]/[cg]/[guide:guide]?/[v]/[adi]-[i:id]' => $appearance,
             '/users/[i:user_id]/[cg]/[guide:guide]?/[v]/[i:id][cgimg:type]?.[cgext:ext]' => $appearance_file,
@@ -227,11 +227,11 @@ class WinterchillaPagesTest extends TestCase
     {
         $gaps = [];
         foreach (self::pages() as $route => [$kind, $note]) {
-            if (in_array($kind, [self::GAP, self::DROPPED], true)) {
+            if (in_array($kind, [self::GAP, self::PLACEHOLDER], true)) {
                 $gaps[] = "$route: $note";
             }
         }
         $this->assertNotEmpty($gaps);
-        $this->markTestSkipped("Winterchilla pages without a Luna equivalent: open gaps and verified dead pages (".count($gaps)."):\n  ".implode("\n  ", $gaps));
+        $this->markTestSkipped("Winterchilla pages without a Luna equivalent: open gaps and unfinished placeholders (".count($gaps)."):\n  ".implode("\n  ", $gaps));
     }
 }
