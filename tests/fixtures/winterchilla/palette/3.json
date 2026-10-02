@@ -1,5 +1,5 @@
 {
-    "generated_at": "Friday, 2nd October 2026, 08:53:17 GMT",
+    "generated_at": "Friday, 2nd October 2026, 09:02:43 GMT",
     "source_url": "https://mlpvector.lc/cg/pony/v/3-Fluttershy",
     "name": "Fluttershy",
     "groups": [
@@ -69,5 +69,5 @@
         }
     ],
     "id": 3,
-    "sprite": false
+    "sprite": true
 }

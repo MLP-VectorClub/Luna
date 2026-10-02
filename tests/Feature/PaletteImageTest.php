@@ -9,28 +9,24 @@ use Tests\TestCase;
 /**
  * The expected images in tests/fixtures/winterchilla/palette were rendered by Winterchilla's CGUtils::renderAppearancePNG() for real appearances
  * (scripts/generate-winterchilla-palette-goldens.php). Given the same input, including the time and URL printed in the header, Luna has to
- * produce exactly the same PNG. `palette` holds what Winterchilla renders today (it never finds the sprite, so none is drawn), `palette-sprite` what it
- * renders when the sprite is found (the way it is meant to work).
- */
+ * produce exactly the same PNG. */
 class PaletteImageTest extends TestCase
 {
     public static function appearances(): array
     {
         $cases = [];
-        foreach (['palette' => 'as Winterchilla renders it today', 'palette-sprite' => 'with the sprite'] as $dir => $label) {
-            foreach (glob(__DIR__."/../fixtures/winterchilla/$dir/*.json") as $file) {
-                $id = basename($file, '.json');
-                $cases["appearance $id $label"] = [$dir, $id];
-            }
+        foreach (glob(__DIR__.'/../fixtures/winterchilla/palette/*.json') as $file) {
+            $id = basename($file, '.json');
+            $cases["appearance $id"] = [$id];
         }
 
         return $cases;
     }
 
     #[DataProvider('appearances')]
-    public function testPaletteImageMatchesWinterchilla(string $set, string $id): void
+    public function testPaletteImageMatchesWinterchilla(string $id): void
     {
-        $dir = __DIR__."/../fixtures/winterchilla/$set";
+        $dir = __DIR__.'/../fixtures/winterchilla/palette';
         $meta = json_decode(file_get_contents("$dir/$id.json"), true);
 
         $png = PaletteImage::render($meta['name'], $meta['sprite'] ? "$dir/$id-sprite.png" : null, $meta['groups'], $meta['generated_at'], $meta['source_url']);

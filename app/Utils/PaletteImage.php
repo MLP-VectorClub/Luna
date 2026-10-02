@@ -15,8 +15,7 @@ class PaletteImage
     private const PIXELATED_FONT = 'PixelOperator.ttf';
 
     /**
-     * @param  string|null  $sprite_path  path of the sprite PNG, if the appearance has one and it should be drawn. Winterchilla looks for the sprite at
-     *                                    `<id>.png<id>.png` and so never draws it, callers pass null to produce the same image
+     * @param  string|null  $sprite_path  path of the sprite PNG, if the appearance has one
      * @param  array<int, array{label: string, colors: array<int, array{label: string, hex: string|null}>}>  $groups
      * @param  string  $generated_at  shown in the header, Winterchilla uses the full date and time of the export
      * @param  string  $source_url  shown in the header, the URL of the appearance
