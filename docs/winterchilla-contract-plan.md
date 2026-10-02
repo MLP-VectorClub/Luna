@@ -172,6 +172,9 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
   Result: clean. Adds only `migrations`, `personal_access_tokens`, `password_resets`, `failed_jobs`, `activity_log`, `media` and the `show (season, episode)` unique index (the copy lacked it, no duplicates);
   no existing table or column changed, so Winterchilla's schema is untouched. Luna served config, guides, shows, tags, events and members from the copy. `fs:migrate` could not be rehearsed:
   the only `fs/` available is Winterchilla's dev one, whose orphan test files make the command abort (as designed). It needs a copy of the production `fs/`.
+- 2026-10-02: **`fs:migrate` rehearsal** with the production `fs/` (Winterchilla repo, 149 `cm_source` files) into `luna_rehearsal`, storage redirected with `LARAVEL_STORAGE_PATH` to a scratch folder:
+  146 cutie mark files imported (one medialibrary file per `cutiemarks` row, 0 rows without a file, 4 MB), 1 orphan skipped (`254.svg`, no row, dated 2026-09-30, probably a scratch test leftover).
+  Luna serves appearance 1 with its cutie mark URL. `fs/sprites` is empty in that copy, so the sprite import was not exercised. `fs:migrate` now skips and reports files without a record instead of aborting.
 
 ## 8. Things the migration found that Winterchilla (or Luna) had missed
 
