@@ -100,6 +100,8 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::post('email/verify', [UserEmailController::class, 'verify'])->middleware('role:staff');
             Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
             Route::post('signout', [UsersController::class, 'signout']);
+            Route::get('sessions', [UsersController::class, 'sessions']);
+            Route::delete('sessions/{id}', [UsersController::class, 'deleteSession'])->where('id', '[0-9a-f]{64}');
             Route::get('tokens', [UsersController::class, 'tokens']);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);
 

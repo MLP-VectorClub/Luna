@@ -122,4 +122,17 @@ class Core
     {
         return sprintf('%s on %s', Browser::browserName(), Browser::platformName());
     }
+
+    /**
+     * Same description as getDeviceIdentifier() for a stored user agent string
+     */
+    public static function describeUserAgent(?string $user_agent): string
+    {
+        if ($user_agent === null || $user_agent === '') {
+            return 'Unknown device';
+        }
+        $result = Browser::parse($user_agent);
+
+        return sprintf('%s on %s', $result->browserName(), $result->platformName());
+    }
 }

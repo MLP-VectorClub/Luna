@@ -85,7 +85,8 @@ return [
     |
     */
 
-    'table' => 'sessions',
+    // Not `sessions`: that table belongs to Winterchilla (different columns) in the shared database
+    'table' => env('SESSION_TABLE', 'luna_sessions'),
 
     /*
     |--------------------------------------------------------------------------

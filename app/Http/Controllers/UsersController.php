@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Models\DeviantartUser;
 use App\Models\User;
+use App\Utils\Core;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -323,6 +324,9 @@ class UsersController extends Controller
         DB::transaction(function () use ($user, $valid) {
             $user->forceFill(['password' => Hash::make($valid['newPassword'])])->save();
             $user->tokens()->delete();
+            if (config('session.driver') === 'database') {
+                DB::table(config('session.table'))->where('user_id', $user->id)->delete();
+            }
         });
 
         return response()->json(['message' => 'Your new password has been set successfully. As a security precaution your existing sessions have been deleted, so you will need to log in again.']);
@@ -455,6 +459,73 @@ class UsersController extends Controller
                 ];
             })
         ]);
+    }
+
+    /**
+     * @OA\Schema(
+     *   schema="BrowserSession",
+     *   type="object",
+     *   description="A browser session of the current user (cookie authentication)",
+     *   required={"id", "device", "ip", "lastActiveAt", "createdAt", "current"},
+     *   additionalProperties=false,
+     *   @OA\Property(property="id", type="string", description="Opaque identifier to pass to DELETE /users/sessions/{id}. Not the session id itself", example="9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"),
+     *   @OA\Property(property="device", type="string", description="Browser and operating system the session was started from", example="Firefox on Linux"),
+     *   @OA\Property(property="ip", type="string", nullable=true, description="IP address the session was last used from"),
+     *   @OA\Property(property="lastActiveAt", type="string", format="date-time"),
+     *   @OA\Property(property="createdAt", type="string", format="date-time", nullable=true),
+     *   @OA\Property(property="current", type="boolean", description="Whether this is the session that made the request")
+     * )
+     * @OA\Get(
+     *   path="/users/sessions",
+     *   operationId="GetUsersSessions",
+     *   description="Browser sessions (cookie authentication) of the current user, most recently active first. Access tokens are listed by `GET /users/tokens`.",
+     *   tags={"authentication","users"},
+     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *   @OA\Response(response="200", description="Success", @OA\JsonContent(type="object", required={"sessions"}, additionalProperties=false,
+     *     @OA\Property(property="sessions", type="array", @OA\Items(ref="#/components/schemas/BrowserSession"))
+     *   )),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function sessions(Request $request): JsonResponse
+    {
+        $current = $request->hasSession() ? $request->session()->getId() : null;
+        $sessions = DB::table(config('session.table'))->where('user_id', $request->user()->id)->orderByDesc('last_activity')->get()
+            ->map(fn($row) => [
+                'id' => hash('sha256', $row->id),
+                'device' => Core::describeUserAgent($row->user_agent),
+                'ip' => $row->ip_address,
+                'lastActiveAt' => Date::createFromTimestamp($row->last_activity)->toIso8601String(),
+                'createdAt' => $row->created_at === null ? null : Date::parse($row->created_at)->toIso8601String(),
+                'current' => $current !== null && hash_equals($row->id, $current),
+            ])->values();
+
+        return response()->json(['sessions' => $sessions]);
+    }
+
+    /**
+     * @OA\Delete(
+     *   path="/users/sessions/{id}",
+     *   operationId="DeleteUsersSessionsId",
+     *   description="Ends a browser session of the current user, which signs that browser out. Use `POST /users/signout` for the session making the request.",
+     *   tags={"authentication","users"},
+     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(type="string"), description="The `id` from `GET /users/sessions`"),
+     *   @OA\Response(response="204", description="The session was ended"),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="No such session for this user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function deleteSession(Request $request, string $id): Response
+    {
+        $table = config('session.table');
+        $row = DB::table($table)->where('user_id', $request->user()->id)->get(['id'])->first(fn($row) => hash_equals(hash('sha256', $row->id), $id));
+        if ($row === null) {
+            abort(404, 'Session not found');
+        }
+        DB::table($table)->where('id', $row->id)->delete();
+
+        return response()->noContent();
     }
 
     /**
