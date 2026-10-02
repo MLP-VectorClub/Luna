@@ -177,7 +177,7 @@ class ShowManagementController extends Controller
      *   description="Create a show entry. Staff only",
      *   tags={"shows"},
      *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/ShowInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", required={"id"}, additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"))),
+     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", required={"id", "url"}, additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="url", type="string", format="uri", description="URL of the newly created show entry"))),
      *   @OA\Response(response="409", description="An episode with the same season and episode number exists", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
      * )
@@ -188,7 +188,7 @@ class ShowManagementController extends Controller
         $data['posted_by'] = $request->user()->id;
         $show = Show::create($data);
 
-        return response()->json(['id' => $show->id], 201);
+        return response()->json(['id' => $show->id, 'url' => $show->toUrl()], 201);
     }
 
     /**

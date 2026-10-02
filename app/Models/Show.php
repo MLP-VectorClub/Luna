@@ -40,6 +40,24 @@ class Show extends Model
         return $this->hasMany(ShowVote::class);
     }
 
+    /**
+     * Path of the show on the front end, same format as Winterchilla (`/episode/S1E1-Title`, `/movie/5-Title`)
+     */
+    public function toUrl(): string
+    {
+        if ($this->isEpisode()) {
+            $episode = $this->parts === 2 ? "{$this->episode}-".($this->episode + 1) : $this->episode;
+            $url = "/episode/S{$this->season}E$episode";
+        } else {
+            $url = "/{$this->type}/{$this->id}";
+        }
+        if (!empty($this->title)) {
+            $url .= '-'.trim(preg_replace('/-+/', '-', preg_replace('/[^A-Za-z\d\-]/', '-', $this->title)), '-');
+        }
+
+        return $url;
+    }
+
     public function isEpisode(): bool
     {
         return $this->type === 'episode';

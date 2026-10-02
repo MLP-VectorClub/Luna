@@ -71,7 +71,9 @@ class ShowManagementTest extends TestCase
     {
         $this->as(Role::Staff);
 
-        $id = $this->postJson('/show', ['type' => 'movie', 'title' => 'Contract Test Movie', 'airs' => '2011-02-03 04:05'])->assertCreated()->json('id');
+        $created = $this->postJson('/show', ['type' => 'movie', 'title' => 'Contract Test Movie', 'airs' => '2011-02-03 04:05'])->assertCreated();
+        $id = $created->json('id');
+        $this->assertSame("/movie/$id-Contract-Test-Movie", $created->json('url'));
         $this->putJson("/show/$id", ['title' => 'Renamed Contract Movie', 'airs' => '2012-03-04 05:06'])->assertNoContent();
         $this->getJson("/show/$id")->assertJsonPath('show.title', 'Renamed Contract Movie');
         $this->putJson("/show/$id", ['type' => 'episode', 'title' => 'Renamed Contract Movie', 'airs' => '2012-03-04 05:06'])->assertJsonValidationErrors('type');
