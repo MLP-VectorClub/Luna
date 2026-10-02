@@ -12,7 +12,7 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 - Elasticsearch moved to the ES 8 client (`mailerlite/laravel-elasticsearch`), queries in `ColorGuideHelper` are plain arrays. Prod runs ES 8.19, index `appearances` is created by Winterchilla
 - OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves the docs at the route itself, no trailing filename)
 - Old migrations run on a fresh database again (`unsignedFloat` removed, activity_log no longer reads the removed package's config)
-- Test suite: PHPUnit 11, now 131 tests (see the Winterchilla contract section)
+- Test suite: PHPUnit 11, now 135 tests (see the Winterchilla contract section)
 - Deployed to production (`ffd40e0`), including the `expires_at` fix that unblocks successful signins (password login confirmed working on production)
 
 ### Left
@@ -31,13 +31,16 @@ progress log are in `docs/winterchilla-contract-plan.md`. Nothing from this work
 - Settings, notices, useful links, user preferences (+ `PUT /users/{id}/role`), tags, color groups, appearances (reads and all management except cutie marks), sprites, shows (incl. votes, next, latest, prefill), admin logs, notification read, color guide export and reindex, personal guide (slots, points, history), post lists, post write flows (create, edit, reserve, finish, approve, delete, change image, unbreak, direct reservations), user profile and contributions, event reads, the disabled event writes (501 like Winterchilla), cutie marks (`App\Http\Controllers\CutieMarksController`, stored as medialibrary files holding the sanitized SVG) and SVG sanitizing (`App\Utils\SvgHelper`, enshrined/svg-sanitize, minified by the sanitizer, no svgo), Discord sync and unlink (`DiscordController`, Laravel `Http` against discord.com, needs `DISCORD_CLIENT_ID/SECRET/BOT_TOKEN/SERVER_ID`)
 - Image links go through `App\Utils\ImageProvider` and `DeviantArt` (oEmbed, Derpibooru, Imgur, Lightshot, club gallery check), always via Laravel's `Http` client so tests fake them
 - `App\Utils\AppearanceIndex` keeps the shared ElasticSearch `appearances` index in sync; `LogWriter` writes the shared `logs` table
-- 131 Luna tests (`php artisan test`)
+- 135 Luna tests (`php artisan test`)
 
 ### Left (6 operations)
 - Cutie mark gaps: no svgo, colors are not tokenized (the file is stored sanitized, `sanitize-svg` only warns about colors missing from the `Cutie Mark` color group), attribution by username/deviation needs the DeviantArt user to exist already (no DeviantArt API lookup to create unknown users), the `preview` HTML of Winterchilla is not returned
 - Event entries, intentionally skipped (disabled in Winterchilla, unused by Celestia): `GET|PUT|DELETE /events/{id}/entries`, `/event-entries/{entryid}`. Ask Winterchilla to mark them disabled
 - Not done and not in the contract: notes cross references (`#id`, episode ids) stay plain text, `GET /appearances/{id}/preview` (internal), the real ElasticSearch reindex is untested
 - Before Winterchilla can use Luna's database: the migration rehearsal passed (`scripts/rehearse-cutover.sh`, see the plan; point `LARAVEL_STORAGE_PATH` at a scratch folder when rehearsing `fs:migrate`). `fs:migrate` was rehearsed with the production `fs/` (146 cutie marks and 110 sprites imported). `fs:migrate` skips files without a database record. Still open: the user decides how to load/adopt the production data
+
+### Winterchilla page coverage
+`tests/Feature/WinterchillaPagesTest.php` accounts for every GET page route in Winterchilla's `config/routes/pages.php` (88 patterns, read from `../Winterchilla` when it sits next to Luna): 42 are fed by Luna endpoints that are smoke tested, 13 are legacy redirects, 15 are Celestia-only, 5 are OAuth (not smoke tested, needs provider tokens), 7 are test-only, and 6 are gaps (reported as a skipped test with the list): appearance file exports (`.png/.svg/.json/.gpl`, 2 routes), cutie mark source download, tag change history of an appearance, staff list of personal guide appearances (`/admin/pcg-appearances`), profile by DeviantArt UUID (`/u/{uuid}`). A new Winterchilla page fails the inventory test until it is classified.
 
 ### Running the contract suite against Luna
 1. `scripts/load-contract-seed.sh <contract-seed.sql>` builds the `luna_contract` DB (the seed comes from Winterchilla's `scripts/dump-contract-seed.sh`, do not run that against the shared test DB)
