@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Builds the `luna_contract` database from Winterchilla's seeded contract-test data, so its tests/Browser/Api suite can run against Luna.
 #
-#   scripts/load-contract-seed.sh /path/to/contract-seed.sql   (produced by Winterchilla's scripts/dump-contract-seed.sh)
+#   scripts/load-contract-seed.sh [/path/to/contract-seed.sql]   (default: tests/fixtures/contract-seed.sql, a copy of what Winterchilla's scripts/dump-contract-seed.sh produced, so
+#   Luna does not need Winterchilla to build the contract test database)
 #
 # Run Luna against it with: APP_ENV=testing DB_DATABASE=luna_contract php artisan serve --port=8766
 # and Winterchilla's suite with: CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_PATH= CONTRACT_AUTH=bearer CONTRACT_LOGIN_URL=/test/login/{id}
 set -euo pipefail
 cd "$(dirname "$0")/.."
-SEED="${1:?path to contract-seed.sql}"
+SEED="${1:-tests/fixtures/contract-seed.sql}"
 set -a; source .env; set +a
 export PGPASSWORD="${DB_PASSWORD}"
 PSQL=(psql -h "${DB_HOST:-127.0.0.1}" -U "${DB_USERNAME}" -v ON_ERROR_STOP=1 -q)

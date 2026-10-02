@@ -12,7 +12,8 @@
 
 $args = array_values(array_filter(array_slice($argv, 1), fn($a) => !str_starts_with($a, '--')));
 $by_tag = in_array('--by-tag', $argv, true);
-$contract_path = $args[0] ?? __DIR__.'/../../Winterchilla/public/dist/api.json';
+// Winterchilla's file when it sits next to Luna, otherwise the copy kept in this repo (docs/contract/api.json)
+$contract_path = $args[0] ?? (is_file(__DIR__.'/../../Winterchilla/public/dist/api.json') ? __DIR__.'/../../Winterchilla/public/dist/api.json' : __DIR__.'/../docs/contract/api.json');
 $luna_path = __DIR__.'/../storage/api-docs/api-docs.json';
 
 foreach ([$contract_path, $luna_path] as $file) {

@@ -28,10 +28,8 @@ class WinterchillaPagesTest extends TestCase
     private const API = 'api';
     private const CELESTIA = 'celestia';
     private const REDIRECT = 'redirect';
-    private const GAP = 'gap';
     private const TEST_ONLY = 'test-only';
     private const EXTERNAL = 'external';
-    private const PLACEHOLDER = 'placeholder';
 
     /**
      * @return array<string, array{0: string, 1: string, 2?: string[]}> route pattern => [kind, note, smokes]
@@ -41,7 +39,7 @@ class WinterchillaPagesTest extends TestCase
         $about = [self::API, 'Member list and server info', ['GET /about/members => 200']];
         $guides = [self::API, 'Guide listing', ['GET /appearances?guide=pony => 200', 'GET /color-guide => 200']];
         $appearance = [self::API, 'Appearance page data', ['GET /appearances/{appearance} => 200', 'GET /appearances/{appearance}/color-groups => 200']];
-        $appearance_file = [self::GAP, 'Appearance exports: the Download swatch file button (.json for Illustrator, .gpl for Inkscape, URLs are shown in the UI instructions), palette .png and preview/facing .svg. Celestia plans to compose them client side from colorGroups, not decided by the user'];
+        $appearance_file = [self::API, 'Swatch downloads, palette and preview images of an appearance', ['GET /appearances/{appearance}/palette?format=json => 200', 'GET /appearances/{appearance}/palette?format=gpl => 200', 'GET /appearances/{appearance}/image?type=preview&format=svg => 200', 'GET /appearances/{appearance}/image?type=facing&format=svg => 200', 'GET /appearances/{appearance}/image?type=palette&format=png => 200']];
         $legacy_user = [self::REDIRECT, 'Old @name URL, Celestia redirects after resolving the name', ['GET /users/da/{username} => 200']];
         $show = [self::API, 'Show page data', ['GET /show/{show} => 200', 'GET /posts?showId={show}&kind=request => 200']];
         $personal = [self::API, 'Personal guide', ['GET /users/{user}/personal-guide/appearances => 200', 'GET /users/{user}/personal-guide/slots => 2xx @user']];
@@ -62,7 +60,7 @@ class WinterchillaPagesTest extends TestCase
             '/admin/logs/[i]?' => [self::API, 'Log list and entry', ['GET /admin/logs => 200 @staff', 'GET /admin/logs/{log} => 200 @staff']],
             '/admin/usefullinks' => [self::API, 'Useful links management', ['GET /useful-links => 200 @staff']],
             '/admin/wsdiag' => $celestia('Websocket diagnostics, Luna has no websocket server'),
-            '/admin/pcg-appearances/[i]?' => [self::GAP, 'Staff list of all personal guide appearances: linked from the admin dashboard, a real staff feature. Celestia does not plan it, not decided by the user'],
+            '/admin/pcg-appearances/[i]?' => [self::API, 'Staff list of all personal guide appearances', ['GET /admin/pcg-appearances => 200 @staff']],
             '/admin/notices' => [self::API, 'Notice management', ['GET /notices => 200 @staff', 'GET /notices/{notice} => 200 @staff']],
             '/blending' => $celestia('Client side tool'),
             '/[cg]/blending' => $celestia('Client side tool'),
@@ -79,7 +77,7 @@ class WinterchillaPagesTest extends TestCase
             '/[cg]/[guide:guide]?/[v]/[i:id]-[adi]' => $appearance,
             '/[cg]/[guide:guide]?/[v]/[adi]-[i:id]' => $appearance,
             '/[cg]/[guide:guide]?/[v]/[i:id][cgimg:type]?.[cgext:ext]' => $appearance_file,
-            '/[cg]/[guide:guide]?/tag-changes/[i:id][adi]?' => [self::PLACEHOLDER, 'Tag change history: unfinished feature in Winterchilla ("TODO Finish feature", the page answers 404 before doing anything). Kept as a placeholder, not dropped: the tag_changes data is preserved and the route stays reserved until the feature is finished'],
+            '/[cg]/[guide:guide]?/tag-changes/[i:id][adi]?' => [self::API, 'Tag change history of an appearance, staff only', ['GET /appearances/{appearance}/tag-changes => 200 @staff']],
             '/users/[i:user_id]/[cg]/[guide:guide]?/[v]/[i:id](-[adi]?)' => $appearance,
             '/users/[i:user_id]/[cg]/[guide:guide]?/[v]/[adi]-[i:id]' => $appearance,
             '/users/[i:user_id]/[cg]/[guide:guide]?/[v]/[i:id][cgimg:type]?.[cgext:ext]' => $appearance_file,
@@ -87,7 +85,7 @@ class WinterchillaPagesTest extends TestCase
             '/docs' => [self::API, 'API docs', ['GET /generated/api-docs.json => 200']],
             '/[cg]/[guide:guide]?/tags/[i]?' => [self::API, 'Tag list', ['GET /tags => 200 @staff', 'GET /tags/{tag} => 200 @staff']],
             '/[cg]/cutiemark/[i:id].svg' => [self::API, 'Cutie mark file, Luna exposes the file URL (viewUrl) on the appearance and `rendered` on GET /appearances/{id}/cutie-marks', ['GET /appearances/{appearance}/cutie-marks => 200 @staff']],
-            '/[cg]/cutiemark/download/[i:id][adi]?' => [self::GAP, 'Cutie mark download button (source or tokenized SVG): Celestia would link the viewUrl file instead, not decided by the user'],
+            '/[cg]/cutiemark/download/[i:id][adi]?' => [self::API, 'Cutie mark download; the route is checked with an unknown cutie mark, the download itself is covered by AppearanceExportsTest', ['GET /appearances/{appearance}/cutie-marks/987654/download => 404']],
             '/da-auth' => $oauth,
             '/da-auth/begin' => $oauth,
             '/da-auth/end' => $oauth,
@@ -111,7 +109,7 @@ class WinterchillaPagesTest extends TestCase
             '/users' => [self::API, 'Member list', ['GET /users => 200 @staff', 'GET /about/members => 200']],
             '/users/[i:user_id](-[uc]?)?' => $profile,
             '/[sett]' => [self::API, 'Own profile shortcut', ['GET /users/me => 200 @user']],
-            '/u/[uuid:uuid]' => [self::GAP, 'Profile by DeviantArt UUID: developer-only redirect, low value, not decided by the user'],
+            '/u/[uuid:uuid]' => [self::API, 'Profile by DeviantArt UUID, developer only', ['GET /users/da-uuid/{uuid} => 200 @developer']],
             '/users/[i:user_id]/contrib/[ad:type]/[i]?' => [self::API, 'Contributions list', ['GET /users/{user}/contributions/finished-posts => 200']],
             '/users/[i:id]?/account' => [self::API, 'Account settings', ['GET /users/me => 200 @user', 'GET /users/{user}/preferences/cg_itemsperpage => 200 @user', 'GET /users/tokens => 200 @user']],
             '/users/verify' => [self::API, 'E-mail verification link', ['GET /users/email/verify/{user}/invalid => 403 @user']],
@@ -143,11 +141,12 @@ class WinterchillaPagesTest extends TestCase
         ];
     }
 
-    private function winterchillaRoutes(): ?array
+    private function winterchillaRoutes(): array
     {
+        // Winterchilla's own file when it sits next to Luna, otherwise the copy in this repo
         $file = dirname(__DIR__, 3).'/Winterchilla/config/routes/pages.php';
         if (!is_file($file)) {
-            return null;
+            $file = __DIR__.'/../fixtures/winterchilla/pages.php';
         }
         preg_match_all('/\$page_route\(\'([^\']+)\'/', file_get_contents($file), $matches);
 
@@ -157,9 +156,6 @@ class WinterchillaPagesTest extends TestCase
     public function testEveryWinterchillaPageIsAccountedFor(): void
     {
         $routes = $this->winterchillaRoutes();
-        if ($routes === null) {
-            $this->markTestSkipped('The Winterchilla repository is not next to Luna');
-        }
 
         $pages = self::pages();
         $this->assertSame([], array_values(array_diff($routes, array_keys($pages))), 'Winterchilla pages missing from WinterchillaPagesTest::pages()');
@@ -182,6 +178,7 @@ class WinterchillaPagesTest extends TestCase
     public function testSmokeTheLunaEndpointsBehindThePages(): void
     {
         $staff = User::factory()->create(['role' => Role::Staff]);
+        $developer = User::factory()->create(['role' => Role::Developer]);
         $user = User::factory()->create(['role' => Role::User, 'name' => 'Pageuser']);
         $da = new \App\Models\DeviantartUser(['name' => 'Pageuser', 'avatar_url' => 'https://example.com/a.png']);
         $da->forceFill(['id' => '0f0e0d0c-0b0a-4000-8000-000000000042', 'user_id' => $user->id])->save();
@@ -194,7 +191,7 @@ class WinterchillaPagesTest extends TestCase
         $log = \App\Utils\LogWriter::record('appearances', ['action' => 'add', 'id' => $appearance->id, 'label' => 'Smoke Pony', 'order' => 1, 'notes' => null, 'guide' => 'pony']);
         $replacements = [
             '{appearance}' => $appearance->id, '{show}' => $show->id, '{post}' => $post->id, '{event}' => $event->id,
-            '{notice}' => $notice->id, '{tag}' => $tag->id, '{log}' => $log->id, '{user}' => $user->id, '{username}' => 'Pageuser',
+            '{notice}' => $notice->id, '{tag}' => $tag->id, '{log}' => $log->id, '{user}' => $user->id, '{username}' => 'Pageuser', '{uuid}' => '0f0e0d0c-0b0a-4000-8000-000000000042',
         ];
 
         $smoked = 0;
@@ -205,11 +202,11 @@ class WinterchillaPagesTest extends TestCase
                     continue;
                 }
                 $seen[$smoke] = true;
-                $this->assertSame(1, preg_match('~^(GET) (\S+) => (\d{3}|2xx)(?: @(staff|user))?$~', $smoke, $m), "Bad smoke definition $smoke");
+                $this->assertSame(1, preg_match('~^(GET) (\S+) => (\d{3}|2xx)(?: @(staff|user|developer))?$~', $smoke, $m), "Bad smoke definition $smoke");
                 [, , $path, $status] = $m;
                 $this->app['auth']->forgetGuards();
                 if (isset($m[4])) {
-                    $this->actingAs($m[4] === 'staff' ? $staff : $user, 'sanctum');
+                    $this->actingAs(['staff' => $staff, 'user' => $user, 'developer' => $developer][$m[4]], 'sanctum');
                 }
                 $response = $this->getJson(strtr($path, $replacements));
                 if ($status === '2xx') {
@@ -221,17 +218,5 @@ class WinterchillaPagesTest extends TestCase
             }
         }
         $this->assertGreaterThan(30, $smoked);
-    }
-
-    public function testKnownGaps(): void
-    {
-        $gaps = [];
-        foreach (self::pages() as $route => [$kind, $note]) {
-            if (in_array($kind, [self::GAP, self::PLACEHOLDER], true)) {
-                $gaps[] = "$route: $note";
-            }
-        }
-        $this->assertNotEmpty($gaps);
-        $this->markTestSkipped("Winterchilla pages without a Luna equivalent: open gaps and unfinished placeholders (".count($gaps)."):\n  ".implode("\n  ", $gaps));
     }
 }
