@@ -12,6 +12,7 @@ use App\Models\PinnedAppearance;
 use App\Models\Show;
 use App\Models\Tag;
 use App\Models\TagChange;
+use App\Models\User;
 use App\Utils\AppearanceIndex;
 use App\Utils\ColorGuideHelper;
 use App\Utils\Core;
@@ -796,6 +797,65 @@ class AppearanceManagementController extends Controller
         $appearance->forceFill(['sprite_hash' => null])->save();
 
         return response()->json(['sprite' => null]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/appearances/{id}/tag-changes",
+     *   operationId="GetAppearancesIdTagChanges",
+     *   description="The history of tags being added to and removed from an appearance, newest first. Staff only; personal guide appearances have no history.",
+     *   tags={"appearances"},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Parameter(in="query", name="page", required=false, @OA\Schema(type="integer", default=1, minimum=1)),
+     *   @OA\Parameter(in="query", name="size", required=false, @OA\Schema(type="integer", default=25, minimum=1, maximum=100)),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"changes", "pagination"},
+     *     @OA\Property(property="changes", type="array", @OA\Items(type="object", additionalProperties=false, required={"id", "tagId", "tagName", "added", "user", "createdAt"},
+     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
+     *       @OA\Property(property="tagId", type="integer", description="The tag may have been deleted since, in which case it no longer resolves"),
+     *       @OA\Property(property="tagName", type="string", nullable=true, description="The tag's name at the time of the change; missing on very old entries"),
+     *       @OA\Property(property="added", type="boolean", description="True when the tag was added, false when it was removed"),
+     *       @OA\Property(property="user", nullable=true, description="Who made the change; null when the user no longer exists", oneOf={@OA\Schema(ref="#/components/schemas/PostUser")}),
+     *       @OA\Property(property="createdAt", type="string", format="date-time")
+     *     )),
+     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
+     *   )),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Appearance not found, or it belongs to a personal guide", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="422", description="Invalid query", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
+     * )
+     */
+    public function tagChanges(Request $request, int $id): JsonResponse
+    {
+        $appearance = Appearance::findOrFail($id);
+        if ($appearance->owner_id !== null) {
+            throw new HttpException(404, 'Personal guide appearances have no tag change history');
+        }
+        $valid = Validator::make($request->query(), [
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'size' => ['sometimes', 'integer', 'between:1,100'],
+        ], ['size.between' => 'The size must be between 1 and 100.'])->validate();
+        $size = (int) ($valid['size'] ?? 25);
+
+        $pagination = TagChange::where('appearance_id', $appearance->id)->orderByDesc('created_at')->orderByDesc('id')->paginate($size, page: (int) ($valid['page'] ?? 1));
+        $users = User::whereIn('id', $pagination->getCollection()->pluck('user_id')->filter()->unique())->get(['id', 'name'])->keyBy('id');
+
+        return response()->json([
+            'changes' => $pagination->getCollection()->map(fn(TagChange $change) => [
+                'id' => $change->id,
+                'tagId' => $change->tag_id,
+                'tagName' => $change->tag_name,
+                'added' => $change->added,
+                'user' => isset($users[$change->user_id]) ? ['id' => $change->user_id, 'name' => $users[$change->user_id]->name] : null,
+                'createdAt' => $change->created_at?->toIso8601String(),
+            ])->values(),
+            'pagination' => [
+                'currentPage' => $pagination->currentPage(),
+                'totalPages' => max(1, $pagination->lastPage()),
+                'totalItems' => $pagination->total(),
+                'itemsPerPage' => $size,
+            ],
+        ]);
     }
 
     private function managed(Request $request, int $id): Appearance

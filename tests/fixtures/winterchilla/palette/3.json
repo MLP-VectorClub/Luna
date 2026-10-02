@@ -1,0 +1,73 @@
+{
+    "generated_at": "Friday, 2nd October 2026, 08:49:27 GMT",
+    "source_url": "https://mlpvector.lc/cg/pony/v/3-Fluttershy",
+    "name": "Fluttershy",
+    "groups": [
+        {
+            "label": "Coat",
+            "colors": [
+                {
+                    "label": "Outline",
+                    "hex": "#E9D461"
+                },
+                {
+                    "label": "Fill",
+                    "hex": "#FAF5AB"
+                },
+                {
+                    "label": "Shadow Fill",
+                    "hex": "#F3E488"
+                }
+            ]
+        },
+        {
+            "label": "Mane & Tail",
+            "colors": [
+                {
+                    "label": "Outline",
+                    "hex": "#E581B1"
+                },
+                {
+                    "label": "Fill",
+                    "hex": "#F3B5CF"
+                }
+            ]
+        },
+        {
+            "label": "Iris",
+            "colors": [
+                {
+                    "label": "Gradient Top",
+                    "hex": "#02534D"
+                },
+                {
+                    "label": "Gradient Bottom",
+                    "hex": "#02ACA4"
+                },
+                {
+                    "label": "Highlight Top",
+                    "hex": "#3CBEB7"
+                },
+                {
+                    "label": "Highlight Bottom",
+                    "hex": "#84D2D4"
+                }
+            ]
+        },
+        {
+            "label": "Cutie Mark",
+            "colors": [
+                {
+                    "label": "Wings",
+                    "hex": "#F3B5CF"
+                },
+                {
+                    "label": "Body",
+                    "hex": "#69C8C3"
+                }
+            ]
+        }
+    ],
+    "id": 3,
+    "sprite": true
+}

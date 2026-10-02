@@ -1,0 +1,22 @@
+GIMP Palette
+Name: Applejack
+Columns: 6
+#
+# Exported at: {TIME}
+#
+239 111  47 Coat | Outline
+250 186  98 Coat | Fill
+229  82  33 Coat | Shadow Outline
+239 156  84 Coat | Shadow Fill
+255 255 255 Coat | Freckles
+231 212  98 Mane &amp; Tail | Outline
+250 245 171 Mane &amp; Tail | Fill
+ 40 121  22 Iris | Gradient Top
+ 97 186  78 Iris | Gradient Bottom
+120 216  99 Iris | Highlight Top
+202 236 196 Iris | Highlight Bottom
+236  63  65 Cutie Mark | Apples
+107 185  68 Cutie Mark | Leaves
+178 136  77 Hat | Outline
+202 154  86 Hat | Fill
+236  63  65 Hair Tie | Fill

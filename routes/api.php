@@ -90,6 +90,7 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::post('{id}/personal-guide/points', [PersonalGuideController::class, 'givePoints'])->whereNumber('id')->middleware('role:staff');
             Route::post('{user_id}/discord/sync', [DiscordController::class, 'sync'])->whereNumber('user_id');
             Route::delete('{user_id}/discord', [DiscordController::class, 'unlink'])->whereNumber('user_id');
+            Route::get('da-uuid/{uuid}', [UsersController::class, 'getByDaUuid'])->middleware('role:developer');
             Route::put('{id}/role', [UsersController::class, 'setRole'])->whereNumber('id')->middleware('role:staff');
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
@@ -118,6 +119,7 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
 
     Route::middleware('optional.auth')->prefix('appearances')->group(function () {
         Route::get('{id}/palette', [AppearanceExportsController::class, 'palette'])->whereNumber('id');
+        Route::get('{id}/image', [AppearanceExportsController::class, 'image'])->whereNumber('id');
         Route::get('{id}/cutie-marks/{cutieMarkId}/download', [AppearanceExportsController::class, 'cutieMark'])->whereNumber(['id', 'cutieMarkId']);
     });
 
@@ -143,6 +145,7 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
         Route::post('{id}/sanitize-svg', [CutieMarksController::class, 'sanitize'])->whereNumber('id');
 
         Route::middleware('role:staff')->group(function () use ($manage) {
+            Route::get('{id}/tag-changes', [$manage, 'tagChanges'])->whereNumber('id');
             Route::get('{id}/shows', [$manage, 'shows'])->whereNumber('id');
             Route::put('{id}/shows', [$manage, 'setShows'])->whereNumber('id');
             Route::post('{id}/pin', [$manage, 'pin'])->whereNumber('id');
@@ -176,6 +179,7 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
     });
 
     Route::middleware(['auth:sanctum', 'role:staff'])->prefix('admin')->group(function () {
+        Route::get('pcg-appearances', [AdminController::class, 'pcgAppearances']);
         Route::get('logs', [AdminController::class, 'logs']);
         Route::get('logs/{id}', [AdminController::class, 'logDetail'])->whereNumber('id');
     });

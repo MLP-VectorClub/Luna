@@ -107,4 +107,124 @@ class AppearanceImages
 
         return $img;
     }
+
+    /**
+     * Reads the sprite pixel by pixel into horizontal lines grouped by color and opacity. Same as CGUtils::getSpriteImageMap(), including its
+     * behaviour of continuing a line over into the next color when that color's first pixel directly follows the previous color's last pixel
+     * (the line then keeps the previous color), which loses that pixel's color in the traced SVG
+     *
+     * @return array{width: int, height: int, linedata: array<int, array{x: int, y: int, width: int, colorid: int, opacity: int}>, colors: string[]}
+     */
+    public static function traceSprite(string $png_path): array
+    {
+        $size = getimagesize($png_path);
+        if ($size === false) {
+            throw new \RuntimeException("getimagesize failed to read sprite $png_path");
+        }
+        [$width, $height] = $size;
+        $png = imagecreatefrompng($png_path);
+        if ($png === false) {
+            throw new \RuntimeException("Could not create image from path $png_path");
+        }
+        imagesavealpha($png, true);
+
+        $all_colors = [];
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $colors = imagecolorsforindex($png, imagecolorat($png, $x, $y));
+                $hex = strtoupper('#'.str_pad(dechex($colors['red']), 2, '0', STR_PAD_LEFT).str_pad(dechex($colors['green']), 2, '0', STR_PAD_LEFT).str_pad(dechex($colors['blue']), 2, '0', STR_PAD_LEFT));
+                $opacity = $colors['alpha'] ?? 0;
+                if ($opacity === 127) {
+                    continue;
+                }
+                $all_colors[$hex][$opacity][] = [$x, $y];
+            }
+        }
+
+        $current_line = null;
+        $lines = [];
+        $last_x = -2;
+        $last_y = -2;
+        $colors_assoc = [];
+        $color_no = 0;
+        foreach ($all_colors as $hex => $opacities) {
+            if (!isset($colors_assoc[$hex])) {
+                $colors_assoc[$hex] = $color_no;
+                $color_no++;
+            }
+            foreach ($opacities as $opacity => $coords) {
+                foreach ($coords as [$x, $y]) {
+                    if ($x - 1 !== $last_x || $y !== $last_y) {
+                        if ($current_line !== null) {
+                            $lines[] = $current_line;
+                        }
+                        $current_line = ['x' => $x, 'y' => $y, 'width' => 1, 'colorid' => $colors_assoc[$hex], 'opacity' => $opacity];
+                    } else {
+                        $current_line['width']++;
+                    }
+                    $last_x = $x;
+                    $last_y = $y;
+                }
+            }
+        }
+        if ($current_line !== null) {
+            $lines[] = $current_line;
+        }
+
+        return ['width' => $width, 'height' => $height, 'linedata' => $lines, 'colors' => array_flip($colors_assoc)];
+    }
+
+    /**
+     * Same as the SVG assembly of CGUtils::renderSpriteSVG()
+     */
+    public static function spriteSvg(array $map): string
+    {
+        $strokes = [];
+        foreach ($map['linedata'] as $line) {
+            $hex = $map['colors'][$line['colorid']];
+            if ($line['opacity'] !== 0) {
+                $opacity = (float) number_format((127 - $line['opacity']) / 127, 2, '.', '');
+                $hex .= "' opacity='{$opacity}";
+            }
+            $strokes[$hex][] = "M{$line['x']} {$line['y']} l{$line['width']} 0Z";
+        }
+        $svg = "<svg version='1.1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {$map['width']} {$map['height']}' enable-background='new 0 0 {$map['width']} {$map['height']}' xml:space='preserve'>";
+        foreach ($strokes as $hex => $defs) {
+            $svg .= "<path stroke='$hex' d='".rtrim(implode(' ', $defs))."'/>";
+        }
+
+        return $svg.'</svg>';
+    }
+
+    /**
+     * The Illustrator swatch import file, same as CGUtils::getSwatchesAI(): appearance label, color group, color label to hex
+     *
+     * @param  array<string, array<string, string>>  $groups  color group label => (color label => hex)
+     */
+    public static function swatchJson(string $label, array $groups, ?int $exported_at = null): string
+    {
+        $json = ['Exported at' => gmdate('Y-m-d H:i:s \G\M\T', $exported_at ?? time()), 'Version' => '1.4'];
+        $json[$label] = $groups;
+
+        return json_encode($json, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The GIMP / Inkscape palette, same as CGUtils::generateGimpPalette()
+     *
+     * @param  array<int, array{0: int, 1: int, 2: int, 3: string}>  $colors  red, green, blue, label
+     */
+    public static function gimpPalette(string $name, array $colors, ?int $exported_at = null): string
+    {
+        $export_ts = gmdate('Y-m-d H:i:s T', $exported_at ?? time());
+        $file = "GIMP Palette\nName: $name\nColumns: 6\n#\n# Exported at: $export_ts\n#\n";
+        $file .= implode("\n", array_map(fn(array $color) => implode(' ', [
+            str_pad((string) $color[0], 3, ' ', STR_PAD_LEFT),
+            str_pad((string) $color[1], 3, ' ', STR_PAD_LEFT),
+            str_pad((string) $color[2], 3, ' ', STR_PAD_LEFT),
+            htmlspecialchars($color[3]),
+        ]), $colors));
+
+        return "$file\n";
+    }
 }

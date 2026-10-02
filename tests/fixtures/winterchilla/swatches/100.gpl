@@ -1,0 +1,21 @@
+GIMP Palette
+Name: Cloud Chaser
+Columns: 6
+#
+# Exported at: {TIME}
+#
+118 115 206 Coat | Outline
+192 182 243 Coat | Fill
+105 106 185 Coat | Shadow Outline
+172 163 218 Coat | Shadow Fill
+129 194 239 Mane &amp; Tail | Outline
+187 234 255 Mane &amp; Tail | Fill 1
+255 255 255 Mane &amp; Tail | Fill 2
+ 72  38  72 Iris | Gradient Top
+166  80 167 Iris | Gradient Middle 1
+208 120 167 Iris | Gradient Middle 2
+222 159 191 Iris | Gradient Bottom
+242 235 165 Cutie Mark | Star
+210 240 255 Cutie Mark | Trail Fill 1
+133 195 237 Cutie Mark | Trail Fill 2
+255 255 255 Cutie Mark | Sparkles

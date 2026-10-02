@@ -40,6 +40,50 @@ class AdminController extends Controller
     ];
 
     /**
+     * @OA\Get(
+     *   path="/admin/pcg-appearances",
+     *   operationId="GetAdminPcgAppearances",
+     *   description="List every personal color guide appearance of every user, newest first. Staff only.",
+     *   tags={"admin"},
+     *   @OA\Parameter(in="query", name="page", required=false, @OA\Schema(type="integer", default=1, minimum=1)),
+     *   @OA\Parameter(in="query", name="size", required=false, @OA\Schema(type="integer", default=10, minimum=1, maximum=100)),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"appearances", "pagination"},
+     *     @OA\Property(property="appearances", type="array", @OA\Items(allOf={
+     *       @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
+     *       @OA\Schema(type="object", required={"private", "createdAt"}, @OA\Property(property="private", type="boolean"), @OA\Property(property="createdAt", type="string", format="date-time"))
+     *     })),
+     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
+     *   )),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="422", description="Invalid query", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
+     * )
+     */
+    public function pcgAppearances(Request $request): JsonResponse
+    {
+        $valid = Validator::make($request->query(), [
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'size' => ['sometimes', 'integer', 'between:1,100'],
+        ], ['size.between' => 'The size must be between 1 and 100.'])->validate();
+        $size = (int) ($valid['size'] ?? 10);
+
+        $pagination = Appearance::whereNotNull('owner_id')->orderByDesc('created_at')->orderByDesc('id')->paginate($size, page: (int) ($valid['page'] ?? 1));
+
+        return response()->camelJson([
+            'appearances' => $pagination->getCollection()->map(fn(Appearance $a) => ColorGuideHelper::mapPreviewAppearance($a) + [
+                'private' => (bool) $a->private,
+                'created_at' => $a->created_at?->toIso8601String(),
+            ])->values(),
+            'pagination' => [
+                'current_page' => $pagination->currentPage(),
+                'total_pages' => max(1, $pagination->lastPage()),
+                'total_items' => $pagination->total(),
+                'items_per_page' => $size,
+            ],
+        ]);
+    }
+
+    /**
      * @OA\Schema(
      *   schema="LogItem",
      *   type="object",

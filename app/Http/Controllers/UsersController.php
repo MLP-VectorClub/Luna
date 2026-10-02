@@ -201,6 +201,29 @@ class UsersController extends Controller
 
     /**
      * @OA\Get(
+     *   path="/users/da-uuid/{uuid}",
+     *   operationId="GetUsersDaUuidUuid",
+     *   description="Get the public information of a user by their DeviantArt account UUID. Developer role only.",
+     *   tags={"users"},
+     *   @OA\Parameter(in="path", name="uuid", required=true, @OA\Schema(type="string", format="uuid")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/User")),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="User not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function getByDaUuid(Request $request, string $uuid): JsonResponse
+    {
+        /** @var DeviantartUser $da_user */
+        $da_user = DeviantartUser::findOrFail(strtolower($uuid));
+        /** @var User $user */
+        $user = $da_user->user()->firstOrFail();
+
+        return $this->getById($request, $user);
+    }
+
+    /**
+     * @OA\Get(
      *   path="/users/{id}",
      *   description="Get information about the specified user",
      *   tags={"users"},

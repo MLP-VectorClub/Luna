@@ -1,0 +1,89 @@
+{
+    "generated_at": "Friday, 2nd October 2026, 08:49:26 GMT",
+    "source_url": "https://mlpvector.lc/cg/pony/v/100-Cloud-Chaser",
+    "name": "Cloud Chaser",
+    "groups": [
+        {
+            "label": "Coat",
+            "colors": [
+                {
+                    "label": "Outline",
+                    "hex": "#7673CE"
+                },
+                {
+                    "label": "Fill",
+                    "hex": "#C0B6F3"
+                },
+                {
+                    "label": "Shadow Outline",
+                    "hex": "#696AB9"
+                },
+                {
+                    "label": "Shadow Fill",
+                    "hex": "#ACA3DA"
+                }
+            ]
+        },
+        {
+            "label": "Mane & Tail",
+            "colors": [
+                {
+                    "label": "Outline",
+                    "hex": "#81C2EF"
+                },
+                {
+                    "label": "Fill 1",
+                    "hex": "#BBEAFF"
+                },
+                {
+                    "label": "Fill 2",
+                    "hex": "#FFFFFF"
+                }
+            ]
+        },
+        {
+            "label": "Iris",
+            "colors": [
+                {
+                    "label": "Gradient Top",
+                    "hex": "#482648"
+                },
+                {
+                    "label": "Gradient Middle 1",
+                    "hex": "#A650A7"
+                },
+                {
+                    "label": "Gradient Middle 2",
+                    "hex": "#D078A7"
+                },
+                {
+                    "label": "Gradient Bottom",
+                    "hex": "#DE9FBF"
+                }
+            ]
+        },
+        {
+            "label": "Cutie Mark",
+            "colors": [
+                {
+                    "label": "Star",
+                    "hex": "#F2EBA5"
+                },
+                {
+                    "label": "Trail Fill 1",
+                    "hex": "#D2F0FF"
+                },
+                {
+                    "label": "Trail Fill 2",
+                    "hex": "#85C3ED"
+                },
+                {
+                    "label": "Sparkles",
+                    "hex": "#FFFFFF"
+                }
+            ]
+        }
+    ],
+    "id": 100,
+    "sprite": true
+}

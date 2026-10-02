@@ -46,4 +46,40 @@ class AppearanceImagesTest extends TestCase
 
         $this->assertSame(file_get_contents("$dir/facing-$name-$facing.svg"), AppearanceImages::facingSvg($facing, $rows));
     }
+
+    public function testSpriteTracingMatchesWinterchilla(): void
+    {
+        $dir = __DIR__.'/../fixtures/winterchilla';
+        $map = AppearanceImages::traceSprite("$dir/sprite.png");
+
+        $this->assertSame(json_decode(file_get_contents("$dir/sprite-map.json"), true), json_decode(json_encode($map), true));
+        $this->assertSame(file_get_contents("$dir/sprite.svg"), AppearanceImages::spriteSvg($map));
+    }
+
+    public static function swatchAppearances(): array
+    {
+        return array_map(fn(string $file) => [basename($file, '.json')], glob(__DIR__.'/../fixtures/winterchilla/swatches/*.json'));
+    }
+
+    #[DataProvider('swatchAppearances')]
+    public function testSwatchFilesMatchWinterchilla(string $id): void
+    {
+        $dir = __DIR__.'/../fixtures/winterchilla/swatches';
+
+        $golden = file_get_contents("$dir/$id.json");
+        $decoded = json_decode($golden, true);
+        $label = array_key_last($decoded);
+        $json = AppearanceImages::swatchJson($label, $decoded[$label], 0);
+        $this->assertSame($golden, str_replace('1970-01-01 00:00:00 GMT', '{TIME}', $json));
+
+        $golden = file_get_contents("$dir/$id.gpl");
+        $colors = [];
+        foreach ($decoded[$label] as $group => $group_colors) {
+            foreach ($group_colors as $color_label => $hex) {
+                [$r, $g, $b] = sscanf(ltrim($hex, '#'), '%02x%02x%02x');
+                $colors[] = [$r, $g, $b, "$group | $color_label"];
+            }
+        }
+        $this->assertSame($golden, str_replace('1970-01-01 00:00:00 GMT', '{TIME}', AppearanceImages::gimpPalette($label, $colors, 0)));
+    }
 }

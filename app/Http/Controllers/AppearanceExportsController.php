@@ -5,6 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Models\Appearance;
 use App\Models\CutieMark;
+use App\Utils\AppearanceImages;
+use App\Utils\ColorGuideHelper;
+use App\Utils\PaletteImage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use App\Utils\Permission;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
@@ -42,29 +48,109 @@ class AppearanceExportsController extends Controller
 
         $groups = $appearance->colorGroups()->with(['colors' => fn($query) => $query->whereNotNull('hex')->orderBy('order')])->get();
         if ($valid['format'] === 'json') {
-            $swatches = ['Exported at' => gmdate('Y-m-d H:i:s \G\M\T'), 'Version' => '1.4', $appearance->label => []];
+            $swatches = [];
             foreach ($groups as $group) {
-                if ($group->colors->isEmpty()) {
-                    continue;
-                }
                 foreach ($group->colors as $color) {
-                    $swatches[$appearance->label][$group->label][$color->label] = $color->hex;
+                    $swatches[$group->label][$color->label] = $color->hex;
                 }
             }
 
-            return $this->attachment(json_encode($swatches, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), "{$appearance->label}.json", 'application/json');
+            return $this->attachment(AppearanceImages::swatchJson($appearance->label, $swatches), "{$appearance->label}.json", 'application/json');
         }
 
-        $lines = [];
+        $colors = [];
         foreach ($groups as $group) {
             foreach ($group->colors as $color) {
                 [$red, $green, $blue] = sscanf(ltrim($color->hex, '#'), '%02x%02x%02x');
-                $lines[] = sprintf('%3d %3d %3d %s', $red, $green, $blue, htmlspecialchars("{$group->label} | {$color->label}"));
+                $colors[] = [$red, $green, $blue, "{$group->label} | {$color->label}"];
             }
         }
-        $gpl = "GIMP Palette\nName: {$appearance->label}\nColumns: 6\n#\n# Exported at: ".gmdate('Y-m-d H:i:s T')."\n#\n".implode("\n", $lines)."\n";
 
-        return $this->attachment($gpl, "{$appearance->label}.gpl", 'application/octet-stream');
+        return $this->attachment(AppearanceImages::gimpPalette($appearance->label, $colors), "{$appearance->label}.gpl", 'application/octet-stream');
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/appearances/{id}/image",
+     *   operationId="GetAppearancesIdImage",
+     *   description="A rendered image of the appearance. Combinations: `palette` as `png` (the colors listed next to the sprite), `sprite` as `png` (the uploaded sprite) or `svg` (traced from it), `preview` as `svg` (the four-color preview) and `facing` as `svg` (the body-orientation graphic, colored with the appearance's colors; pick the side with `facing`). Everything else is a 422, a missing sprite a 404. The server may answer with a redirect to a cache-busted URL of the same image.",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Parameter(in="query", name="type", required=true, @OA\Schema(type="string", enum={"palette", "sprite", "preview", "facing"})),
+     *   @OA\Parameter(in="query", name="format", required=true, @OA\Schema(type="string", enum={"png", "svg"})),
+     *   @OA\Parameter(in="query", name="facing", required=false, @OA\Schema(type="string", default="left", enum={"left", "right"})),
+     *   @OA\Response(response="200", description="The image", @OA\MediaType(mediaType="image/png", @OA\Schema(type="string", format="binary")), @OA\MediaType(mediaType="image/svg+xml", @OA\Schema(type="string"))),
+     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Appearance not found, or it has no sprite", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="422", description="Unsupported type and format combination", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
+     * )
+     */
+    public function image(Request $request, int $id)
+    {
+        $appearance = $this->visible($id);
+        $valid = Validator::make($request->query(), [
+            'type' => ['required', 'string', Rule::in(['palette', 'sprite', 'preview', 'facing'])],
+            'format' => ['required', 'string', Rule::in(['png', 'svg'])],
+            'facing' => ['sometimes', 'string', Rule::in(['left', 'right'])],
+        ])->validate();
+        $combination = "{$valid['type']}.{$valid['format']}";
+        if (!in_array($combination, ['palette.png', 'sprite.png', 'sprite.svg', 'preview.svg', 'facing.svg'], true)) {
+            throw ValidationException::withMessages(['format' => "The image type {$valid['type']} is not available as {$valid['format']}."]);
+        }
+        $headers = ['Cache-Control' => 'public, max-age=300'];
+
+        switch ($combination) {
+            case 'preview.svg':
+                return response(AppearanceImages::previewSvg($appearance->preview_data), 200, $headers + ['Content-Type' => 'image/svg+xml']);
+
+            case 'facing.svg':
+                $rows = DB::table('color_groups as cg')
+                    ->leftJoin('colors as c', 'c.group_id', '=', 'cg.id')
+                    ->where('cg.appearance_id', $appearance->id)
+                    ->orderBy('cg.order')->orderBy('c.label')
+                    ->get(['cg.label as cglabel', 'c.label as clabel', 'c.hex'])
+                    ->map(fn($row) => (array) $row)->all();
+
+                return response(AppearanceImages::facingSvg($valid['facing'] ?? 'left', $rows), 200, $headers + ['Content-Type' => 'image/svg+xml']);
+        }
+
+        $sprite = $appearance->spriteFile();
+        if ($valid['type'] === 'sprite' && $sprite === null) {
+            abort(404, "There's no sprite image for appearance #{$appearance->id}");
+        }
+
+        switch ($combination) {
+            case 'sprite.png':
+                return $appearance->private
+                    ? response()->file($sprite->getPath(), ['Cache-Control' => 'private, must-revalidate'])
+                    : redirect(ColorGuideHelper::mapSprite($appearance, false, $sprite)['path']);
+
+            case 'sprite.svg':
+                $svg = Cache::remember('sprite_svg:'.sha1_file($sprite->getPath()), now()->addDay(), fn() => AppearanceImages::spriteSvg(AppearanceImages::traceSprite($sprite->getPath())));
+
+                return response($svg, 200, $headers + ['Content-Type' => 'image/svg+xml']);
+
+            default: // palette.png
+                $groups = $appearance->colorGroups()->with('colors')->get()->map(fn($group) => [
+                    'label' => $group->label,
+                    'colors' => $group->colors->sortBy('order')->map(fn($color) => ['label' => $color->label, 'hex' => $color->hex])->values()->all(),
+                ])->all();
+                $slug = trim(preg_replace('/-+/', '-', preg_replace('/[^A-Za-z\d\-]/', '-', $appearance->label)), '-');
+                $owner = $appearance->owner_id !== null ? "/users/{$appearance->owner_id}" : '';
+                $guide = $appearance->owner_id !== null ? '' : "{$appearance->guide?->value}/";
+                $source = rtrim((string) config('app.frontend_url'), '/')."$owner/cg/{$guide}v/{$appearance->id}-$slug";
+                $key = 'palette_png:'.sha1(json_encode([$appearance->label, $groups, $sprite?->getPath(), $sprite !== null ? sha1_file($sprite->getPath()) : null, $source]));
+                $png = Cache::remember($key, now()->addDay(), fn() => base64_encode(PaletteImage::render(
+                    $appearance->label,
+                    $sprite?->getPath(),
+                    $groups,
+                    now()->format('l, jS F Y, H:i:s T'),
+                    $source,
+                )));
+
+                return response(base64_decode($png), 200, $headers + ['Content-Type' => 'image/png']);
+        }
     }
 
     /**
