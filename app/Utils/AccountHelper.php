@@ -9,6 +9,7 @@ use App\Enums\UserPrefKey;
 use App\Http\Requests\SocialAuthRequest;
 use App\Models\DeviantartUser;
 use App\Models\DiscordMember;
+use App\Models\PreviousUsername;
 use App\Models\User;
 use App\Rules\StrictEmail;
 use App\Rules\Username;
@@ -155,16 +156,34 @@ class AccountHelper
 
             $record = new DeviantartUser();
             $record->id = $data->getId();
+            $record->user_id = $app_user->id;
         } else {
             $app_user = $record->user()->first();
         }
 
-        $record->name = $data->getNickname();
+        $new_name = $data->getNickname();
+        $old_names = $record->exists ? array_unique(array_filter([$app_user->name, $record->name])) : [];
+
+        $record->name = $new_name;
         $record->avatar_url = $data->getAvatar();
         foreach (self::tokenResponseToModelData($data, 'access_expires') as $k => $v) {
             $record->setAttribute($k, $v);
         }
         $record->save();
+
+        // Renamed on DeviantArt: the user's name follows and the old names are remembered, so profiles can still be found by them
+        if (strcasecmp($app_user->name, $new_name) !== 0 || $old_names !== []) {
+            foreach ($old_names as $old_name) {
+                if (strcasecmp($old_name, $new_name) !== 0) {
+                    PreviousUsername::record($record->id, $old_name);
+                }
+            }
+            // Names are unique, if somebody else took the new one the account keeps the name it has
+            if (strcasecmp($app_user->name, $new_name) !== 0 && !User::where('name', $new_name)->where('id', '!=', $app_user->id)->exists()) {
+                $app_user->name = $new_name;
+                $app_user->save();
+            }
+        }
 
         return $app_user;
     }
@@ -192,6 +211,7 @@ class AccountHelper
 
             $record = new DiscordMember();
             $record->id = $data->getId();
+            $record->user_id = $app_user->id;
         } else {
             $app_user = $record->user()->first();
         }
