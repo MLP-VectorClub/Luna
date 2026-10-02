@@ -2,7 +2,8 @@
 // Regenerates the palette image goldens in tests/fixtures/winterchilla from Winterchilla's own CGUtils::renderAppearancePNG() for real appearances of
 // its development database (read only, apart from deleting the cached palette.png of the chosen appearances so that it gets rendered again).
 // The header of the image contains the time of the export and the URL of the appearance, both are recorded next to the image.
-//   php scripts/generate-winterchilla-palette-goldens.php <appearance id>...   (ids with and without a sprite in ../Winterchilla/fs/sprites)
+//   php scripts/generate-winterchilla-palette-goldens.php [--with-sprite] <appearance id>...   (ids with and without a sprite in ../Winterchilla/fs/sprites)
+// Without --with-sprite the images are what Winterchilla renders today (no sprite, see below), with it they show the sprite as Winterchilla intends.
 if (($argv[1] ?? '') === '--child') {
   [, , $id, $uri_t] = $argv;
   require '/home/went/git/MLP-VectorClub/Winterchilla/config/init/minimal.php';
@@ -25,7 +26,9 @@ if (($argv[1] ?? '') === '--child') {
   exit;
 }
 
-$dir = dirname(__DIR__).'/tests/fixtures/winterchilla/palette';
+$with_sprite = in_array('--with-sprite', $argv, true);
+$argv = array_values(array_diff($argv, ['--with-sprite']));
+$dir = dirname(__DIR__).'/tests/fixtures/winterchilla/palette'.($with_sprite ? '-sprite' : '');
 @mkdir($dir, 0775, true);
 foreach (array_slice($argv, 1) as $id) {
   $cache = "/home/went/git/MLP-VectorClub/Winterchilla/fs/cg_render/appearance/$id/palette.png";
@@ -35,7 +38,7 @@ foreach (array_slice($argv, 1) as $id) {
     // Winterchilla never draws the sprite. A copy at that doubled path makes it render what it is meant to
     $sprite = "/home/went/git/MLP-VectorClub/Winterchilla/fs/sprites/$id.png";
     $doubled = $sprite.$id.'.png';
-    if (file_exists($sprite)) copy($sprite, $doubled);
+    if ($with_sprite && file_exists($sprite)) copy($sprite, $doubled);
     $proc = proc_open([PHP_BINARY, __FILE__, '--child', $id, '0'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['DB_NAME' => 'prod_copy'] + getenv());
     $stdout = stream_get_contents($pipes[1]);
     $stderr = stream_get_contents($pipes[2]);
@@ -48,8 +51,8 @@ foreach (array_slice($argv, 1) as $id) {
   $meta['id'] = (int) $id;
   copy($cache, "$dir/$id.png");
   $sprite = "/home/went/git/MLP-VectorClub/Winterchilla/fs/sprites/$id.png";
-  $meta['sprite'] = file_exists($sprite);
-  if ($meta['sprite']) copy($sprite, "$dir/$id-sprite.png");
+  $meta['sprite'] = $with_sprite && file_exists($sprite);
+  if (file_exists($sprite)) copy($sprite, "$dir/$id-sprite.png");
   file_put_contents("$dir/$id.json", json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
   echo "$id ok\n";
 }

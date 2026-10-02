@@ -1,5 +1,5 @@
 {
-    "generated_at": "Friday, 2nd October 2026, 08:53:16 GMT",
+    "generated_at": "Friday, 2nd October 2026, 08:53:15 GMT",
     "source_url": "https://mlpvector.lc/cg/pony/v/100-Cloud-Chaser",
     "name": "Cloud Chaser",
     "groups": [
@@ -85,5 +85,5 @@
         }
     ],
     "id": 100,
-    "sprite": false
+    "sprite": true
 }

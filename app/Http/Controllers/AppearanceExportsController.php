@@ -140,10 +140,13 @@ class AppearanceExportsController extends Controller
                 $owner = $appearance->owner_id !== null ? "/users/{$appearance->owner_id}" : '';
                 $guide = $appearance->owner_id !== null ? '' : "{$appearance->guide?->value}/";
                 $source = rtrim((string) config('app.frontend_url'), '/')."$owner/cg/{$guide}v/{$appearance->id}-$slug";
-                $key = 'palette_png:'.sha1(json_encode([$appearance->label, $groups, $sprite?->getPath(), $sprite !== null ? sha1_file($sprite->getPath()) : null, $source]));
+                // Winterchilla never draws the sprite into the palette image (it looks for it at a doubled path), which is kept until decided otherwise
+                $draw_sprite = (bool) config('colorguide.palette_image_draws_sprite');
+                $sprite_path = $draw_sprite ? $sprite?->getPath() : null;
+                $key = 'palette_png:'.sha1(json_encode([$appearance->label, $groups, $sprite_path, $sprite_path !== null ? sha1_file($sprite_path) : null, $source]));
                 $png = Cache::remember($key, now()->addDay(), fn() => base64_encode(PaletteImage::render(
                     $appearance->label,
-                    $sprite?->getPath(),
+                    $sprite_path,
                     $groups,
                     now()->format('l, jS F Y, H:i:s T'),
                     $source,

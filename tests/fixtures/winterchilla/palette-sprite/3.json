@@ -1,26 +1,22 @@
 {
     "generated_at": "Friday, 2nd October 2026, 08:53:16 GMT",
-    "source_url": "https://mlpvector.lc/cg/pony/v/104-Twilight-Sky",
-    "name": "Twilight Sky",
+    "source_url": "https://mlpvector.lc/cg/pony/v/3-Fluttershy",
+    "name": "Fluttershy",
     "groups": [
         {
             "label": "Coat",
             "colors": [
                 {
                     "label": "Outline",
-                    "hex": "#787878"
+                    "hex": "#E9D461"
                 },
                 {
                     "label": "Fill",
-                    "hex": "#A1A1A1"
-                },
-                {
-                    "label": "Shadow Outline",
-                    "hex": "#757879"
+                    "hex": "#FAF5AB"
                 },
                 {
                     "label": "Shadow Fill",
-                    "hex": "#909090"
+                    "hex": "#F3E488"
                 }
             ]
         },
@@ -29,11 +25,11 @@
             "colors": [
                 {
                     "label": "Outline",
-                    "hex": "#88DCEE"
+                    "hex": "#E581B1"
                 },
                 {
                     "label": "Fill",
-                    "hex": "#BCFFFF"
+                    "hex": "#F3B5CF"
                 }
             ]
         },
@@ -42,11 +38,19 @@
             "colors": [
                 {
                     "label": "Gradient Top",
-                    "hex": "#006596"
+                    "hex": "#02534D"
                 },
                 {
                     "label": "Gradient Bottom",
-                    "hex": "#49C4F1"
+                    "hex": "#02ACA4"
+                },
+                {
+                    "label": "Highlight Top",
+                    "hex": "#3CBEB7"
+                },
+                {
+                    "label": "Highlight Bottom",
+                    "hex": "#84D2D4"
                 }
             ]
         },
@@ -54,12 +58,16 @@
             "label": "Cutie Mark",
             "colors": [
                 {
-                    "label": "Stars",
-                    "hex": "#FFFFFF"
+                    "label": "Wings",
+                    "hex": "#F3B5CF"
+                },
+                {
+                    "label": "Body",
+                    "hex": "#69C8C3"
                 }
             ]
         }
     ],
-    "id": 104,
-    "sprite": false
+    "id": 3,
+    "sprite": true
 }
