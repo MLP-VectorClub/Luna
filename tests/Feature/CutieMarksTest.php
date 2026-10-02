@@ -81,6 +81,18 @@ class CutieMarksTest extends TestCase
         $this->assertDatabaseHas('logs', ['entry_type' => 'cm_delete']);
     }
 
+    public function testSymmetricalCutieMarkHasNoFacing(): void
+    {
+        Storage::fake('public');
+        $this->as(Role::Staff);
+        $appearance = $this->appearance();
+
+        $this->putCms($appearance, [['svgdata' => $this->svg(), 'attribution' => 'none', 'rotation' => 0]])->assertOk();
+        $this->assertNull($this->getJson("/appearances/{$appearance->id}/cutie-marks")->json('cms.0.facing'));
+        $this->putCms($appearance, [['id' => CutieMark::first()->id, 'facing' => null, 'attribution' => 'none', 'rotation' => 0]])->assertOk();
+        $this->assertNull(CutieMark::first()->facing);
+    }
+
     public function testValidation(): void
     {
         Storage::fake('public');
