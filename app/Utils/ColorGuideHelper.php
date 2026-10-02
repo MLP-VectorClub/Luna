@@ -256,7 +256,7 @@ class ColorGuideHelper
                         'name' => $group_tag_ids[$id],
                         'appearance_ids' => $group_items[$id],
                     ])
-                    ->toArray();
+                    ->values()->toArray();
             case FullGuideSortField::Alphabetically:
                 $group_items = [];
                 foreach ($appearances as $appearance) {
