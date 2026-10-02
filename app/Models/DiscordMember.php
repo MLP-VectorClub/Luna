@@ -9,8 +9,17 @@ class DiscordMember extends Model
 {
     public $timestamps = false;
 
+    protected $casts = [
+        'expires' => 'datetime',
+        'last_synced' => 'datetime',
+        'joined_at' => 'datetime',
+    ];
+
+    public const SYNC_COOLDOWN = 300;
+
     protected $fillable = [
         'username',
+        'display_name',
         'discriminator',
         'nick',
         'avatar_hash',
