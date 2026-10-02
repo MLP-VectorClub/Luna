@@ -18,3 +18,15 @@ DB_DATABASE=luna_contract php artisan migrate --force
 # Winterchilla's test seed has DeviantArt users without an avatar, production never does
 "${PSQL[@]}" -d luna_contract -c 'ALTER TABLE deviantart_users ALTER COLUMN avatar_url DROP NOT NULL'
 "${PSQL[@]}" -d luna_contract -f "$SEED"
+
+# Winterchilla's seeder puts the cutie mark SVG of the seeded cutie marks (IDs 900000 and up) on disk instead of in the dump,
+# attach the same fixture to them here
+DB_DATABASE=luna_contract php artisan tinker --execute='
+$svg = App\Utils\SvgHelper::sanitize(file_get_contents(base_path("tests/fixtures/cutiemark.svg")));
+foreach (App\Models\CutieMark::where("id", ">=", 900000)->get() as $cm) {
+    if ($cm->vectorFile() === null) {
+        $cm->addMediaFromString($svg)->usingFileName(sha1($svg.$cm->id).".svg")->toMediaCollection(App\Models\CutieMark::CUTIEMARKS_COLLECTION);
+    }
+}
+echo "Attached the fixture to ".App\Models\CutieMark::where("id", ">=", 900000)->count()." seeded cutie marks\n";
+'
