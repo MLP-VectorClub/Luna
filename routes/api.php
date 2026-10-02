@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppearanceManagementController;
 use App\Http\Controllers\CutieMarksController;
 use App\Http\Controllers\DiscordController;
+use App\Http\Controllers\EventEntriesController;
 use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\SignupController;
@@ -234,6 +235,14 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::post('{id}/finalize', [EventsController::class, 'disabled'])->whereNumber('id');
         });
         Route::post('{id}/entries/check', [EventsController::class, 'disabled'])->whereNumber('id')->middleware('auth:sanctum');
+        // Winterchilla routes these to the entry controller without an entry id, so they only ever answer 404 to signed in users
+        Route::match(['get', 'put', 'delete'], '{id}/entries', [EventEntriesController::class, 'placeholder'])->whereNumber('id')->middleware('auth:sanctum');
+    });
+
+    Route::middleware('auth:sanctum')->prefix('event-entries')->group(function () {
+        Route::get('{entryid}', [EventEntriesController::class, 'show'])->whereNumber('entryid');
+        Route::put('{entryid}', [EventEntriesController::class, 'update'])->whereNumber('entryid');
+        Route::delete('{entryid}', [EventEntriesController::class, 'destroy'])->whereNumber('entryid');
     });
 
     Route::prefix('notices')->group(function () {
