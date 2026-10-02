@@ -12,7 +12,7 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 - Elasticsearch moved to the ES 8 client (`mailerlite/laravel-elasticsearch`), queries in `ColorGuideHelper` are plain arrays. Prod runs ES 8.19, index `appearances` is created by Winterchilla
 - OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves the docs at the route itself, no trailing filename)
 - Old migrations run on a fresh database again (`unsignedFloat` removed, activity_log no longer reads the removed package's config)
-- Test suite: PHPUnit 11, now 168 tests (see the Winterchilla contract section)
+- Test suite: PHPUnit 11, now 182 tests (see the Winterchilla contract section)
 - Deployed to production (`ffd40e0`), including the `expires_at` fix that unblocks successful signins (password login confirmed working on production)
 
 ### Left
@@ -23,7 +23,7 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 ## Winterchilla contract (as of 2026-10-01)
 
 Luna is being built to implement Winterchilla's `/api/v0` contract (its `public/dist/api.json`) so Celestia can replace Winterchilla's Twig front end. The plan, decisions, findings and
-progress log are in `docs/winterchilla-contract-plan.md`. Nothing from this work is deployed, and no migration has run on production.
+progress log are in `docs/winterchilla-contract-plan.md`. Deployed to production on 2026-10-02 (`11de1f3`, including the `align_schema_with_winterchilla` migration on Luna's own database). The Winterchilla production data has not been loaded into it yet.
 
 ### Built (all 130 contract operations that `scripts/diff-contract.php` counts)
 - Schema alignment migration `2026_10_01_000000_align_schema_with_winterchilla` (drops `show_videos` and `show.generation`, restores `UNIQUE(season, episode)`, discriminator smallint, FK and timestamp fixes, dead rows)
@@ -31,7 +31,6 @@ progress log are in `docs/winterchilla-contract-plan.md`. Nothing from this work
 - Settings, notices, useful links, user preferences (+ `PUT /users/{id}/role`), tags, color groups, appearances (reads and all management except cutie marks), sprites, shows (incl. votes, next, latest, prefill), admin logs, notification read, color guide export and reindex, personal guide (slots, points, history), post lists, post write flows (create, edit, reserve, finish, approve, delete, change image, unbreak, direct reservations), user profile and contributions, event reads, the disabled event writes (501 like Winterchilla), cutie marks (`App\Http\Controllers\CutieMarksController`, stored as medialibrary files holding the sanitized SVG) and SVG sanitizing (`App\Utils\SvgHelper`, enshrined/svg-sanitize, minified by the sanitizer, no svgo), Discord sync and unlink (`DiscordController`, Laravel `Http` against discord.com, needs `DISCORD_CLIENT_ID/SECRET/BOT_TOKEN/SERVER_ID`)
 - Image links go through `App\Utils\ImageProvider` and `DeviantArt` (oEmbed, Derpibooru, Imgur, Lightshot, club gallery check), always via Laravel's `Http` client so tests fake them
 - `App\Utils\AppearanceIndex` keeps the shared ElasticSearch `appearances` index in sync; `LogWriter` writes the shared `logs` table
-- 167 Luna tests (`php artisan test`)
 
 ### Left
 - Cutie mark gaps: no svgo, colors are not tokenized (the file is stored sanitized, `sanitize-svg` only warns about colors missing from the `Cutie Mark` color group), attribution by username/deviation needs the DeviantArt user to exist already (no DeviantArt API lookup to create unknown users), the `preview` HTML of Winterchilla is not returned
