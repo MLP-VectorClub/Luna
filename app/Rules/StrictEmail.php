@@ -34,7 +34,8 @@ class StrictEmail extends BaseRule
             return false;
         }
 
-        return Validator::make(['email' => $value], ['email' => 'email:rfc,dns'])->passes();
+        // The DNS lookup can be switched off for tests that must not depend on the network
+        return Validator::make(['email' => $value], ['email' => config('app.email_dns_check', true) ? 'email:rfc,dns' : 'email:rfc'])->passes();
     }
 
     /**

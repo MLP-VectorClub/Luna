@@ -27,6 +27,7 @@ use App\Http\Controllers\TagsController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\UserPrefsController;
+use App\Http\Controllers\UserEmailController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
@@ -95,6 +96,8 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);
+            Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->whereNumber('id')->middleware('role:staff');
+            Route::post('email/verify', [UserEmailController::class, 'verify'])->middleware('role:staff');
             Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('tokens', [UsersController::class, 'tokens']);
