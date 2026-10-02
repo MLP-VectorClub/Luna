@@ -97,14 +97,24 @@ class ShowManagementTest extends TestCase
         $show = $this->episode();
         $this->postJson("/show/{$show->id}/vote", ['vote' => 5])->assertUnauthorized();
         $this->getJson("/show/{$show->id}/vote")->assertOk()->assertExactJson(['data' => []]);
+        $this->getJson("/show/{$show->id}")->assertOk()->assertJsonPath('show.userVote', null);
 
-        $this->as(Role::User);
+        $voter = $this->as(Role::User);
+        $this->getJson("/show/{$show->id}")->assertJsonPath('show.userVote', null);
         $this->postJson("/show/{$show->id}/vote", ['vote' => 9])->assertJsonValidationErrors('vote');
-        $this->postJson("/show/{$show->id}/vote", ['vote' => 5])->assertOk()->assertJsonPath('data.5', 1);
+        $this->postJson("/show/{$show->id}/vote", ['vote' => 5])->assertOk()->assertJsonPath('data.5', 1)->assertJsonPath('userVote', 5);
         $this->postJson("/show/{$show->id}/vote", ['vote' => 4])->assertStatus(409);
+        $this->getJson("/show/{$show->id}")->assertJsonPath('show.userVote', 5);
+
+        // Somebody else, and a guest, do not see the vote
+        $this->as(Role::Member);
+        $this->getJson("/show/{$show->id}")->assertJsonPath('show.userVote', null);
+        $this->app['auth']->forgetGuards();
+        $this->getJson("/show/{$show->id}")->assertJsonPath('show.userVote', null);
         $this->assertEquals(5, $show->fresh()->score);
 
         $future = $this->episode(['season' => 2, 'episode' => 1, 'airs' => now()->addYear()]);
+        $this->actingAs($voter, 'sanctum');
         $this->postJson("/show/{$future->id}/vote", ['vote' => 5])->assertStatus(409);
     }
 

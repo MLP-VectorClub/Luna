@@ -6,6 +6,7 @@ use App\Models\Appearance;
 use App\Models\PinnedAppearance;
 use App\Models\Show;
 use App\Models\ShowVote;
+use App\Models\User;
 use App\Utils\HtmlSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,10 +61,11 @@ class ShowManagementController extends Controller
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"show"}, @OA\Property(property="show", allOf={
      *     @OA\Schema(ref="#/components/schemas/Show"),
-     *     @OA\Schema(type="object", required={"aired", "willAir", "canEdit", "relatedAppearances"},
+     *     @OA\Schema(type="object", required={"aired", "willAir", "canEdit", "userVote", "relatedAppearances"},
      *       @OA\Property(property="aired", type="boolean", description="Whether the show has already aired"),
      *       @OA\Property(property="willAir", type="string", format="date-time", description="When the show will have aired (air time plus its running time)"),
      *       @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit the show"),
+     *       @OA\Property(property="userVote", type="integer", minimum=1, maximum=5, nullable=true, description="The rating (1-5) the signed in visitor gave, null when they have not voted or are not signed in"),
      *       @OA\Property(property="relatedAppearances", type="array", @OA\Items(ref="#/components/schemas/PreviewAppearance"))
      *     )
      *   }))),
@@ -79,6 +81,7 @@ class ShowManagementController extends Controller
             'aired' => $show->hasAired(),
             'willAir' => $show->willHaveAiredBy()->toIso8601String(),
             'canEdit' => $is_staff,
+            'userVote' => $this->userVote($show, $request->user()),
             'relatedAppearances' => $show->appearances()->orderBy('appearances.id')->get()
                 ->filter(fn(Appearance $a) => $a->owner_id === null || $is_staff)
                 ->map(fn(Appearance $a) => \App\Utils\ColorGuideHelper::mapPreviewAppearance($a))
@@ -256,7 +259,7 @@ class ShowManagementController extends Controller
      *   tags={"shows"},
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"vote"}, @OA\Property(property="vote", type="integer", minimum=1, maximum=5))),
-     *   @OA\Response(response="200", description="The vote counts after voting", @OA\JsonContent(type="object", required={"data"}, @OA\Property(property="data", type="object", additionalProperties=@OA\AdditionalProperties(type="integer")))),
+     *   @OA\Response(response="200", description="The vote counts after voting, and the rating that was recorded", @OA\JsonContent(type="object", required={"data", "userVote"}, @OA\Property(property="data", type="object", additionalProperties=@OA\AdditionalProperties(type="integer")), @OA\Property(property="userVote", type="integer", minimum=1, maximum=5))),
      *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="409", description="The show has not aired yet, or the user already voted", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
@@ -281,7 +284,7 @@ class ShowManagementController extends Controller
         ShowVote::create(['show_id' => $show->id, 'user_id' => $user->id, 'vote' => $valid['vote']]);
         $show->updateScore();
 
-        return response()->json(['data' => (object) $this->voteCounts($show)]);
+        return response()->json(['data' => (object) $this->voteCounts($show), 'userVote' => (int) $valid['vote']]);
     }
 
     /**
@@ -338,6 +341,16 @@ class ShowManagementController extends Controller
         $show->appearances()->sync(Appearance::whereIn('id', array_map('intval', $ids))->pluck('id')->all());
 
         return response()->json(new \stdClass());
+    }
+
+    private function userVote(Show $show, ?User $user): ?int
+    {
+        if ($user === null) {
+            return null;
+        }
+        $vote = ShowVote::where('show_id', $show->id)->where('user_id', $user->id)->value('vote');
+
+        return $vote === null ? null : (int) $vote;
     }
 
     private function voteCounts(Show $show): array
