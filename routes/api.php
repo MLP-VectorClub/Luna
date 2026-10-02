@@ -3,6 +3,7 @@
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppearanceManagementController;
+use App\Http\Controllers\AppearanceExportsController;
 use App\Http\Controllers\CutieMarksController;
 use App\Http\Controllers\DiscordController;
 use App\Http\Controllers\EventEntriesController;
@@ -113,6 +114,11 @@ Route::middleware([$throttle(60), 'optional.auth'])->group(function () {
         Route::get('{appearance}/locate', [AppearancesController::class, 'locate']);
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite'])->name('appearance_sprite');
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'colorGroups']);
+    });
+
+    Route::middleware('optional.auth')->prefix('appearances')->group(function () {
+        Route::get('{id}/palette', [AppearanceExportsController::class, 'palette'])->whereNumber('id');
+        Route::get('{id}/cutie-marks/{cutieMarkId}/download', [AppearanceExportsController::class, 'cutieMark'])->whereNumber(['id', 'cutieMarkId']);
     });
 
     Route::middleware('auth:sanctum')->prefix('appearances')->group(function () {
