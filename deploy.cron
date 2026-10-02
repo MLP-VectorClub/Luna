@@ -1,0 +1,16 @@
+# Scheduled jobs for git-deploy-toolkit: installed as /etc/cron.d/git-deploy-luna on each deploy and run by cron.
+# See deploy.conf for the rest of the deploy setup.
+#
+# The Laravel scheduler needs exactly one trigger, once a minute; what runs when is in app/Console/Kernel.php, which
+# is versioned. Until this file existed nothing on the server triggered it, so none of the scheduled commands ever
+# ran: the GDPR retention ones (gdpr:anonymize-logged-ips daily, gdpr:prune-email-verifications hourly, see the
+# privacy policy's retention periods) and cloudflare:reload.
+#
+# Run as www-data, like the web app, so what the commands write under storage/ stays writable for it.
+#
+# Not carried over: /etc/cron.hourly/luna-worker.sh ran `queue:work --stop-when-empty` hourly as root. Production
+# uses QUEUE_CONNECTION=sync, so there was no queue for it to work and it only risked root-owned files.
+MAILTO=""
+PATH=/usr/local/bin:/usr/bin:/bin
+
+* * * * * www-data cd @WORKTREE@ && php artisan schedule:run >> /dev/null 2>&1
