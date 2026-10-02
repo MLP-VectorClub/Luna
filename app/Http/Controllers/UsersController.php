@@ -50,7 +50,7 @@ class UsersController extends Controller
      *   @OA\Property(
      *     property="role",
      *     description="The publicly visible role for the user",
-     *     ref="#/components/schemas/UserRole",
+     *     ref="#/components/schemas/AccountRole",
      *   ),
      * )
      * @OA\Schema(

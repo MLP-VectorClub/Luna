@@ -76,9 +76,9 @@ class ShowController extends Controller
      *   @OA\Parameter(
      *     in="query",
      *     name="order",
-     *     required=false,
+     *     required=true,
      *     @OA\Schema(ref="#/components/schemas/ShowOrdering"),
-     *     description="What method to use for ordering results. Overall sorting is based only on the `no` field (default), while series sorting is meant for episodes and uses the `season` and `episode` fields to keep them in chronological order."
+     *     description="What method to use for ordering results. Overall sorting is based only on the `no` field, while series sorting is meant for episodes and uses the `season` and `episode` fields to keep them in chronological order."
      *   ),
      *   @OA\Parameter(
      *     in="query",
@@ -93,6 +93,20 @@ class ShowController extends Controller
      *     required=false,
      *     @OA\Schema(ref="#/components/schemas/ShowListPageSize"),
      *     description="The number of results to return per page"
+     *   ),
+     *   @OA\Parameter(
+     *     in="query",
+     *     name="season",
+     *     required=false,
+     *     @OA\Schema(type="integer", minimum=0),
+     *     description="Only list episodes of this season"
+     *   ),
+     *   @OA\Parameter(
+     *     in="query",
+     *     name="episode",
+     *     required=false,
+     *     @OA\Schema(type="integer", minimum=0),
+     *     description="Only list episodes with this number"
      *   ),
      *   @OA\Response(
      *     response="200",

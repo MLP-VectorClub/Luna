@@ -31,9 +31,12 @@ class PersonalGuideController extends Controller
      *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
      *   @OA\Parameter(in="query", name="size", description="Defaults to the user's items per page preference", @OA\Schema(type="integer", minimum=1, maximum=50)),
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"appearances", "pagination", "canManage"},
-     *     @OA\Property(property="appearances", type="array", @OA\Items(type="object")),
+     *     @OA\Property(property="appearances", type="array", @OA\Items(anyOf={
+     *       @OA\Schema(allOf={@OA\Schema(ref="#/components/schemas/Appearance"), @OA\Schema(type="object", required={"private"}, @OA\Property(property="private", type="boolean"))}),
+     *       @OA\Schema(type="object", description="Stub of a private appearance that the visitor may not see in full", required={"id", "label", "private"}, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"), @OA\Property(property="private", type="boolean", enum={true}))
+     *     })),
      *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination"),
-     *     @OA\Property(property="canManage", type="boolean")
+     *     @OA\Property(property="canManage", type="boolean", description="Whether the visitor may add and edit appearances in this guide")
      *   )),
      *   @OA\Response(response="403", description="The user hides their guide", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
