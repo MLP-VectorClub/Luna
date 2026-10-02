@@ -163,6 +163,11 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
   the default-sprite fallback and the staff-only cutie mark file checks.
 - Decision needed before cutie marks / sprites: Winterchilla sanitizes uploaded SVG with the `svgo` Node binary (`/appearances/{id}/sanitize-svg`, cutie mark upload). Luna has no
   equivalent; options are shipping svgo as a dependency of Luna's deploy, or sanitizing in PHP (e.g. `enshrined/svg-sanitize`) which would not minify.
+- 2026-10-02: `vectorApps` in `/config`, partial update semantics on `PUT /appearances/{id}`, cutie marks (`GET|PUT /appearances/{id}/cutie-marks`) and `POST /appearances/{id}/sanitize-svg`
+  (decision: sanitize in PHP with enshrined/svg-sanitize and its own minifier, no svgo; stored file is the sanitized SVG, colors are not tokenized), Discord sync and unlink.
+  **121 of 127 operations done**; the 6 left are the event entry operations (disabled in Winterchilla, skipped). Luna's suite has 131 tests.
+  Discord calls go through `Http` (discord.com API v10); `DISCORD_SKIP_REVOKE=true` (set by `scripts/serve-contract.sh`) skips the revoke call so the contract test can unlink seeded users.
+  Seed caveat: `last_synced` of the seeded synced Discord user (9004) is time based, load the seed shortly before running `DiscordApiTest`, otherwise the sync hits Discord and unlinks the user.
 
 ## 8. Things the migration found that Winterchilla (or Luna) had missed
 
@@ -171,7 +176,7 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
 - Luna's sidebar response lacked `minRole` and exposed `order`; the contract wants `{id, label, url, title, minRole}`. Fixed.
 - `dev_role_label` default was `staff` in Luna and is `developer` in Winterchilla (production stores `staff` explicitly, so nothing changes there). Aligned to `developer`.
 - Luna's `Show` model still listed a removed `synopsis_last_checked` column. Removed.
-- Username rule: Winterchilla `[A-Za-z\-\d]{1,20}`, Luna's `Username` rule allows `_` and any length. Not changed yet.
+- Username rule: Winterchilla `[A-Za-z\-\d]{1,20}`, Luna's `Username` rule allows `_` and any length. Not changed yet (existing accounts may break).
 - Contract oddities to settle with Winterchilla: `Pagination.currentPage` description in api.json contains a leaked docblock; `GET /tags/autocomplete?action=synon` answers 409
   (a GET that reports state through an error) and prefixes `type` with `typ-` when searching; `Tag.synonymOf` is an id while `TagListItem.synonymOf` is `{id, name}`;
   `TagListItem.type` enum lacks `warn`; `DELETE /tags/{id}/synonym` answers 200 or 204 depending on whether the tag was a synonym.
