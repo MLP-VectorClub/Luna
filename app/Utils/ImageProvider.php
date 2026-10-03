@@ -150,7 +150,8 @@ class ImageProvider
                 throw new ImageProviderException("The image could not be retrieved due to a missing handler for the provider \"$provider\"");
         }
 
-        foreach (['preview', 'fullsize'] as $field) {
+        // The test server's image URLs point at local plain HTTP servers
+        foreach (DeviantArt::fakeProviders() ? [] : ['preview', 'fullsize'] as $field) {
             if ($image->{$field} !== null) {
                 $image->{$field} = preg_replace('~^http://~', 'https://', $image->{$field});
             }
@@ -161,6 +162,10 @@ class ImageProvider
 
     private static function headContentType(string $url): ?string
     {
+        if (DeviantArt::fakeProviders()) {
+            return 'image/png';
+        }
+
         try {
             $type = Http::timeout(10)->head($url)->header('Content-Type');
         } catch (ConnectionException $e) {

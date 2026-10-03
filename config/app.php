@@ -58,6 +58,9 @@ return [
     'throttle_reads' => (int) env('THROTTLE_READS', 1200),
     'throttle_writes' => (int) env('THROTTLE_WRITES', 60),
 
+    // Only read when APP_ENV=testing: answer image and DeviantArt lookups from the cache instead of the network, for the browser UI tests
+    'test_providers' => (bool) env('TEST_FAKE_PROVIDERS', false),
+
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
 
     'asset_url' => env('ASSET_URL', null),

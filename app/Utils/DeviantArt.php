@@ -4,6 +4,7 @@ namespace App\Utils;
 
 use App\Exceptions\ImageProviderException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,8 @@ class DeviantArt
     /**
      * @return ResolvedImage|null null when the submission does not exist
      */
+    public const CLUB_GALLERY_CACHE_PREFIX = 'test-club-gallery:';
+
     public static function submission(string $id, string $provider = 'fav.me'): ?ResolvedImage
     {
         if ($provider === 'sta.sh') {
@@ -42,6 +45,9 @@ class DeviantArt
         $cached = Cache::get($cache_key);
         if ($cached !== null) {
             return new ResolvedImage(...$cached);
+        }
+        if (self::fakeProviders()) {
+            return null;
         }
 
         $url = $provider === 'sta.sh' ? "https://sta.sh/$id" : "https://fav.me/$id";
@@ -102,10 +108,24 @@ class DeviantArt
     }
 
     /**
+     * Test server mode (APP_ENV=testing and TEST_FAKE_PROVIDERS=true): nothing is asked of DeviantArt or of image hosts. Deviations come from the cache
+     * (see TestFixturesController), images count as available PNGs and the club gallery is a cache marker per deviation
+     */
+    public static function fakeProviders(): bool
+    {
+        return App::environment('testing') && config('app.test_providers');
+    }
+
+    /**
      * @param  int[]  $only_fails  when given, only these response codes count as unavailable
      */
     public static function isImageAvailable(string $url, array $only_fails = [], ?int &$response_code = null): bool
     {
+        if (self::fakeProviders()) {
+            $response_code = 200;
+
+            return true;
+        }
         try {
             $response = Http::timeout(10)->head($url);
         } catch (ConnectionException $e) {
@@ -126,6 +146,10 @@ class DeviantArt
      */
     public static function isDeviationInClub(string $deviation_id): bool|int
     {
+        if (self::fakeProviders()) {
+            return Cache::has(self::CLUB_GALLERY_CACHE_PREFIX.$deviation_id);
+        }
+
         $numeric_id = intval(mb_substr($deviation_id, 1), 36);
         try {
             $response = Http::timeout(10)->get('https://www.deviantart.com/global/difi/', ['c' => ["\"DeviationView\",\"getAllGroups\",[\"$numeric_id\"]"], 't' => 'json']);

@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\ColorGuideController;
 use App\Http\Controllers\ColorGroupsController;
 use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\Testing\TestFixturesController;
 use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
@@ -59,6 +60,14 @@ Route::middleware($throttle(12))->group(function () {
 
 if (App::environment('testing')) {
     Route::post('test/login/{id}', [TestLoginController::class, 'login'])->where('id', '[0-9]+');
+
+    // The browser UI tests: cookie session sign-in and the fake DeviantArt (see TestFixturesController)
+    Route::get('test/session/{id}', [TestFixturesController::class, 'session'])->where('id', '[0-9]+')
+        ->middleware([\Illuminate\Cookie\Middleware\EncryptCookies::class, \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class, \Illuminate\Session\Middleware\StartSession::class]);
+    Route::put('test/deviations/{id}', [TestFixturesController::class, 'deviation']);
+    Route::delete('test/deviations/{id}', [TestFixturesController::class, 'forgetDeviation']);
+    Route::put('test/club-gallery/{id}', [TestFixturesController::class, 'acceptIntoClub']);
+    Route::delete('test/club-gallery/{id}', [TestFixturesController::class, 'rejectFromClub']);
 }
 
 Route::get('config', [ConfigController::class, 'get']);
