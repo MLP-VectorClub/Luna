@@ -150,9 +150,9 @@ class SiteAdminTest extends TestCase
         $make('memberlink', 'member');
         $make('stafflink', 'staff');
 
-        $this->getJson('/useful-links/sidebar')->assertOk()->assertExactJson([]);
-
         $labels = fn() => array_column($this->getJson('/useful-links/sidebar')->assertOk()->json(), 'label');
+        // Signed out visitors see the links meant for everybody
+        $this->assertSame(['guestlink'], $labels());
         $this->as(Role::User);
         $this->assertSame(['guestlink'], $labels());
         $this->as(Role::Member);

@@ -41,7 +41,7 @@ class UsefulLinksController extends Controller
      * @OA\Get(
      *   path="/useful-links/sidebar",
      *   operationId="GetUsefulLinksSidebar",
-     *   description="Get the list of useful links available to the user for display in the sidebar. Signed-out visitors get an empty list",
+     *   description="Get the list of useful links available to the visitor for display in the sidebar: the links for everybody (minRole `guest`) and, when signed in, the ones their role is allowed to see",
      *   tags={"useful links"},
      *   security={},
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/SidebarUsefulLink")))
@@ -49,15 +49,12 @@ class UsefulLinksController extends Controller
      */
     public function sidebar(Request $request): JsonResponse
     {
-        $user = $request->user();
-        // Logged out users will not see useful links
-        if ($user === null) {
-            return response()->json([]);
-        }
+        // Signed-out visitors see the links meant for everybody, like in Winterchilla's sidebar
+        $role = $request->user()?->role;
 
         return response()->json(
             UsefulLink::ordered()->get()
-                ->filter(fn(UsefulLink $link) => self::visibleTo($link, $user->role))
+                ->filter(fn(UsefulLink $link) => $link->minrole === 'guest' || ($role !== null && self::visibleTo($link, $role)))
                 ->map(fn(UsefulLink $link) => self::sidebarItem($link))
                 ->values()
         );
