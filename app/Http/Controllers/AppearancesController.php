@@ -249,7 +249,7 @@ class AppearancesController extends Controller
      * @OA\Get(
      *   path="/appearances/nutshell-names",
      *   operationId="GetAppearancesNutshellNames",
-     *   description="The alternative names of the 2020 \"nutshell names\" mode, which the front end shows instead of the labels of official appearances when the `cg_nutshell` preference is on. Appearances without an entry are shown lowercased, entries with several names pick one at random each time. Personal guide appearances are never renamed.",
+     *   description="The alternative names of the 2020 nutshell names mode, which the front end shows instead of the labels of official appearances when the `cg_nutshell` preference is on. Appearances without an entry are shown lowercased, entries with several names pick one at random each time. Personal guide appearances are never renamed.",
      *   tags={"appearances"},
      *   security={},
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"names"}, additionalProperties=false,
