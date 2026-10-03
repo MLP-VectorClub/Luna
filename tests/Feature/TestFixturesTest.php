@@ -68,16 +68,35 @@ class TestFixturesTest extends TestCase
         $this->putJson('/test/deviations/dabc123', [])->assertJsonValidationErrors('preview');
     }
 
-    public function testASeededUserGetsACookieSession(): void
+    public function testASeededUserGetsACookieSessionAndIsSentToTheFrontEnd(): void
     {
+        config(['app.frontend_url' => 'http://front.test']);
         $user = User::factory()->create(['role' => Role::Member]);
 
-        $response = $this->get("/test/session/{$user->id}?to=/show");
+        $response = $this->get("/test/session-login/{$user->id}");
 
-        $response->assertRedirect('/show');
+        $response->assertRedirect('http://front.test/');
         $response->assertCookie(config('session.cookie'));
         $this->assertAuthenticatedAs($user, 'web');
-        $this->getJson('/test/session/987654')->assertNotFound();
+        $this->getJson('/test/session-login/987654')->assertNotFound();
+    }
+
+    public function testTheReturnTargetHasToStayOnTheFrontEnd(): void
+    {
+        config(['app.frontend_url' => 'http://front.test']);
+        $user = User::factory()->create(['role' => Role::User]);
+
+        foreach ([
+            '/show/1?x=1' => 'http://front.test/show/1?x=1',
+            'http://front.test/cg/pony' => 'http://front.test/cg/pony',
+            'http://evil.test/' => 'http://front.test/',
+            '//evil.test/path' => 'http://front.test/',
+            'http://front.test.evil.test/' => 'http://front.test/',
+            '/\\evil.test' => 'http://front.test/',
+            'javascript:alert(1)' => 'http://front.test/',
+        ] as $return => $expected) {
+            $this->get("/test/session-login/{$user->id}?return=".urlencode($return))->assertRedirect($expected);
+        }
     }
 
     public function testNothingIsFakedWhenTheModeIsOff(): void

@@ -18,17 +18,34 @@ use Illuminate\Support\Facades\Cache;
 class TestFixturesController extends Controller
 {
     /**
-     * Signs the seeded user in with a cookie session, like the sign-in of the front end does. The browser has to call this on the API
-     * (or through the front end's /api proxy) so that it receives the session cookie. Redirects to `to` when given
+     * Signs the seeded user in with a cookie session, like the sign-in of the front end does, and redirects to the front end (or to the
+     * `return` path/URL when it stays on the front end's origin). The browser has to call this through the API's host or the front end's /api
+     * proxy so that it receives the session cookie; run the test server without SESSION_DOMAIN to get a host-only cookie
      */
     public function session(Request $request, int $id)
     {
         Auth::guard('web')->login(User::findOrFail($id));
         $request->session()->regenerate();
 
-        $to = $request->query('to');
+        return redirect($this->returnTarget($request->query('return', $request->query('to'))));
+    }
 
-        return is_string($to) && $to !== '' ? redirect($to) : response()->noContent();
+    private function returnTarget(mixed $return): string
+    {
+        $front = rtrim((string) config('app.frontend_url'), '/');
+        if (!is_string($return) || $return === '') {
+            return $front.'/';
+        }
+        // A path on the front end
+        if (str_starts_with($return, '/') && !str_starts_with($return, '//') && !str_contains($return, '\\')) {
+            return $front.$return;
+        }
+        // A full URL only when it is on the front end's own origin
+        if (str_starts_with($return, $front.'/') || $return === $front) {
+            return $return;
+        }
+
+        return $front.'/';
     }
 
     /**

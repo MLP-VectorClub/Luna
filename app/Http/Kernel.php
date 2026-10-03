@@ -75,6 +75,9 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middlewarePriority = [
+        // Cookies have to be encrypted around the session, otherwise the session cookie of a route that uses the `web` group leaves unencrypted
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
         \Illuminate\Session\Middleware\StartSession::class,
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
         \App\Http\Middleware\Authenticate::class,

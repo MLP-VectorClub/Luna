@@ -62,8 +62,8 @@ if (App::environment('testing')) {
     Route::post('test/login/{id}', [TestLoginController::class, 'login'])->where('id', '[0-9]+');
 
     // The browser UI tests: cookie session sign-in and the fake DeviantArt (see TestFixturesController)
-    Route::get('test/session/{id}', [TestFixturesController::class, 'session'])->where('id', '[0-9]+')
-        ->middleware([\Illuminate\Cookie\Middleware\EncryptCookies::class, \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class, \Illuminate\Session\Middleware\StartSession::class]);
+    Route::get('test/session-login/{id}', [TestFixturesController::class, 'session'])->where('id', '[0-9]+')
+        ->middleware('web');
     Route::put('test/deviations/{id}', [TestFixturesController::class, 'deviation']);
     Route::delete('test/deviations/{id}', [TestFixturesController::class, 'forgetDeviation']);
     Route::put('test/club-gallery/{id}', [TestFixturesController::class, 'acceptIntoClub']);
