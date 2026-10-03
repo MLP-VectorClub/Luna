@@ -85,4 +85,22 @@ class DeviantArtSigninTest extends TestCase
         $this->assertSame('Fresh', $created->name);
         $this->assertSame(0, PreviousUsername::count());
     }
+
+    public function testASignInWithoutALocalAccountAnswersWithAReason(): void
+    {
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
+        $this->expectExceptionMessage('Could not find local account for user');
+
+        AccountHelper::socialDeviantart($this->daUser('Nobody'), false);
+    }
+
+    public function testTheReasonOfANotFoundErrorIsKept(): void
+    {
+        \Illuminate\Support\Facades\Route::middleware('api')->get('/_gone', fn() => abort(404, 'Could not find local account for user'));
+        \Illuminate\Support\Facades\Route::middleware('api')->get('/_missing', fn() => throw new \Illuminate\Database\Eloquent\ModelNotFoundException());
+
+        $this->getJson('/_gone')->assertNotFound()->assertExactJson(['message' => 'Could not find local account for user']);
+        $this->getJson('/_missing')->assertNotFound()->assertExactJson(['message' => 'Not found']);
+        $this->getJson('/no/such/route')->assertNotFound()->assertExactJson(['message' => 'Not found']);
+    }
 }

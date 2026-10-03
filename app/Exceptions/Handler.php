@@ -54,7 +54,10 @@ class Handler extends ExceptionHandler
     {
         // The API contract wants every failure as `{message}` with the proper status code
         if ($exception instanceof NotFoundHttpException || $exception instanceof ModelNotFoundException) {
-            return response()->json(['message' => 'Not found'], 404);
+            // abort(404, 'reason') keeps its reason, a plain missing route or model does not say what was looked for
+            $reason = $exception instanceof NotFoundHttpException && !str_starts_with($exception->getMessage(), 'The route ') ? $exception->getMessage() : '';
+
+            return response()->json(['message' => $reason !== '' ? $reason : 'Not found'], 404);
         }
 
         if ($exception instanceof ConflictException) {

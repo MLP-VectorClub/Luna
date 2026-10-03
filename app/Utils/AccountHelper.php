@@ -8,6 +8,9 @@ use App\Enums\SocialProvider;
 use App\Enums\UserPrefKey;
 use App\Http\Requests\SocialAuthRequest;
 use App\Models\DeviantartUser;
+use GuzzleHttp\Exception\ClientException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use App\Models\DiscordMember;
 use App\Models\PreviousUsername;
 use App\Models\User;
@@ -146,6 +149,7 @@ class AccountHelper
         $record = DeviantartUser::find($data->getId());
         if ($record === null) {
             if (!$register) {
+                Log::notice('OAuth sign-in: no local account for the DeviantArt user', ['id' => $data->getId(), 'nickname' => $data->getNickname()]);
                 abort(404, 'Could not find local account for user');
             }
             $app_user = self::create([
@@ -200,6 +204,7 @@ class AccountHelper
         $record = DiscordMember::find($data->getId());
         if ($record === null) {
             if (!$register) {
+                Log::notice('OAuth sign-in: no local account for the Discord user', ['id' => $data->getId(), 'name' => $data->getName()]);
                 abort(404, 'Could not find local account for user');
             }
             $app_user = self::create([
@@ -214,6 +219,20 @@ class AccountHelper
             $record->user_id = $app_user->id;
         } else {
             $app_user = $record->user()->first();
+            // A server member that is not bound to an account on the site (most of the members, bound ones come from Winterchilla's linking)
+            if ($app_user === null) {
+                if (!$register) {
+                    Log::notice('OAuth sign-in: the Discord user is a server member without an account on the site', ['id' => $data->getId(), 'name' => $data->getName()]);
+                    abort(404, 'Could not find local account for user');
+                }
+                $app_user = self::create([
+                    'name' => $data->getName(),
+                    'email' => $data->getEmail(),
+                    'role' => Role::User,
+                ]);
+                UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider, AvatarProvider::Discord);
+                $record->user_id = $app_user->id;
+            }
         }
 
         /**
@@ -263,7 +282,16 @@ class AccountHelper
         $validated = $request->validated();
         $driver = Socialite::driver($validated['provider'])->stateless();
         $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
-        $data = $driver->user();
+        try {
+            $data = $driver->user();
+        } catch (ClientException $e) {
+            // The provider refused the code: it was already used (a reload of the callback page sends it again), expired, or the redirect URL differs
+            Log::warning("OAuth sign-in with {$validated['provider']} was refused by the provider", [
+                'status' => $e->getResponse()->getStatusCode(),
+                'body' => substr((string) $e->getResponse()->getBody(), 0, 300),
+            ]);
+            throw ValidationException::withMessages(['code' => 'The sign-in code was rejected, it may have expired or already been used. Please try signing in again.']);
+        }
 
         DB::transaction(function () use ($validated, $data, $register, &$user) {
             switch ($validated['provider']) {
