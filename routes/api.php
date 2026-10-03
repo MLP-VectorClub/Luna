@@ -117,6 +117,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('full', [AppearancesController::class, 'queryFullPublic'])->name('appearances_full')->middleware('cacheResponse:300');
         Route::get('pinned', [AppearancesController::class, 'pinned'])->name('pinned_appearance')->middleware('cacheResponse:60');
         Route::get('autocomplete', [AppearancesController::class, 'autocomplete'])->name('appearances_autocomplete')->middleware('cacheResponse:180');
+        Route::get('nutshell-names', [AppearancesController::class, 'nutshellNames'])->middleware('cacheResponse:3600');
         Route::get('{appearance}', [AppearancesController::class, 'get']);
         Route::get('{appearance}/locate', [AppearancesController::class, 'locate']);
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite'])->name('appearance_sprite');
