@@ -296,6 +296,7 @@ class ColorGuideHelper
             'guide' => $a->guide,
             'owner_id' => $a->owner_id,
             'previewData' => $a->preview_data,
+            'nutshellNames' => NutshellNames::for($a),
         ];
     }
 

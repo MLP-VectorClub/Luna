@@ -245,25 +245,6 @@ class AppearancesController extends Controller
         return response()->camelJson(ColorGuideHelper::mapDetailedAppearance($appearance));
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/nutshell-names",
-     *   operationId="GetAppearancesNutshellNames",
-     *   description="The alternative names of the 2020 nutshell names mode, which the front end shows instead of the labels of official appearances when the `cg_nutshell` preference is on. Appearances without an entry are shown lowercased, entries with several names pick one at random each time. Personal guide appearances are never renamed.",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"names"}, additionalProperties=false,
-     *     @OA\Property(property="names", type="object", description="Appearance id to the list of names it can be shown as", additionalProperties=@OA\AdditionalProperties(type="array", @OA\Items(type="string")))
-     *   ))
-     * )
-     */
-    public function nutshellNames(): JsonResponse
-    {
-        $names = json_decode(file_get_contents(resource_path('data/nutshell_names.json')), true, 512, JSON_THROW_ON_ERROR);
-
-        return response()->json(['names' => (object) $names]);
-    }
-
     private static function _handlePrivateAppearanceCheck(Request $request, Appearance $appearance): ?JsonResponse
     {
         if ($appearance->private && Permission::insufficient(Role::Staff)) {
