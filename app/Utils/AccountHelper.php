@@ -20,10 +20,15 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Session\ArraySessionHandler;
+use Illuminate\Session\Store;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Cookie;
 use Valorin\Pwned\Pwned;
 
 class AccountHelper
@@ -261,6 +266,40 @@ class AccountHelper
         return sprintf("%s/oauth/%s", config('app.frontend_url'), $provider) . $register_param;
     }
 
+    /** Name of the cookie that carries the PKCE code verifier from the redirect to the code exchange */
+    public const PKCE_COOKIE = 'oauth_pkce';
+
+    private const PKCE_LIFETIME_MINUTES = 10;
+
+    /**
+     * Socialite keeps the PKCE verifier in the request's session, which stateless requests (a popup opened by the front end, an
+     * API client) do not have. Gives the current request a throwaway in-memory session so Socialite can work, the verifier
+     * travels in an encrypted cookie instead (see `socialRedirect` and `socialAuth`).
+     */
+    private static function pkceSession(?string $verifier = null): Store
+    {
+        $store = new Store('oauth-pkce', new ArraySessionHandler(self::PKCE_LIFETIME_MINUTES));
+        if ($verifier !== null) {
+            $store->put('code_verifier', $verifier);
+        }
+        request()->setLaravelSession($store);
+
+        return $store;
+    }
+
+    private static function readPkceCookie(Request $request): ?string
+    {
+        $value = $request->cookies->get(self::PKCE_COOKIE);
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+        try {
+            return Crypt::decryptString($value);
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
     public static function socialRedirect(SocialAuthRequest $request, bool $register)
     {
         $validated = $request->validated();
@@ -274,7 +313,24 @@ class AccountHelper
                 break;
         }
         $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
-        return $driver->redirect();
+        $session = self::pkceSession();
+        $response = $driver->redirect();
+        $verifier = $session->get('code_verifier');
+        if ($verifier !== null) {
+            $response->headers->setCookie(new Cookie(
+                self::PKCE_COOKIE,
+                Crypt::encryptString($verifier),
+                now()->addMinutes(self::PKCE_LIFETIME_MINUTES),
+                '/',
+                null,
+                $request->isSecure(),
+                true,
+                false,
+                Cookie::SAMESITE_LAX
+            ));
+        }
+
+        return $response;
     }
 
     public static function socialAuth(SocialAuthRequest $request, bool $register)
@@ -282,6 +338,7 @@ class AccountHelper
         $validated = $request->validated();
         $driver = Socialite::driver($validated['provider'])->stateless();
         $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
+        self::pkceSession(self::readPkceCookie($request));
         try {
             $data = $driver->user();
         } catch (ClientException $e) {
