@@ -199,6 +199,8 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('logs/{id}', [AdminController::class, 'logDetail'])->whereNumber('id');
     });
 
+    Route::delete('admin/stat-cache', [AdminController::class, 'clearStatCache'])->middleware(['auth:sanctum', 'role:developer']);
+
     Route::middleware(['auth:sanctum', 'role:developer'])->prefix('color-guide')->group(function () {
         Route::post('reindex', [AdminController::class, 'reindex']);
         Route::get('export', [AdminController::class, 'export']);
