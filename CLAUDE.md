@@ -32,8 +32,6 @@ progress log are in `docs/winterchilla-contract-plan.md`. Deployed to production
 - Image links go through `App\Utils\ImageProvider` and `DeviantArt` (oEmbed, Derpibooru, Imgur, Lightshot, club gallery check), always via Laravel's `Http` client so tests fake them
 - `App\Utils\AppearanceIndex` keeps the shared ElasticSearch `appearances` index in sync; `LogWriter` writes the shared `logs` table
 
-`DELETE /admin/stat-cache` (developer only, `AdminController::clearStatCache`, 204) ports Winterchilla's x-internal stat cache button; it only clears the cache of the PHP process that answers.
-
 ### Left
 - Cutie mark gaps: no svgo, colors are not tokenized (the file is stored sanitized, `sanitize-svg` only warns about colors missing from the `Cutie Mark` color group), attribution by username/deviation needs the DeviantArt user to exist already (no DeviantArt API lookup to create unknown users), the `preview` HTML of Winterchilla is not returned
 - Event entries: `GET|PUT|DELETE /event-entries/{entryid}` are implemented (`EventEntriesController`, PUT answers `{}` without Winterchilla's `entryHtml` UI field); `GET|PUT|DELETE /events/{id}/entries` are placeholders that answer 404 for signed in users like Winterchilla (its route never gets an entry id)

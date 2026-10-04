@@ -189,24 +189,6 @@ class AdminController extends Controller
     }
 
     /**
-     * @OA\Delete(
-     *   path="/admin/stat-cache",
-     *   operationId="DeleteAdminStatCache",
-     *   description="Clear PHP's file status cache (of the PHP process that answers the request). Developer permission required",
-     *   tags={"admin"},
-     *   @OA\Response(response="204", description="Cleared"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
-    public function clearStatCache(): Response
-    {
-        clearstatcache();
-
-        return response()->noContent();
-    }
-
-    /**
      * @OA\Post(
      *   path="/color-guide/reindex",
      *   operationId="PostColorGuideReindex",

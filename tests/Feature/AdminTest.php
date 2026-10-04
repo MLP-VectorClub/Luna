@@ -90,15 +90,6 @@ class AdminTest extends TestCase
         $this->getJson('/color-guide/export')->assertForbidden();
     }
 
-    public function testClearStatCacheNeedsADeveloper(): void
-    {
-        $this->deleteJson('/admin/stat-cache')->assertUnauthorized();
-        $this->as(Role::Staff);
-        $this->deleteJson('/admin/stat-cache')->assertForbidden();
-        $this->as(Role::Developer);
-        $this->deleteJson('/admin/stat-cache')->assertNoContent();
-    }
-
     public function testExport(): void
     {
         Appearance::create(['label' => 'Twilight', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => 'Notes', 'order' => 1]);
