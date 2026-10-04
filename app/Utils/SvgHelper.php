@@ -8,6 +8,7 @@ use enshrined\svgSanitize\Sanitizer;
 use enshrined\svgSanitize\data\AllowedAttributes;
 use enshrined\svgSanitize\data\AttributeInterface;
 use enshrined\svgSanitize\data\TagInterface;
+use SeinopSys\RGBAColor;
 
 /**
  * Sanitizing for user uploaded SVG files (cutie marks), mirrors Winterchilla's `CoreUtils::sanitizeSvg`.
@@ -133,5 +134,69 @@ class SvgHelper
         }
 
         return array_values($warnings);
+    }
+
+    /**
+     * Replaces every color of the SVG by a comment that points at the guide's Cutie Mark color it equals, so the file follows
+     * the color when the guide changes (see `untokenize`). Like Winterchilla's `CGUtils::tokenizeSvg`, with the color's hex kept
+     * in the token (`<!--@ID:RRGGBB[,ALPHA]-->`) so the file can still be rendered when the color is later deleted.
+     * Colors the guide does not have become `<!--#/RRGGBBAA-->`.
+     *
+     * @param  array<int, string>  $colors  color ID => hex of the Cutie Mark color group
+     */
+    public static function tokenize(string $svg, array $colors): string
+    {
+        $ids_by_hex = [];
+        foreach ($colors as $id => $hex) {
+            $parsed = RGBAColor::parse($hex);
+            if ($parsed !== null) {
+                $ids_by_hex[$parsed->toHex()] ??= $id;
+            }
+        }
+
+        RGBAColor::forEachColorIn($svg, static function (?RGBAColor $color) use ($ids_by_hex) {
+            if ($color === null) {
+                return '';
+            }
+            $id = $ids_by_hex[$color->toHex()] ?? null;
+            if ($id === null) {
+                return sprintf('<!--#/%s-->', strtoupper(substr($color->toHexa(), 1)));
+            }
+
+            return sprintf('<!--@%d:%s%s-->', $id, strtoupper(substr($color->toHex(), 1)), $color->isTransparent() ? ','.$color->alpha : '');
+        });
+
+        return $svg;
+    }
+
+    /**
+     * Turns the tokens of `tokenize` back into colors, using the guide's current colors (the color stored in the token when
+     * the guide no longer has it).
+     *
+     * @param  array<int, string>  $colors  color ID => hex of the Cutie Mark color group
+     * @param  string[]|null  $warnings  filled with colors that are not part of the guide
+     */
+    public static function untokenize(string $svg, array $colors, ?array &$warnings = null): string
+    {
+        $svg = preg_replace_callback('/<!--@(\d+):([\dA-F]{6})(?:,([\d.]+))?-->/', static function (array $match) use ($colors) {
+            $color = RGBAColor::parse($colors[(int) $match[1]] ?? '') ?? RGBAColor::parse('#'.$match[2]);
+            $color->alpha = (float) ($match[3] ?? 1);
+
+            return (string) $color;
+        }, $svg);
+
+        $unknown = [];
+        $svg = preg_replace_callback('~<!--#/([\dA-F]{8})-->~', static function (array $match) use (&$unknown) {
+            $color = RGBAColor::parse('#'.$match[1]);
+            $unknown[$match[1]] = "Unexpected color $color (not found in Cutie Mark color group)";
+
+            return (string) $color;
+        }, $svg);
+
+        if ($warnings !== null) {
+            $warnings = array_merge($warnings, array_values($unknown));
+        }
+
+        return $svg;
     }
 }

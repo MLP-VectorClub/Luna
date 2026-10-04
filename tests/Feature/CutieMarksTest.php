@@ -141,4 +141,53 @@ class CutieMarksTest extends TestCase
         $this->post("/appearances/{$appearance->id}/sanitize-svg", ['file' => UploadedFile::fake()->createWithContent('cm.svg', 'not svg')], ['Accept' => 'application/json'])->assertJsonValidationErrors('file');
         $this->postJson("/appearances/{$appearance->id}/sanitize-svg")->assertJsonValidationErrors('file');
     }
+
+    public function testCutieMarkColorsFollowTheGuide(): void
+    {
+        $this->as(Role::Staff);
+        $appearance = $this->appearance();
+        $group = ColorGroup::create(['appearance_id' => $appearance->id, 'label' => 'Cutie Mark', 'order' => 0]);
+        $color = Color::create(['group_id' => $group->id, 'label' => 'Fill', 'order' => 1, 'hex' => '#FF0000']);
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0h10v10z" fill="#ff0000"/><path d="M0 0h5v5z" fill="#00ff00"/></svg>';
+
+        $this->putCms($appearance, [['svgdata' => $svg, 'attribution' => 'none', 'rotation' => 0]])->assertOk();
+        $cm = CutieMark::first();
+        $this->assertStringContainsString('#ff0000', strtolower(file_get_contents($cm->vectorFile()->getPath())));
+        $this->assertStringContainsString("<!--@{$color->id}:FF0000-->", $cm->vectorFile()->getCustomProperty('tokenized'));
+        $old_url = $cm->vectorFile()->getFullUrl();
+
+        $this->putJson("/color-groups/{$group->id}", ['label' => 'Cutie Mark', 'colors' => [['id' => $color->id, 'label' => 'Fill', 'hex' => '#0000FF']]])->assertOk();
+
+        $file = CutieMark::first()->vectorFile();
+        $content = strtolower(file_get_contents($file->getPath()));
+        $this->assertStringContainsString('fill="#0000ff"', $content);
+        $this->assertStringNotContainsString('#ff0000', $content);
+        $this->assertStringContainsString('#00ff00', $content, 'colors the guide does not know are kept');
+        $this->assertNotSame($old_url, $file->getFullUrl());
+        $this->assertSame(1, CutieMark::first()->media()->count());
+    }
+
+    public function testCutieMarksWithoutAColorGroupAreStoredAsUploaded(): void
+    {
+        $this->as(Role::Staff);
+        $appearance = $this->appearance();
+
+        $this->putCms($appearance, [['svgdata' => $this->svg(), 'attribution' => 'none', 'rotation' => 0]])->assertOk();
+
+        $this->assertNull(CutieMark::first()->vectorFile()->getCustomProperty('tokenized'));
+    }
+
+    public function testTheTokenizeCommandLinksExistingCutieMarks(): void
+    {
+        $this->as(Role::Staff);
+        $appearance = $this->appearance();
+        $this->putCms($appearance, [['svgdata' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0h10v10z" fill="#ff0000"/></svg>', 'attribution' => 'none', 'rotation' => 0]])->assertOk();
+        $this->assertNull(CutieMark::first()->vectorFile()->getCustomProperty('tokenized'));
+        $group = ColorGroup::create(['appearance_id' => $appearance->id, 'label' => 'Cutie Mark', 'order' => 0]);
+        $color = Color::create(['group_id' => $group->id, 'label' => 'Fill', 'order' => 1, 'hex' => '#FF0000']);
+
+        $this->artisan('cutiemarks:tokenize')->expectsOutput('Tokenized 1 cutie mark(s), 0 skipped (no Cutie Mark color group)')->assertSuccessful();
+
+        $this->assertStringContainsString("<!--@{$color->id}:FF0000-->", CutieMark::first()->vectorFile()->getCustomProperty('tokenized'));
+    }
 }

@@ -215,10 +215,7 @@ class CutieMarksController extends Controller
                 $cm ??= new CutieMark(['appearance_id' => $appearance->id]);
                 $cm->fill($attributes)->save();
                 if ($svg !== null) {
-                    $cm->addMediaFromString($svg)
-                        ->usingFileName(sha1($svg).'.svg')
-                        ->withCustomProperties(['user_id' => request()->user()->id])
-                        ->toMediaCollection(CutieMark::CUTIEMARKS_COLLECTION);
+                    $cm->storeSvg($svg, ['user_id' => request()->user()->id]);
                 }
             }
         });

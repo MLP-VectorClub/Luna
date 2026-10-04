@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appearance;
 use App\Models\Color;
+use App\Models\CutieMark;
 use App\Models\ColorGroup;
 use App\Models\MajorChange;
 use App\Utils\HexColor;
@@ -283,6 +284,11 @@ class ColorGroupsController extends Controller
                 MajorChange::create(['appearance_id' => $appearance->id, 'reason' => $reason, 'user_id' => $request->user()->id]);
             }
         });
+
+        if ($group->label === CutieMark::COLOR_GROUP_LABEL) {
+            // The cutie marks follow the colors of their group
+            CutieMark::rerenderAllOf($appearance->id);
+        }
 
         if ($creating) {
             LogWriter::record('cgs', [
