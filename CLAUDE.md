@@ -78,6 +78,8 @@ The 2020 "nutshell names" mode stays (user decision, 2026-10-03). Winterchilla s
 - Remaining failures are tests that assert Winterchilla UI fields (`li`, `url`, `goto`, `cgs`, `newhtml`...), tests of `x-internal` endpoints, and Winterchilla-only file checks
 - `php artisan l5-swagger:generate && php scripts/diff-contract.php [--by-tag]` lists the contract operations Luna still lacks
 
+Deploys reload every active php-fpm service (`deploy_restart` in `deploy.conf`), which clears the PHP stat cache and opcache of all workers; there is deliberately no API endpoint for it (Winterchilla's `DELETE /admin/stat-cache` is not ported, an endpoint can only reach one worker).
+
 ## Local setup
 
 - URL: `https://api.mlpvector.lc` (nginx vhost is `/etc/nginx/conf.d/luna-lc.conf`, not in the repo; reuses the `mlpvector.lc` cert, which already lists `api.mlpvector.lc`). `CDN_URL=https://api.mlpvector.lc/cdn` serves `storage/app/public`
