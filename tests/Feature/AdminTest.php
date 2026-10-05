@@ -51,6 +51,15 @@ class AdminTest extends TestCase
         $this->getJson("/admin/logs?initiatorId={$admin->id}")->assertJsonCount(1, 'entries');
         $this->getJson('/admin/logs?initiatorId=0')->assertJsonPath('entries.0.type', 'cgs');
 
+        // The old filter box
+        $this->getJson('/admin/logs')->assertJsonPath('entryTypes.rolechange', 'User group change');
+        $this->getJson('/admin/logs?by=me')->assertJsonCount(1, 'entries')->assertJsonPath('entries.0.type', 'rolechange');
+        $this->getJson('/admin/logs?by='.strtoupper($admin->name))->assertJsonCount(1, 'entries');
+        $this->getJson('/admin/logs?by=Web%20server')->assertJsonPath('entries.0.type', 'cgs')->assertJsonCount(1, 'entries');
+        $this->getJson('/admin/logs?by=127.0.0.1')->assertJsonCount(2, 'entries');
+        $this->getJson('/admin/logs?by=10.9.8.7')->assertJsonCount(0, 'entries');
+        $this->getJson('/admin/logs?by=nobody-by-that-name')->assertJsonCount(0, 'entries');
+
         $this->getJson('/admin/logs?type=nonsense')->assertJsonValidationErrors('type');
         $this->getJson('/admin/logs?initiatorId=x')->assertJsonValidationErrors('initiatorId');
         $this->getJson('/admin/logs?size=500')->assertJsonValidationErrors('size');

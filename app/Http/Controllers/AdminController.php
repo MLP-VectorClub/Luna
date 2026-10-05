@@ -7,6 +7,7 @@ use App\Models\Log;
 use App\Models\Notification;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
 use App\Utils\AppearanceIndex;
 use App\Utils\ColorGuideHelper;
 use Elastic\Transport\Exception\NoNodeAvailableException;
@@ -93,10 +94,12 @@ class AdminController extends Controller
      *   tags={"admin"},
      *   @OA\Parameter(in="query", name="type", @OA\Schema(type="string")),
      *   @OA\Parameter(in="query", name="initiatorId", description="0 selects entries made by the web server itself", @OA\Schema(type="integer", minimum=0)),
+     *   @OA\Parameter(in="query", name="by", description="Like the old site's filter box: a user name, `me`, `Web server`, `my IP` or an IP address (not part of Winterchilla's contract)", @OA\Schema(type="string", maxLength=45)),
      *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
      *   @OA\Parameter(in="query", name="size", @OA\Schema(type="integer", minimum=1, maximum=100, default=20)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"entries", "pagination"},
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"entries", "pagination", "entryTypes"},
      *     @OA\Property(property="entries", type="array", @OA\Items(ref="#/components/schemas/LogItem")),
+     *     @OA\Property(property="entryTypes", type="object", description="Every entry type with its label, for the filter", additionalProperties=@OA\AdditionalProperties(type="string")),
      *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
      *   )),
      *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
@@ -109,6 +112,7 @@ class AdminController extends Controller
         $valid = Validator::make($request->query(), [
             'type' => ['sometimes', 'string', 'in:'.implode(',', array_keys(self::LOG_TYPES))],
             'initiatorId' => ['sometimes', 'integer', 'min:0'],
+            'by' => ['sometimes', 'string', 'max:45'],
             'page' => ['sometimes', 'integer', 'min:1'],
             'size' => ['sometimes', 'integer', 'between:1,100'],
         ], [
@@ -118,13 +122,33 @@ class AdminController extends Controller
         ])->validate();
         $size = (int) ($valid['size'] ?? 20);
 
+        // The filter box of the old site: a name, `me`, `Web server`, `my IP` or an address
+        $initiator = $valid['initiatorId'] ?? null;
+        $ip = null;
+        if (isset($valid['by']) && trim($valid['by']) !== '') {
+            $by = strtolower(trim($valid['by']));
+            if (in_array($by, ['me', 'you'], true)) {
+                $initiator = $request->user()->id;
+            } elseif (in_array($by, ['my ip', 'your ip'], true)) {
+                $ip = $request->ip();
+            } elseif ($by === 'web server') {
+                $initiator = 0;
+            } elseif (preg_match('/^[\da-f.:]+$/', $by) && (str_contains($by, '.') || str_contains($by, ':'))) {
+                $ip = $by;
+            } else {
+                $initiator = User::whereRaw('lower(name) = ?', [$by])->value('id') ?? -1;
+            }
+        }
+
         $pagination = Log::with('actor:id,name')
             ->when(isset($valid['type']), fn($query) => $query->where('entry_type', $valid['type']))
-            ->when(isset($valid['initiatorId']), fn($query) => (int) $valid['initiatorId'] === 0 ? $query->whereNull('initiator') : $query->where('initiator', (int) $valid['initiatorId']))
+            ->when($initiator !== null, fn($query) => (int) $initiator === 0 ? $query->whereNull('initiator') : $query->where('initiator', (int) $initiator))
+            ->when($ip !== null, fn($query) => $query->where('ip', $ip))
             ->orderByDesc('created_at')->orderByDesc('id')
             ->paginate($size, page: (int) ($valid['page'] ?? 1));
 
         return response()->json([
+            'entryTypes' => self::LOG_TYPES,
             'entries' => $pagination->getCollection()->map(fn(Log $log) => [
                 'id' => $log->id,
                 'type' => $log->entry_type,
