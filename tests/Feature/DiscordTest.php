@@ -115,6 +115,9 @@ class DiscordTest extends TestCase
         $this->actingAs($user, 'sanctum');
         $this->getJson("/users/{$user->id}/profile")->assertOk()
             ->assertJsonPath('discord.linked', true)->assertJsonPath('discord.tag', 'someone#0042')
-            ->assertJsonPath('discord.serverMember', true)->assertJsonPath('discord.canSync', false)->assertJsonPath('discord.syncCooldown', 300);
+            ->assertJsonPath('discord.serverMember', true)->assertJsonPath('discord.canSync', false)->assertJsonPath('discord.syncCooldown', 300)
+            ->assertJsonPath('account.email', $user->email)->assertJsonPath('account.passwordSet', $user->password !== null && $user->password !== '');
+        $this->actingAs(User::factory()->create(['role' => Role::Member]), 'sanctum');
+        $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('account', null);
     }
 }

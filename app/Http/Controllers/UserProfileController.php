@@ -114,6 +114,11 @@ class UserProfileController extends Controller
             'vectorApp' => $vector_app instanceof \BackedEnum ? $vector_app->value : $vector_app,
             'discordName' => $user->discordMember?->display_name,
             'discord' => $discord,
+            'account' => $same_user || $is_staff ? [
+                'email' => $user->email,
+                'emailVerifiedAt' => $user->email_verified_at?->toISOString(),
+                'passwordSet' => $user->password !== null && $user->password !== '',
+            ] : null,
             'developerInfo' => $visitor !== null && perm(Role::Developer, $visitor->role)
                 ? ['deviantArtId' => $da_user?->id, 'discordId' => $user->discordMember?->id]
                 : null,
