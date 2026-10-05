@@ -228,6 +228,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('{id}/deviation', [PostsController::class, 'deviation'])->whereNumber('id');
 
         Route::middleware('auth:sanctum')->group(function () use ($manage) {
+            Route::get('requests/suggestion', [PostsController::class, 'suggestion']);
             Route::post('/', [$manage, 'create']);
             Route::post('check-image', [$manage, 'checkImageEndpoint']);
             Route::get('{id}', [$manage, 'show'])->whereNumber('id');

@@ -101,4 +101,32 @@ class PostsController extends Controller
             'fullsizeUrl' => $submission->fullsize,
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *   path="/posts/requests/suggestion",
+     *   operationId="GetPostsRequestsSuggestion",
+     *   description="A random request that is still open (not finished, and not reserved or reserved more than 3 weeks ago) for the Request Roulette on the profile page. Pass the IDs that were suggested already to get a different one each time. Requires a signed in user",
+     *   tags={"posts"},
+     *   @OA\Parameter(in="query", name="alreadyLoaded", required=false, description="Comma separated post IDs not to suggest again", @OA\Schema(type="string")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"post"},
+     *     @OA\Property(property="post", allOf={@OA\Schema(ref="#/components/schemas/PostItem"), @OA\Schema(type="object", required={"show"}, @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))}))),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="There is nothing left to suggest", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function suggestion(Request $request): JsonResponse
+    {
+        $loaded = array_values(array_filter(array_map('intval', explode(',', (string) $request->query('alreadyLoaded', ''))), fn(int $id) => $id > 0));
+
+        $query = Post::with(['requester', 'reserver', 'show'])->whereNotNull('requested_by')->whereNull('deviation_id')->where('broken', false)
+            ->where(fn($q) => $q->whereNull('reserved_by')->orWhere('reserved_at', '<', now()->subWeeks(3)))
+            ->when($loaded !== [], fn($q) => $q->whereNotIn('id', $loaded));
+        $post = $query->inRandomOrder()->first();
+        if ($post === null) {
+            abort(404, ($loaded !== [] ? "You've gone through all" : 'There are no').' available requests, check back later.');
+        }
+
+        return response()->json(['post' => $post->toContract($request->user()) + ['show' => ShowController::mapShowListItem($post->show)]]);
+    }
 }
