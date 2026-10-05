@@ -18,6 +18,7 @@ use App\Models\ColorGroup;
 use App\Models\CutieMark;
 use App\Models\DeviantartUser;
 use App\Models\MajorChange;
+use Illuminate\Support\Carbon;
 use App\Models\Tag;
 use App\Pagination;
 use App\ShowHelper;
@@ -474,6 +475,8 @@ class ColorGuideHelper
             $tag_mapper = fn (Tag $t) => self::mapTag($t);
             $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
             $appearance['notes'] = $a->notes_rend;
+            $last_change = MajorChange::where('appearance_id', $a->id)->max('created_at');
+            $appearance['last_major_change'] = $last_change === null ? null : Carbon::parse($last_change)->toISOString();
             $appearance['color_groups'] = self::getColorGroups($a);
         } else {
             // The full list shows tags and notes too, but not the color groups. Only regular tags, synonyms stay hidden here

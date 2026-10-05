@@ -318,7 +318,8 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="sprite", description="The sprite that belongs to this appearance, or null if there is none",
  *   nullable=true,
  *   oneOf={@OA\Schema(ref="#/components/schemas/Sprite")}),
- *   @OA\Property(property="hasCutieMarks", type="boolean", description="Indicates whether there are any cutie marks tied to this appearance")
+ *   @OA\Property(property="hasCutieMarks", type="boolean", description="Indicates whether there are any cutie marks tied to this appearance"),
+ *   @OA\Property(property="lastMajorChange", type="string", format="date-time", nullable=true, description="When the appearance's last major change was recorded; not part of Winterchilla's contract, which renders it as HTML in the guide list. Not set on the compact items of the full list")
  * )
  *
  * @OA\Schema(
