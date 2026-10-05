@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Enums\UserPrefKey;
 use App\Models\Appearance;
 use App\Models\CutieMark;
+use App\Models\DiscordMember;
 use App\Models\Post;
 use App\Models\User;
 use App\Utils\ColorGuideHelper;
@@ -90,6 +91,20 @@ class UserProfileController extends Controller
             $progress = ['slots' => intdiv($points, 10), 'requestsToNext' => 10 - ($points % 10)];
         }
 
+        // The Discord section of the account page, for the user themselves and staff
+        $discord = null;
+        if (($same_user || $is_staff) && $user->discordMember !== null) {
+            $member = $user->discordMember;
+            $discord = [
+                'linked' => $member->access !== null,
+                'tag' => $member->username.($member->discriminator > 0 ? '#'.str_pad((string) $member->discriminator, 4, '0', STR_PAD_LEFT) : ''),
+                'serverMember' => $member->joined_at !== null,
+                'lastSynced' => $member->last_synced?->toISOString(),
+                'syncCooldown' => DiscordMember::SYNC_COOLDOWN,
+                'canSync' => $member->last_synced === null || $member->last_synced->getTimestamp() + DiscordMember::SYNC_COOLDOWN <= time(),
+            ];
+        }
+
         $da_user = $user->daUser;
         $vector_app = UserPrefHelper::get($user, UserPrefKey::Personal_VectorApp);
 
@@ -98,6 +113,7 @@ class UserProfileController extends Controller
             'deviantArtUrl' => $da_user === null ? null : 'https://www.deviantart.com/'.$da_user->name,
             'vectorApp' => $vector_app instanceof \BackedEnum ? $vector_app->value : $vector_app,
             'discordName' => $user->discordMember?->display_name,
+            'discord' => $discord,
             'developerInfo' => $visitor !== null && perm(Role::Developer, $visitor->role)
                 ? ['deviantArtId' => $da_user?->id, 'discordId' => $user->discordMember?->id]
                 : null,

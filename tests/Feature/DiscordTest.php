@@ -104,4 +104,17 @@ class DiscordTest extends TestCase
         $this->deleteJson("/users/{$user->id}/discord")->assertStatus(502);
         $this->assertSame(1, DiscordMember::count());
     }
+
+    public function testTheProfileTellsTheLinkedAccountToTheUserAndStaffOnly(): void
+    {
+        $user = User::factory()->create(['role' => Role::Member]);
+        $this->member($user, ['username' => 'someone', 'discriminator' => 42, 'joined_at' => now(), 'last_synced' => now()]);
+
+        $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('discord', null);
+
+        $this->actingAs($user, 'sanctum');
+        $this->getJson("/users/{$user->id}/profile")->assertOk()
+            ->assertJsonPath('discord.linked', true)->assertJsonPath('discord.tag', 'someone#0042')
+            ->assertJsonPath('discord.serverMember', true)->assertJsonPath('discord.canSync', false)->assertJsonPath('discord.syncCooldown', 300);
+    }
 }
