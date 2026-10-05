@@ -102,6 +102,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::delete('{user_id}/discord', [DiscordController::class, 'unlink'])->whereNumber('user_id');
             Route::get('da-uuid/{uuid}', [UsersController::class, 'getByDaUuid'])->middleware('role:developer');
             Route::put('{id}/role', [UsersController::class, 'setRole'])->whereNumber('id')->middleware('role:staff');
+            Route::get('{id}/preferences', [UserPrefsController::class, 'index'])->whereNumber('id');
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);

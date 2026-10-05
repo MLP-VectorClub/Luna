@@ -71,6 +71,30 @@ class UserPrefsController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *   path="/users/{id}/preferences",
+     *   operationId="GetUsersIdPreferences",
+     *   description="All preferences of the specified user (what the profile page's preference forms show), defaults where nothing was set. Requires the requester to be the same user or staff. Not part of Winterchilla's contract, which renders the forms as HTML.",
+     *   tags={"users"},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/UserPrefs")),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Not allowed", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Unknown user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function index(Request $request, int $id)
+    {
+        $user = User::findOrFail($id);
+        $requester = $request->user();
+        if ($requester->id !== $user->id && !$requester->isStaff()) {
+            throw new AuthorizationException('You cannot access the preferences of other users');
+        }
+
+        return response()->json(UserPrefHelper::getAll($user, null));
+    }
+
+    /**
      * @OA\Schema(
      *   schema="PreferenceValue",
      *   type="object",
