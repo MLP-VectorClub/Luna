@@ -141,6 +141,21 @@ class PostsAndProfileTest extends TestCase
         $this->assertSame(10, $own->json('personalGuideProgress.requestsToNext'));
     }
 
+    public function testStaffCanPurgeTheCachedContributionCounts(): void
+    {
+        $user = $this->user(Role::Member);
+        $this->deleteJson("/users/{$user->id}/contributions/cache")->assertUnauthorized();
+        $this->actingAs($this->user(Role::Member), 'sanctum');
+        $this->deleteJson("/users/{$user->id}/contributions/cache")->assertForbidden();
+
+        $this->actingAs($this->user(Role::Staff), 'sanctum');
+        $this->getJson("/users/{$user->id}/profile")->assertOk();
+        $this->assertTrue(\Illuminate\Support\Facades\Cache::has("user_{$user->id}_contributions"));
+        $this->deleteJson("/users/{$user->id}/contributions/cache")->assertNoContent();
+        $this->assertFalse(\Illuminate\Support\Facades\Cache::has("user_{$user->id}_contributions"));
+        $this->deleteJson('/users/987654/contributions/cache')->assertNotFound();
+    }
+
     public function testNonMembersHaveNoAwaitingApprovalList(): void
     {
         $user = $this->user();

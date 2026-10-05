@@ -90,6 +90,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
 
         Route::get('{id}/profile', [UserProfileController::class, 'profile'])->whereNumber('id');
         Route::get('{id}/contributions/{type}', [UserProfileController::class, 'contributions'])->whereNumber('id');
+        Route::delete('{id}/contributions/cache', [UserProfileController::class, 'purgeContributionsCache'])->whereNumber('id')->middleware(['auth:sanctum', 'role:staff']);
         Route::get('{id}/personal-guide/appearances', [PersonalGuideController::class, 'appearances'])->whereNumber('id');
 
         Route::middleware('auth:sanctum')->group(function () {

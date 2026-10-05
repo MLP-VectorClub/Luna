@@ -15,6 +15,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -184,6 +185,27 @@ class UserProfileController extends Controller
                 'itemsPerPage' => $size,
             ],
         ]);
+    }
+
+    /**
+     * @OA\Delete(
+     *   path="/users/{id}/contributions/cache",
+     *   operationId="DeleteUsersIdContributionsCache",
+     *   description="Forget the cached contribution counts of the profile so they are counted again. Requires staff",
+     *   tags={"users"},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="204", description="Purged"),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function purgeContributionsCache(int $id): Response
+    {
+        $user = User::findOrFail($id);
+        Cache::forget("user_{$user->id}_contributions");
+
+        return response()->noContent();
     }
 
     /** A post as the contract describes it, plus the show it belongs to ("Posted under S01 E01: …" on the profile) */
