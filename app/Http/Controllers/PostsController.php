@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\Show;
+use App\Utils\DeviantArt;
+use App\Exceptions\ImageProviderException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -51,5 +53,52 @@ class PostsController extends Controller
             ->get();
 
         return response()->json(['posts' => $posts->map(fn(Post $post) => $post->toContract($viewer))->values()]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/posts/{id}/deviation",
+     *   operationId="GetPostsIdDeviation",
+     *   description="The DeviantArt submission a finished post points at (title, author and images from DeviantArt's cached oEmbed data). It is a separate request because looking it up can take a moment, pages load it as the post scrolls into view. Broken posts are only available to staff",
+     *   tags={"posts"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"id", "title", "author", "previewUrl", "fullsizeUrl"},
+     *     @OA\Property(property="id", type="string", description="Submission ID (https://fav.me/{id})"),
+     *     @OA\Property(property="title", type="string"),
+     *     @OA\Property(property="author", type="string", nullable=true),
+     *     @OA\Property(property="previewUrl", type="string", nullable=true),
+     *     @OA\Property(property="fullsizeUrl", type="string", nullable=true)
+     *   )),
+     *   @OA\Response(response="404", description="No such post, the post is not finished, or DeviantArt does not know the submission", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="502", description="DeviantArt could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function deviation(Request $request, int $id): JsonResponse
+    {
+        $post = Post::findOrFail($id);
+        if ($post->broken && !($request->user()?->isStaff() ?? false)) {
+            abort(404);
+        }
+        if ($post->deviation_id === null) {
+            abort(404, 'The post is not finished');
+        }
+
+        try {
+            $submission = DeviantArt::submission($post->deviation_id);
+        } catch (ImageProviderException $e) {
+            abort(502, 'DeviantArt could not be reached');
+        }
+        if ($submission === null) {
+            abort(404, 'The submission could not be found');
+        }
+
+        return response()->json([
+            'id' => $submission->id,
+            'title' => $submission->title,
+            'author' => $submission->author,
+            'previewUrl' => $submission->preview,
+            'fullsizeUrl' => $submission->fullsize,
+        ]);
     }
 }

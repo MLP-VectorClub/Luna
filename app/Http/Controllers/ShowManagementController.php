@@ -8,6 +8,7 @@ use App\Models\Show;
 use App\Models\ShowVote;
 use App\Models\User;
 use App\Utils\HtmlSanitizer;
+use App\Utils\SettingsHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -136,6 +137,60 @@ class ShowManagementController extends Controller
             'airs' => $next->airs->toIso8601String(),
             'season' => $next->season,
             'title' => $next->title,
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/show/reservation-info",
+     *   operationId="GetShowReservationInfo",
+     *   description="The two texts shown on every episode page: what reservations are and the reservation rules (HTML that was sanitized when staff saved it, see `PUT /settings/{key}`)",
+     *   tags={"shows"},
+     *   security={},
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"aboutReservations", "reservationRules"},
+     *     @OA\Property(property="aboutReservations", type="string"), @OA\Property(property="reservationRules", type="string")
+     *   ))
+     * )
+     */
+    public function reservationInfo(): JsonResponse
+    {
+        return response()->json([
+            'aboutReservations' => SettingsHelper::get('about_reservations'),
+            'reservationRules' => SettingsHelper::get('reservation_rules'),
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/show/{id}/adjacent",
+     *   operationId="GetShowIdAdjacent",
+     *   description="The entries before and after this one: by overall number for episodes, by episode number among the other entries (movies, specials) for those",
+     *   tags={"shows"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"previous", "next"},
+     *     @OA\Property(property="previous", ref="#/components/schemas/ShowListItem", nullable=true),
+     *     @OA\Property(property="next", ref="#/components/schemas/ShowListItem", nullable=true)
+     *   )),
+     *   @OA\Response(response="404", description="Show not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function adjacent(int $id): JsonResponse
+    {
+        $show = Show::findOrFail($id);
+        $episode = $show->type === 'episode';
+        $column = $episode ? 'no' : 'episode';
+        $find = fn(string $operator, string $direction) => $show->{$column} === null ? null : Show::query()
+            ->where('type', $episode ? '=' : '!=', 'episode')
+            ->where($column, $operator, $show->{$column})
+            ->orderBy($column, $direction)
+            ->first();
+        $previous = $find('<', 'desc');
+        $next = $find('>', 'asc');
+
+        return response()->json([
+            'previous' => $previous === null ? null : ShowController::mapShowListItem($previous),
+            'next' => $next === null ? null : ShowController::mapShowListItem($next),
         ]);
     }
 

@@ -223,6 +223,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         $manage = PostManagementController::class;
         Route::get('/', [PostsController::class, 'index']);
         Route::get('{id}/location', [$manage, 'location'])->whereNumber('id');
+        Route::get('{id}/deviation', [PostsController::class, 'deviation'])->whereNumber('id');
 
         Route::middleware('auth:sanctum')->group(function () use ($manage) {
             Route::post('/', [$manage, 'create']);
@@ -296,7 +297,9 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('/', [ShowController::class, 'index']);
         Route::get('latest', [$manage, 'latest']);
         Route::get('next', [$manage, 'next']);
+        Route::get('reservation-info', [$manage, 'reservationInfo']);
         Route::get('{id}', [$manage, 'show'])->whereNumber('id');
+        Route::get('{id}/adjacent', [$manage, 'adjacent'])->whereNumber('id');
         Route::get('{id}/vote', [$manage, 'votes'])->whereNumber('id');
 
         Route::middleware('auth:sanctum')->group(function () use ($manage) {
