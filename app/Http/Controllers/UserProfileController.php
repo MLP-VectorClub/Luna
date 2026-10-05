@@ -78,9 +78,9 @@ class UserProfileController extends Controller
         // What the visitor may see of the user's reservations: their own, or those of a member when staff visits
         $pending = null;
         if ($visitor !== null && ($same_user || ($is_staff && $is_member))) {
-            $pending = Post::with(['requester', 'reserver'])->where('reserved_by', $user->id)->whereNull('deviation_id')
+            $pending = Post::with(['requester', 'reserver', 'show'])->where('reserved_by', $user->id)->whereNull('deviation_id')
                 ->orderBy('reserved_at')->orderBy('id')->get()
-                ->map(fn(Post $post) => $post->toContract($visitor))->values();
+                ->map(fn(Post $post) => $this->withShow($post, $visitor))->values();
         }
 
         $progress = null;
@@ -112,9 +112,9 @@ class UserProfileController extends Controller
             'contributionsCacheDuration' => '1 hour',
             'personalGuides' => $guides,
             'awaitingApproval' => perm(Role::Member, $user->role)
-                ? Post::with(['requester', 'reserver'])->where('reserved_by', $user->id)->whereNotNull('deviation_id')->where('lock', false)
+                ? Post::with(['requester', 'reserver', 'show'])->where('reserved_by', $user->id)->whereNotNull('deviation_id')->where('lock', false)
                     ->orderByRaw('CASE WHEN requested_by IS NOT NULL THEN requested_at ELSE reserved_at END')->get()
-                    ->map(fn(Post $post) => $post->toContract($visitor))->values()
+                    ->map(fn(Post $post) => $this->withShow($post, $visitor))->values()
                 : null,
         ]);
     }
@@ -184,6 +184,12 @@ class UserProfileController extends Controller
                 'itemsPerPage' => $size,
             ],
         ]);
+    }
+
+    /** A post as the contract describes it, plus the show it belongs to ("Posted under S01 E01: …" on the profile) */
+    private function withShow(Post $post, ?User $visitor): array
+    {
+        return $post->toContract($visitor) + ['show' => ShowController::mapShowListItem($post->show)];
     }
 
     private function publicUser(User $user): array

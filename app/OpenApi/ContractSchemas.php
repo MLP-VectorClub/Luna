@@ -484,7 +484,7 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="personalGuideProgress", type="object", nullable=true, description="Only for the user themselves and staff: whole slots the user has and how many more approved requests give another one",
  *   @OA\Property(property="slots", type="integer"), @OA\Property(property="requestsToNext", type="integer")),
  *   @OA\Property(property="pendingReservations", type="array", nullable=true, description="Reservations that are not finished yet; only for the user themselves and for staff visiting a member",
- *   @OA\Items(ref="#/components/schemas/PostItem")),
+ *   @OA\Items(allOf={@OA\Schema(ref="#/components/schemas/PostItem"), @OA\Schema(type="object", required={"show"}, @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))})),
  *   @OA\Property(property="sameUser", type="boolean", description="Whether the visitor is looking at their own profile"),
  *   @OA\Property(property="canEdit", type="boolean", description="Whether the visitor may change this user's role"),
  *   @OA\Property(property="devOnDev", type="boolean",
@@ -518,7 +518,7 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="awaitingApproval", type="array",
  *   description="Finished posts waiting for approval; null when the user is not a member",
  *   nullable=true,
- *   @OA\Items(ref="#/components/schemas/PostItem"))
+ *   @OA\Items(allOf={@OA\Schema(ref="#/components/schemas/PostItem"), @OA\Schema(type="object", required={"show"}, @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))}))
  * )
  *
  * @OA\Schema(

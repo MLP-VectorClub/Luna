@@ -136,6 +136,7 @@ class PostsAndProfileTest extends TestCase
         $this->actingAs($member, 'sanctum');
         $own = $this->getJson("/users/{$member->id}/profile")->assertOk();
         $this->assertSame([$reserved->id], collect($own->json('pendingReservations'))->pluck('id')->all());
+        $this->assertSame($show->id, $own->json('pendingReservations.0.show.id'));
         $this->assertSame(1, $own->json('personalGuideProgress.slots'));
         $this->assertSame(10, $own->json('personalGuideProgress.requestsToNext'));
     }
