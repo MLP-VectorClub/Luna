@@ -74,8 +74,34 @@ class UserProfileController extends Controller
 
         $contributions = Cache::remember("user_{$user->id}_contributions", 3600, fn() => $this->contributionCounts($user));
 
+        $is_member = perm(Role::Member, $user->role);
+        // What the visitor may see of the user's reservations: their own, or those of a member when staff visits
+        $pending = null;
+        if ($visitor !== null && ($same_user || ($is_staff && $is_member))) {
+            $pending = Post::with(['requester', 'reserver'])->where('reserved_by', $user->id)->whereNull('deviation_id')
+                ->orderBy('reserved_at')->orderBy('id')->get()
+                ->map(fn(Post $post) => $post->toContract($visitor))->values();
+        }
+
+        $progress = null;
+        if ($same_user || $is_staff) {
+            $points = $user->pcgAvailablePoints();
+            $progress = ['slots' => intdiv($points, 10), 'requestsToNext' => 10 - ($points % 10)];
+        }
+
+        $da_user = $user->daUser;
+        $vector_app = UserPrefHelper::get($user, UserPrefKey::Personal_VectorApp);
+
         return response()->json([
             'user' => $this->publicUser($user),
+            'deviantArtUrl' => $da_user === null ? null : 'https://www.deviantart.com/'.$da_user->name,
+            'vectorApp' => $vector_app instanceof \BackedEnum ? $vector_app->value : $vector_app,
+            'discordName' => $user->discordMember?->display_name,
+            'developerInfo' => $visitor !== null && perm(Role::Developer, $visitor->role)
+                ? ['deviantArtId' => $da_user?->id, 'discordId' => $user->discordMember?->id]
+                : null,
+            'personalGuideProgress' => $progress,
+            'pendingReservations' => $pending,
             'sameUser' => $same_user,
             'canEdit' => $can_edit,
             'devOnDev' => $dev_on_dev,
@@ -216,6 +242,9 @@ class UserProfileController extends Controller
             'finished-posts' => [$this->postContributions($user, 'finished-posts')->count(), 'post', 'finished'],
             'fulfilled-requests' => [$this->postContributions($user, 'fulfilled-requests')->count(), 'request', 'fulfilled'],
         ];
+
+        // Not a list of its own: posts of this user that were accepted into the group gallery
+        $counts['approved-posts'] = [DB::table('locked_posts')->where('user_id', $user->id)->count(), 'post', 'marked approved'];
 
         $result = [];
         foreach ($counts as $type => [$count, $noun, $verb]) {

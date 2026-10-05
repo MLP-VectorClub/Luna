@@ -120,6 +120,26 @@ class PostsAndProfileTest extends TestCase
         $this->getJson('/users/987654/profile')->assertNotFound();
     }
 
+    public function testProfileHasTheDataOfThePendingReservationsAndTheSlotProgress(): void
+    {
+        $show = $this->show();
+        $member = $this->user(Role::Member, 'Pending Member');
+        $reserved = $this->makePost($show, ['reserved_by' => $member->id, 'reserved_at' => now(), 'requested_by' => $this->user()->id, 'requested_at' => now(), 'type' => 'chr']);
+        $this->makePost($show, ['reserved_by' => $member->id, 'reserved_at' => now(), 'deviation_id' => 'dfin001', 'finished_at' => now()]);
+        DB::table('locked_posts')->insert(['post_id' => $reserved->id, 'user_id' => $member->id, 'created_at' => now(), 'updated_at' => now()]);
+
+        // Nobody else sees the reservations or the progress
+        $guest = $this->getJson("/users/{$member->id}/profile")->assertOk();
+        $guest->assertJsonPath('pendingReservations', null)->assertJsonPath('personalGuideProgress', null);
+        $this->assertContains('approved-posts', collect($guest->json('contributions'))->pluck('type')->all());
+
+        $this->actingAs($member, 'sanctum');
+        $own = $this->getJson("/users/{$member->id}/profile")->assertOk();
+        $this->assertSame([$reserved->id], collect($own->json('pendingReservations'))->pluck('id')->all());
+        $this->assertSame(1, $own->json('personalGuideProgress.slots'));
+        $this->assertSame(10, $own->json('personalGuideProgress.requestsToNext'));
+    }
+
     public function testNonMembersHaveNoAwaitingApprovalList(): void
     {
         $user = $this->user();
