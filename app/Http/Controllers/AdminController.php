@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appearance;
 use App\Models\Log;
 use App\Models\Notification;
+use App\Models\Post;
 use App\Models\Tag;
 use App\Utils\AppearanceIndex;
 use App\Utils\ColorGuideHelper;
@@ -13,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Elasticsearch;
 use OpenApi\Annotations as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -186,6 +188,64 @@ class AdminController extends Controller
         }
 
         return response()->noContent();
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/admin/posts/recent",
+     *   operationId="GetAdminPostsRecent",
+     *   description="The 20 most recently posted requests and reservations, for the admin area. Requires staff",
+     *   tags={"admin"},
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"posts"}, @OA\Property(property="posts", type="array",
+     *     @OA\Items(allOf={@OA\Schema(ref="#/components/schemas/PostItem"), @OA\Schema(type="object", required={"show"}, @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))})))),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function recentPosts(Request $request): JsonResponse
+    {
+        $posts = Post::with(['requester', 'reserver', 'show'])
+            ->orderByRaw('CASE WHEN requested_by IS NOT NULL THEN requested_at ELSE reserved_at END DESC')->orderByDesc('id')->limit(20)->get()
+            ->map(fn(Post $post) => $post->toContract($request->user()) + ['show' => ShowController::mapShowListItem($post->show)])->values();
+
+        return response()->json(['posts' => $posts]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/admin/search-status",
+     *   operationId="GetAdminSearchStatus",
+     *   description="State of the ElasticSearch server behind the color guide search. Requires developer permission",
+     *   tags={"admin"},
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"down", "indices", "nodes"},
+     *     @OA\Property(property="down", type="boolean"), @OA\Property(property="indices", type="array", @OA\Items(type="string")), @OA\Property(property="nodes", type="array", @OA\Items(type="string")))),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function searchStatus(): JsonResponse
+    {
+        try {
+            $client = Elasticsearch::connection();
+            if (!$client->ping()->asBool()) {
+                return response()->json(['down' => true, 'indices' => [], 'nodes' => []]);
+            }
+            $describe = fn(array $rows) => array_map(function (array $row, int $no) {
+                $line = "#$no ";
+                foreach ($row as $key => $value) {
+                    if ($value !== null && $value !== '') {
+                        $line .= "$key:$value ";
+                    }
+                }
+
+                return trim($line);
+            }, $rows, array_keys($rows));
+            $indices = array_values(array_filter($client->cat()->indices(['format' => 'json'])->asArray(), fn(array $index) => ($index['index'] ?? null) === 'appearances'));
+
+            return response()->json(['down' => false, 'indices' => $describe($indices), 'nodes' => $describe($client->cat()->nodes(['format' => 'json'])->asArray())]);
+        } catch (\Throwable $e) {
+            return response()->json(['down' => true, 'indices' => [], 'nodes' => []]);
+        }
     }
 
     /**

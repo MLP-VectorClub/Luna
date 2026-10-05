@@ -198,8 +198,11 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
     Route::middleware(['auth:sanctum', 'role:staff'])->prefix('admin')->group(function () {
         Route::get('pcg-appearances', [AdminController::class, 'pcgAppearances']);
         Route::get('logs', [AdminController::class, 'logs']);
+        Route::get('posts/recent', [AdminController::class, 'recentPosts']);
         Route::get('logs/{id}', [AdminController::class, 'logDetail'])->whereNumber('id');
     });
+
+    Route::get('admin/search-status', [AdminController::class, 'searchStatus'])->middleware(['auth:sanctum', 'role:developer']);
 
     Route::middleware(['auth:sanctum', 'role:developer'])->prefix('color-guide')->group(function () {
         Route::post('reindex', [AdminController::class, 'reindex']);

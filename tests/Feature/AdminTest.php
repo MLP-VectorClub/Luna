@@ -101,4 +101,31 @@ class AdminTest extends TestCase
         $this->assertCount(1, $response->json('Appearances'));
         $this->assertSame('Twilight', array_values($response->json('Appearances'))[0]['label']);
     }
+
+    public function testRecentPostsAreForStaff(): void
+    {
+        $this->getJson('/admin/posts/recent')->assertUnauthorized();
+        $this->as(Role::Member);
+        $this->getJson('/admin/posts/recent')->assertForbidden();
+
+        $user = $this->as(Role::Staff);
+        $show = \App\Models\Show::create(['type' => 'episode', 'season' => 1, 'episode' => 1, 'title' => 'First', 'posted_by' => $user->id, 'airs' => '2010-10-10 15:00', 'no' => 1]);
+        foreach (range(1, 22) as $i) {
+            \App\Models\Post::create(['show_id' => $show->id, 'requested_by' => $user->id, 'requested_at' => now()->subMinutes(30 - $i), 'type' => 'chr', 'preview' => 'https://example.com/p.png', 'fullsize' => 'https://example.com/f.png', 'label' => "Post $i"]);
+        }
+
+        $posts = $this->getJson('/admin/posts/recent')->assertOk()->json('posts');
+        $this->assertCount(20, $posts);
+        $this->assertSame('Post 22', $posts[0]['label']);
+        $this->assertSame($show->id, $posts[0]['show']['id']);
+    }
+
+    public function testSearchStatusIsForDevelopers(): void
+    {
+        $this->getJson('/admin/search-status')->assertUnauthorized();
+        $this->as(Role::Staff);
+        $this->getJson('/admin/search-status')->assertForbidden();
+        $this->as(Role::Developer);
+        $this->getJson('/admin/search-status')->assertOk()->assertJsonStructure(['down', 'indices', 'nodes']);
+    }
 }
