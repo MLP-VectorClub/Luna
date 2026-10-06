@@ -8,7 +8,9 @@
 #   scripts/import-winterchilla-data.sh <winterchilla_db> <target_db> [winterchilla_fs_folder uploader_user_id]
 #
 # The target database is dropped first if it exists, so build a NEW database and swap it in (see docs/winterchilla-data-import.md), never point this at
-# the database Luna is serving. Needs a PostgreSQL superuser (`session_replication_role`): run it as one, or set PGUSER / PGHOST / PGPASSWORD for it.
+# the database Luna is serving. Creating databases, the extensions and the foreign key bypass (`session_replication_role`) need a PostgreSQL superuser:
+# either run it with PGUSER / PGHOST / PGPASSWORD of one (default: Luna's .env), or let those steps run through the postgres OS user, which is how
+# the server has it: PG_ADMIN="sudo -n -u postgres" TARGET_OWNER=luna (the database role Luna connects with, it must own the new database).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 SOURCE="${1:?Winterchilla database name}"; TARGET="${2:?target database name}"
@@ -17,21 +19,25 @@ FS_FOLDER="${3:-}"; UPLOADER="${4:-1}"
 if [ -f .env ]; then set -a; source .env; set +a; fi
 export PGHOST="${PGHOST:-${DB_HOST:-127.0.0.1}}" PGUSER="${PGUSER:-${DB_USERNAME:-postgres}}" PGPASSWORD="${PGPASSWORD:-${DB_PASSWORD:-}}"
 PSQL=(psql -v ON_ERROR_STOP=1 -q -At)
+# The steps that need superuser rights
+read -r -a ADMIN <<< "${PG_ADMIN:-}"
+APSQL=("${ADMIN[@]}" "${PSQL[@]}")
+APGDUMP=("${ADMIN[@]}" pg_dump)
 DUMP="$(mktemp --suffix=.sql)"; trap 'rm -f "$DUMP"' EXIT
 
 echo "== Creating $TARGET"
-"${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$TARGET\"" -c "CREATE DATABASE \"$TARGET\""
-[ -f setup/create_extensions.pg.sql ] && "${PSQL[@]}" -d "$TARGET" -f setup/create_extensions.pg.sql >/dev/null 2>&1 || true
+"${APSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$TARGET\"" -c "CREATE DATABASE \"$TARGET\"${TARGET_OWNER:+ OWNER \"$TARGET_OWNER\"}"
+[ -f setup/create_extensions.pg.sql ] && "${APSQL[@]}" -d "$TARGET" -f "$PWD/setup/create_extensions.pg.sql" >/dev/null 2>&1 || true
 
 echo "== Building Luna's schema (migrate:fresh)"
 DB_DATABASE="$TARGET" php artisan migrate:fresh --force | tail -2
 
 echo "== Loading the data of $SOURCE"
-pg_dump -d "$SOURCE" --data-only --no-owner --exclude-table=phinxlog -f "$DUMP" 2> >(grep -v -E 'circular foreign-key|detail: tags|hint:' >&2 || true)
-( echo "SET session_replication_role = replica;"; cat "$DUMP" ) | "${PSQL[@]}" -d "$TARGET" >/dev/null
+"${APGDUMP[@]}" -d "$SOURCE" --data-only --no-owner --exclude-table=phinxlog > "$DUMP" 2> >(grep -v -E 'circular foreign-key|detail: tags|hint:' >&2 || true)
+( echo "SET session_replication_role = replica;"; cat "$DUMP" ) | "${APSQL[@]}" -d "$TARGET" >/dev/null
 
 echo "== Moving the id sequences past the highest ids"
-"${PSQL[@]}" -d "$TARGET" -c "
+"${APSQL[@]}" -d "$TARGET" -c "
 DO \$\$ DECLARE r record; BEGIN
   FOR r IN SELECT c.table_name, c.column_name FROM information_schema.columns c
            WHERE c.table_schema = 'public' AND pg_get_serial_sequence(quote_ident(c.table_name), c.column_name) IS NOT NULL LOOP
@@ -46,7 +52,7 @@ fi
 
 echo "== Row counts (source / target)"
 for t in users deviantart_users discord_members show posts appearances tags logs events cutiemarks colors; do
-  a=$("${PSQL[@]}" -d "$SOURCE" -c "SELECT count(*) FROM $t"); b=$("${PSQL[@]}" -d "$TARGET" -c "SELECT count(*) FROM $t")
+  a=$("${APSQL[@]}" -d "$SOURCE" -c "SELECT count(*) FROM $t"); b=$("${APSQL[@]}" -d "$TARGET" -c "SELECT count(*) FROM $t")
   printf '%-18s %8s %8s %s\n' "$t" "$a" "$b" "$([ "$a" = "$b" ] && echo ok || echo DIFFERENT)"
 done
 echo "Done. $TARGET holds a fresh copy of $SOURCE."
