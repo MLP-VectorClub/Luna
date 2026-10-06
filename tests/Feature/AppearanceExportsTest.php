@@ -121,6 +121,9 @@ class AppearanceExportsTest extends TestCase
         $this->getJson("$path?source=1")->assertUnauthorized();
         $this->actingAs($this->user(), 'sanctum')->getJson("$path?source=1")->assertForbidden();
         $this->actingAs($staff, 'sanctum')->get("$path?source=1")->assertOk()->assertSee('<svg', false);
+        $this->getJson("/cutie-marks/{$cm->id}/image")->assertOk()->assertHeader('Content-Type', 'image/svg+xml')->assertHeaderMissing('Content-Disposition');
+        $this->getJson("/cutie-marks/{$cm->id}/download")->assertOk()->assertHeader('Content-Disposition');
+        $this->getJson('/cutie-marks/987654/image')->assertNotFound();
         $this->getJson("/appearances/{$appearance->id}/cutie-marks/987654/download")->assertNotFound();
         $this->getJson("/appearances/{$other->id}/cutie-marks/{$cm->id}/download")->assertNotFound();
     }

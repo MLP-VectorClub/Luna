@@ -194,6 +194,36 @@ class AppearanceExportsController extends Controller
         return $this->attachment(file_get_contents($file->getPath()), "{$appearance->label} - cutie mark {$cutie_mark->id}.svg", 'image/svg+xml');
     }
 
+    /**
+     * @OA\Get(
+     *   path="/cutie-marks/{cutieMarkId}/{disposition}",
+     *   operationId="GetCutieMarksCutieMarkIdDisposition",
+     *   description="A cutie mark file by its own ID, for the URLs of the previous site: `image` serves the SVG inline, `download` as an attachment.",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="cutieMarkId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Parameter(in="path", name="disposition", required=true, @OA\Schema(type="string", enum={"image", "download"})),
+     *   @OA\Response(response="200", description="The cutie mark file", @OA\MediaType(mediaType="image/svg+xml", @OA\Schema(type="string", format="binary"))),
+     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Cutie mark not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function cutieMarkById(int $cutieMarkId, string $disposition)
+    {
+        $cutie_mark = CutieMark::findOrFail($cutieMarkId);
+        $appearance = Appearance::findOrFail($cutie_mark->appearance_id);
+        $this->assertVisible($appearance);
+
+        $file = $cutie_mark->vectorFile();
+        abort_if($file === null, 404, 'The cutie mark has no file');
+        $svg = file_get_contents($file->getPath());
+        if ($disposition === 'image') {
+            return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
+        }
+
+        return $this->attachment($svg, "{$appearance->label} - cutie mark {$cutie_mark->id}.svg", 'image/svg+xml');
+    }
+
     private function visible(int $id): Appearance
     {
         $appearance = Appearance::findOrFail($id);

@@ -134,6 +134,9 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('{appearance}/color-groups', [AppearancesController::class, 'colorGroups']);
     });
 
+    Route::middleware('optional.auth')->get('cutie-marks/{cutieMarkId}/{disposition}', [AppearanceExportsController::class, 'cutieMarkById'])
+        ->whereNumber('cutieMarkId')->whereIn('disposition', ['image', 'download']);
+
     Route::middleware('optional.auth')->prefix('appearances')->group(function () {
         Route::get('{id}/palette', [AppearanceExportsController::class, 'palette'])->whereNumber('id');
         Route::get('{id}/image', [AppearanceExportsController::class, 'image'])->whereNumber('id');
