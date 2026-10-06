@@ -29,8 +29,17 @@ echo "== Creating $TARGET"
 "${APSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$TARGET\"" -c "CREATE DATABASE \"$TARGET\"${TARGET_OWNER:+ OWNER \"$TARGET_OWNER\"}"
 [ -f setup/create_extensions.pg.sql ] && "${APSQL[@]}" -d "$TARGET" -f "$PWD/setup/create_extensions.pg.sql" >/dev/null 2>&1 || true
 
+# A cached config (php artisan config:cache / optimize, as on the server) ignores DB_DATABASE, and migrate:fresh would then rebuild the database Luna
+# is serving: ignore the cache file and refuse to go on unless Laravel really points at the target
+export APP_CONFIG_CACHE="$(mktemp -u)" DB_DATABASE="$TARGET"
+CONNECTED_TO="$(php artisan tinker --execute='echo config("database.connections.".config("database.default").".database");' 2>/dev/null | tail -1)"
+if [ "$CONNECTED_TO" != "$TARGET" ]; then
+  echo "Laravel would use the database '$CONNECTED_TO', not '$TARGET': not touching anything" >&2
+  exit 1
+fi
+
 echo "== Building Luna's schema (migrate:fresh)"
-DB_DATABASE="$TARGET" php artisan migrate:fresh --force | tail -2
+php artisan migrate:fresh --force | tail -2
 
 echo "== Loading the data of $SOURCE"
 "${APGDUMP[@]}" -d "$SOURCE" --data-only --no-owner --exclude-table=phinxlog > "$DUMP" 2> >(grep -v -E 'circular foreign-key|detail: tags|hint:' >&2 || true)
@@ -47,7 +56,7 @@ END \$\$;" >/dev/null
 
 if [ -n "$FS_FOLDER" ]; then
   echo "== Copying the cutie mark and sprite files from $FS_FOLDER (uploader #$UPLOADER)"
-  DB_DATABASE="$TARGET" php artisan fs:migrate "$FS_FOLDER" "$UPLOADER" --wipe
+  php artisan fs:migrate "$FS_FOLDER" "$UPLOADER" --wipe
 fi
 
 echo "== Row counts (source / target)"

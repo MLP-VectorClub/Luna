@@ -9,7 +9,7 @@ users, shows, posts, appearances, tags, logs, events, cutie marks and colors ide
 scripts/import-winterchilla-data.sh <winterchilla_db> <target_db> [winterchilla_fs_folder uploader_user_id]
 ```
 
-It drops and recreates the target database, so never aim it at the database Luna is serving. It needs a PostgreSQL superuser (the foreign keys are not checked while loading, `tags` has a circular one).
+It drops and recreates the target database, so never aim it at the database Luna is serving. It ignores the cached config and stops unless Laravel really points at the target (on 2026-10-06 the first production run did not have that check: the server's cached config ignored `DB_DATABASE` and `migrate:fresh` rebuilt the live `luna` database; the data was then loaded into it from Winterchilla by hand, see the log in the plan). It needs a PostgreSQL superuser (the foreign keys are not checked while loading, `tags` has a circular one).
 
 ## On the server (build next to the live database, swap with a rename, keep the old one as the way back)
 
