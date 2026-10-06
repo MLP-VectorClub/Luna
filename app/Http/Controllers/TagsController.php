@@ -94,6 +94,50 @@ class TagsController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *   path="/tags/autocomplete",
+     *   operationId="GetTagsAutocomplete",
+     *   description="Tags whose name contains the text, most used first, for the tag editor and the synonym target field. Requires staff",
+     *   tags={"tags"},
+     *   @OA\Parameter(in="query", name="s", required=true, @OA\Schema(type="string", maxLength=64)),
+     *   @OA\Parameter(in="query", name="not", required=false, description="A tag to leave out", @OA\Schema(type="integer")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"tags"}, additionalProperties=false,
+     *     @OA\Property(property="tags", type="array", @OA\Items(type="object", required={"id", "name", "type", "uses", "synonymOf", "synonymTarget"}, additionalProperties=false,
+     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
+     *       @OA\Property(property="name", type="string"),
+     *       @OA\Property(property="type", type="string", nullable=true),
+     *       @OA\Property(property="uses", type="integer"),
+     *       @OA\Property(property="synonymOf", type="integer", nullable=true, description="ID of the tag this one is a synonym of"),
+     *       @OA\Property(property="synonymTarget", type="string", nullable=true, description="Name of that tag")
+     *     )))),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $valid = Validator::make($request->query(), ['s' => ['required', 'string', 'max:64'], 'not' => ['sometimes', 'integer']])->validate();
+        $text = trim(mb_strtolower($valid['s']));
+        if ($text === '' || !preg_match('/^[ -~]+$/', $text)) {
+            return response()->json(['tags' => []]);
+        }
+
+        $tags = Tag::whereRaw('lower(name) like ?', ['%'.addcslashes($text, '%_\\').'%'])
+            ->when(isset($valid['not']), fn ($query) => $query->where('id', '!=', $valid['not']))
+            ->orderByDesc('uses')->orderBy('name')->limit(5)->get();
+        $targets = Tag::whereIn('id', $tags->pluck('synonym_of')->filter()->unique())->pluck('name', 'id');
+
+        return response()->json(['tags' => $tags->map(fn (Tag $tag) => [
+            'id' => $tag->id,
+            'name' => $tag->name,
+            'type' => $tag->type,
+            'uses' => (int) $tag->uses,
+            'synonymOf' => $tag->synonym_of,
+            'synonymTarget' => $tag->synonym_of === null ? null : ($targets[$tag->synonym_of] ?? null),
+        ])->values()]);
+    }
+
+    /**
      * @OA\Post(
      *   path="/tags",
      *   operationId="PostTags",

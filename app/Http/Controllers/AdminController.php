@@ -299,16 +299,15 @@ class AdminController extends Controller
      * @OA\Get(
      *   path="/color-guide/export",
      *   operationId="GetColorGuideExport",
-     *   description="Download the full color guide as a JSON file (same layout as Winterchilla's `mlpvc-colorguide.json`). Developer permission required",
+     *   description="The full color guide as a JSON file (same layout as Winterchilla's public `mlpvc-colorguide.json`, which tools such as the swatch import script for Adobe Illustrator read; colors of private appearances are left out). Public, kept for an hour",
      *   tags={"color guide"},
-     *   @OA\Response(response="200", description="The export file", @OA\MediaType(mediaType="application/json", @OA\Schema(type="object"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     *   security={},
+     *   @OA\Response(response="200", description="The export file", @OA\MediaType(mediaType="application/json", @OA\Schema(type="object")))
      * )
      */
     public function export()
     {
-        $data = ['Appearances' => [], 'Tags' => []];
+        $data = ['$schema' => rtrim((string) config('app.frontend_url'), '/').'/dist/mlpvc-colorguide-schema.json?v1.1', 'Appearances' => [], 'Tags' => []];
         foreach (Tag::orderBy('id')->get() as $tag) {
             $data['Tags'][$tag->id] = $tag->only(['id', 'name', 'title', 'type', 'uses', 'synonym_of']);
         }
@@ -361,6 +360,6 @@ class AdminController extends Controller
             $data['Appearances'][$appearance->id] = $entry;
         }
 
-        return response()->json($data, 200, ['Content-Disposition' => 'attachment; filename="mlpvc-colorguide.json"']);
+        return response()->json($data, 200, ['Last-Modified' => now()->toRfc7231String()]);
     }
 }

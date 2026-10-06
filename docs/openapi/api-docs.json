@@ -639,7 +639,7 @@
                 "tags": [
                     "color guide"
                 ],
-                "description": "Download the full color guide as a JSON file (same layout as Winterchilla's `mlpvc-colorguide.json`). Developer permission required",
+                "description": "The full color guide as a JSON file (same layout as Winterchilla's public `mlpvc-colorguide.json`, which tools such as the swatch import script for Adobe Illustrator read; colors of private appearances are left out). Public, kept for an hour",
                 "operationId": "GetColorGuideExport",
                 "responses": {
                     "200": {
@@ -651,28 +651,9 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "description": "Not signed in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Insufficient permissions",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
                     }
-                }
+                },
+                "security": []
             }
         },
         "/appearances/{id}/palette": {
@@ -7222,6 +7203,28 @@
                 }
             }
         },
+        "/show/upcoming": {
+            "get": {
+                "tags": [
+                    "shows"
+                ],
+                "description": "The show entries that air within the next 6 months, soonest first (the sidebar list called Happening soon)",
+                "operationId": "GetShowUpcoming",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShowList"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/show": {
             "get": {
                 "tags": [
@@ -8396,6 +8399,113 @@
                                         }
                                     },
                                     "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tags/autocomplete": {
+            "get": {
+                "tags": [
+                    "tags"
+                ],
+                "description": "Tags whose name contains the text, most used first, for the tag editor and the synonym target field. Requires staff",
+                "operationId": "GetTagsAutocomplete",
+                "parameters": [
+                    {
+                        "name": "s",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 64
+                        }
+                    },
+                    {
+                        "name": "not",
+                        "in": "query",
+                        "description": "A tag to leave out",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "tags"
+                                    ],
+                                    "properties": {
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "type",
+                                                    "uses",
+                                                    "synonymOf",
+                                                    "synonymTarget"
+                                                ],
+                                                "properties": {
+                                                    "id": {
+                                                        "$ref": "#/components/schemas/OneBasedId"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "uses": {
+                                                        "type": "integer"
+                                                    },
+                                                    "synonymOf": {
+                                                        "description": "ID of the tag this one is a synonym of",
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "synonymTarget": {
+                                                        "description": "Name of that tag",
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient permissions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
                                 }
                             }
                         }
@@ -13206,12 +13316,12 @@
             "description": "settings"
         },
         {
-            "name": "show",
-            "description": "show"
-        },
-        {
             "name": "shows",
             "description": "shows"
+        },
+        {
+            "name": "show",
+            "description": "show"
         },
         {
             "name": "tags",

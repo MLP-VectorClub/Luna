@@ -49,6 +49,23 @@ class ShowController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *   path="/show/upcoming",
+     *   operationId="GetShowUpcoming",
+     *   description="The show entries that air within the next 6 months, soonest first (the sidebar list called Happening soon)",
+     *   tags={"shows"},
+     *   security={},
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/ShowList"))
+     * )
+     */
+    public function upcoming(): JsonResponse
+    {
+        $shows = Show::where('airs', '>', now())->where('airs', '<', now()->addMonths(6))->orderBy('airs')->orderBy('id')->get();
+
+        return response()->json(['show' => $shows->map(fn (Show $show) => self::mapShowListItem($show))->values()]);
+    }
+
+    /**
      * @OA\Schema(
      *   schema="ShowListPageSize",
      *   type="integer",

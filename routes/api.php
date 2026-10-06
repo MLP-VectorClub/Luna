@@ -209,14 +209,16 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
 
     Route::middleware(['auth:sanctum', 'role:developer'])->prefix('color-guide')->group(function () {
         Route::post('reindex', [AdminController::class, 'reindex']);
-        Route::get('export', [AdminController::class, 'export']);
     });
+    // The old site published this as a static file that other tools read, so it is public (and kept for an hour, building it takes a while)
+    Route::get('color-guide/export', [AdminController::class, 'export'])->middleware('cacheResponse:3600');
     Route::middleware('auth:sanctum')->post('notifications/{id}/read', [AdminController::class, 'readNotification'])->whereNumber('id');
 
     Route::prefix('tags')->group(function () {
         Route::get('/', [TagsController::class, 'index']);
 
         Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
+            Route::get('autocomplete', [TagsController::class, 'autocomplete']);
             Route::post('/', [TagsController::class, 'create']);
             Route::post('recount-uses', [TagsController::class, 'recountUses']);
             Route::get('{id}', [TagsController::class, 'show'])->whereNumber('id');
@@ -308,6 +310,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('latest', [$manage, 'latest']);
         Route::get('next', [$manage, 'next']);
         Route::get('reservation-info', [$manage, 'reservationInfo']);
+        Route::get('upcoming', [ShowController::class, 'upcoming']);
         Route::get('{id}', [$manage, 'show'])->whereNumber('id');
         Route::get('{id}/adjacent', [$manage, 'adjacent'])->whereNumber('id');
         Route::get('{id}/vote', [$manage, 'votes'])->whereNumber('id');

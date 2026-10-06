@@ -91,22 +91,20 @@ class AdminTest extends TestCase
         $this->postJson('/notifications/987654/read')->assertNotFound();
     }
 
-    public function testReindexAndExportNeedADeveloper(): void
+    public function testReindexNeedsADeveloper(): void
     {
         $this->postJson('/color-guide/reindex')->assertUnauthorized();
         $this->as(Role::Staff);
         $this->postJson('/color-guide/reindex')->assertForbidden();
-        $this->getJson('/color-guide/export')->assertForbidden();
     }
 
     public function testExport(): void
     {
         Appearance::create(['label' => 'Twilight', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => 'Notes', 'order' => 1]);
         Appearance::create(['label' => 'Personal', 'owner_id' => User::factory()->create()->id, 'notes_src' => null]);
-        $this->as(Role::Developer);
-
+        // The old site published this file for everybody (other tools read it)
         $response = $this->getJson('/color-guide/export')->assertOk();
-        $response->assertHeader('Content-Disposition', 'attachment; filename="mlpvc-colorguide.json"');
+        $this->assertStringEndsWith('/dist/mlpvc-colorguide-schema.json?v1.1', $response->json('$schema'));
         $this->assertCount(1, $response->json('Appearances'));
         $this->assertSame('Twilight', array_values($response->json('Appearances'))[0]['label']);
     }
