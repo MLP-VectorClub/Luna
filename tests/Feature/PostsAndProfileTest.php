@@ -213,9 +213,28 @@ class PostsAndProfileTest extends TestCase
         $this->getJson("/events/{$event->id}")->assertOk()
             ->assertJsonPath('addedBy.name', 'Creator')
             ->assertJsonPath('entries.0.submissionId', 'dabc123')
+            ->assertJsonPath('descriptionHtml', '<p>Rules</p>')
+            ->assertJsonStructure(['entries' => [['updatedAt']]])
             ->assertJsonPath('canEnter', false)
             ->assertJsonPath('ended', true);
         $this->getJson('/events/987654')->assertNotFound();
+        $this->getJson("/events/{$event->id}/finished-image")->assertNotFound();
+        $this->getJson('/events/987654/finished-image')->assertNotFound();
+    }
+
+    public function testEventFinishedImage(): void
+    {
+        \Illuminate\Support\Facades\Cache::put('deviation:fav.me:dres001', [
+            'provider' => 'fav.me', 'id' => 'dres001', 'preview' => 'https://img.example/thumb.png', 'fullsize' => 'https://img.example/full.png',
+            'title' => 'Collab', 'author' => 'Everyone', 'type' => 'png',
+        ], 60);
+        $creator = $this->user(Role::Staff, 'Creator');
+        $event = Event::create(['name' => 'Contest', 'starts_at' => now()->subWeek(), 'ends_at' => now()->subDay(), 'entry_role' => 'user', 'desc_src' => '', 'desc_rend' => '', 'added_by' => $creator->id, 'result_favme' => 'dres001']);
+
+        $this->getJson("/events/{$event->id}/finished-image")->assertOk()->assertExactJson([
+            'id' => 'dres001', 'title' => 'Collab', 'author' => 'Everyone',
+            'previewUrl' => 'https://img.example/thumb.png', 'fullsizeUrl' => 'https://img.example/full.png',
+        ]);
     }
 
     public function testDisabledEventWrites(): void

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ImageProviderException;
 use App\Models\Event;
 use App\Models\EventEntry;
 use App\Models\User;
+use App\Utils\DeviantArt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -34,15 +36,16 @@ class EventsController extends Controller
      *   type="object",
      *   allOf={
      *     @OA\Schema(ref="#/components/schemas/EventItem"),
-     *     @OA\Schema(type="object", required={"descriptionSrc", "addedBy", "createdAt", "canEnter", "canVote", "ongoing", "ended", "entries"},
+     *     @OA\Schema(type="object", required={"descriptionSrc", "descriptionHtml", "addedBy", "createdAt", "canEnter", "canVote", "ongoing", "ended", "entries"},
      *       @OA\Property(property="descriptionSrc", type="string", nullable=true, description="Markdown source of the description"),
+     *       @OA\Property(property="descriptionHtml", type="string", description="The description rendered to (already sanitized) HTML"),
      *       @OA\Property(property="addedBy", ref="#/components/schemas/PostUser"),
      *       @OA\Property(property="createdAt", type="string", format="date-time"),
      *       @OA\Property(property="canEnter", type="boolean"),
      *       @OA\Property(property="canVote", type="boolean"),
      *       @OA\Property(property="ongoing", type="boolean"),
      *       @OA\Property(property="ended", type="boolean"),
-     *       @OA\Property(property="entries", type="array", @OA\Items(type="object", required={"id", "title", "submittedBy", "submissionProvider", "submissionId", "previewUrl", "fullUrl", "createdAt"},
+     *       @OA\Property(property="entries", type="array", @OA\Items(type="object", required={"id", "title", "submittedBy", "submissionProvider", "submissionId", "previewUrl", "fullUrl", "createdAt", "updatedAt"},
      *         @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
      *         @OA\Property(property="title", type="string"),
      *         @OA\Property(property="submittedBy", ref="#/components/schemas/PostUser"),
@@ -50,7 +53,8 @@ class EventsController extends Controller
      *         @OA\Property(property="submissionId", type="string"),
      *         @OA\Property(property="previewUrl", type="string", nullable=true),
      *         @OA\Property(property="fullUrl", type="string", nullable=true),
-     *         @OA\Property(property="createdAt", type="string", format="date-time")
+     *         @OA\Property(property="createdAt", type="string", format="date-time"),
+     *         @OA\Property(property="updatedAt", type="string", format="date-time")
      *       ))
      *     )
      *   }
@@ -110,6 +114,7 @@ class EventsController extends Controller
 
         return response()->json($event->toContract() + [
             'descriptionSrc' => $event->desc_src,
+            'descriptionHtml' => (string) $event->desc_rend,
             'addedBy' => $user($event->creator),
             'createdAt' => $event->created_at->toIso8601String(),
             // Event entries and votes are disabled in Winterchilla and so are they here
@@ -126,7 +131,47 @@ class EventsController extends Controller
                 'previewUrl' => $entry->prev_thumb,
                 'fullUrl' => $entry->prev_full,
                 'createdAt' => $entry->created_at->toIso8601String(),
+                'updatedAt' => ($entry->updated_at ?? $entry->created_at)->toIso8601String(),
             ])->values(),
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/events/{id}/finished-image",
+     *   operationId="GetEventsIdFinishedImage",
+     *   description="The DeviantArt submission that shows the finished collaboration (the event's result), loaded from DeviantArt when asked for",
+     *   tags={"events"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"id", "title", "author", "previewUrl", "fullsizeUrl"},
+     *     @OA\Property(property="id", type="string"),
+     *     @OA\Property(property="title", type="string", nullable=true),
+     *     @OA\Property(property="author", type="string", nullable=true),
+     *     @OA\Property(property="previewUrl", type="string"),
+     *     @OA\Property(property="fullsizeUrl", type="string"))),
+     *   @OA\Response(response="404", description="Unknown event, no result yet or the submission could not be found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="502", description="DeviantArt could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function finishedImage(int $id): JsonResponse
+    {
+        $event = Event::findOrFail($id);
+        abort_if($event->result_favme === null, 404, 'The event has no finished image');
+
+        try {
+            $submission = DeviantArt::submission($event->result_favme);
+        } catch (ImageProviderException) {
+            abort(502, 'DeviantArt could not be reached');
+        }
+        abort_if($submission === null, 404, 'The submission could not be found');
+
+        return response()->json([
+            'id' => $submission->id,
+            'title' => $submission->title,
+            'author' => $submission->author,
+            'previewUrl' => $submission->preview,
+            'fullsizeUrl' => $submission->fullsize,
         ]);
     }
 

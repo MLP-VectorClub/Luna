@@ -261,6 +261,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
     Route::prefix('events')->group(function () {
         Route::get('/', [EventsController::class, 'index']);
         Route::get('{id}', [EventsController::class, 'show'])->whereNumber('id');
+        Route::get('{id}/finished-image', [EventsController::class, 'finishedImage'])->whereNumber('id');
 
         // Managing events and receiving entries is switched off in Winterchilla, so these only answer 501 after the permission checks
         Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
