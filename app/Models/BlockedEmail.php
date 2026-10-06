@@ -11,9 +11,14 @@ class BlockedEmail extends Model
 {
     protected $fillable = ['email'];
 
+    /** Blocks the address and, like Winterchilla's `after_create` callback, throws away the verifications that are still waiting for it */
     public static function record(string $email): void
     {
-        self::firstOrCreate(['email' => strtolower($email)]);
+        $email = strtolower($email);
+        $blocked = self::firstOrCreate(['email' => $email]);
+        if ($blocked->wasRecentlyCreated) {
+            EmailVerification::whereRaw('lower(email) = ?', [$email])->delete();
+        }
     }
 
     public static function isBlocked(string $email): bool

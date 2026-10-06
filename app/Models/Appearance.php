@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Utils\HtmlSanitizer;
+use App\Utils\AppearanceNotes;
 use App\Enums\GuideName;
 use App\Traits\HasEnumCasts;
 use App\Traits\Sorted;
@@ -53,6 +53,10 @@ class Appearance extends Model implements Sortable, HasMedia
             if (!$a->token) {
                 $a->token = Uuid::uuid4();
             }
+        });
+        // Winterchilla's `render_notes` callback: the rendered notes are made again on every save, from the source
+        self::saving(function (self $a) {
+            $a->attributes['notes_rend'] = AppearanceNotes::render($a->notes_src, $a->guide);
         });
     }
 
@@ -111,25 +115,6 @@ class Appearance extends Model implements Sortable, HasMedia
     public function spriteFile(): ?Media
     {
         return $this->getFirstMedia(self::SPRITES_COLLECTION);
-    }
-
-    /**
-     * Stores the raw notes and renders them the way Winterchilla does: sanitized HTML with Derpibooru post references
-     * (`>>123`) turned into links. References to shows, episodes and other appearances are left as text for now, their
-     * URLs depend on the front end.
-     */
-    public function setNotesSrcAttribute(?string $notes_src): void
-    {
-        $this->attributes['notes_src'] = $notes_src;
-        if ($notes_src === null) {
-            $this->attributes['notes_rend'] = null;
-
-            return;
-        }
-
-        $rendered = HtmlSanitizer::sanitize($notes_src);
-        $rendered = preg_replace('/(\s)(&gt;&gt;(\d+))(\D|$)/', "$1<a href='https://derpibooru.org/$3'>$2</a>$4", $rendered);
-        $this->attributes['notes_rend'] = str_replace('\#', '#', $rendered);
     }
 
     public function hasSprite(): bool
