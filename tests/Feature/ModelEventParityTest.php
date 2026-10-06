@@ -92,4 +92,18 @@ class ModelEventParityTest extends TestCase
         $this->assertTrue(BlockedEmail::isBlocked('blocked@example.com'));
         $this->assertSame(['other@example.com'], EmailVerification::pluck('email')->all());
     }
+
+    public function testChangingAnAccountLimitationIsLogged(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+        $user = User::factory()->create(['role' => Role::Member]);
+        $this->actingAs($staff, 'sanctum');
+
+        $this->putJson("/users/{$user->id}/preferences/a_postreq", ['value' => false])->assertSuccessful();
+
+        $entry = \App\Models\Log::where('entry_type', 'staff_limits')->first();
+        $this->assertNotNull($entry);
+        $this->assertEquals(["setting" => "a_postreq", "allow" => false, "user_id" => $user->id], $entry->data);
+        $this->assertSame($staff->id, $entry->initiator);
+    }
 }

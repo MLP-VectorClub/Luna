@@ -6641,6 +6641,58 @@
                 "security": []
             }
         },
+        "/posts/{id}/reload": {
+            "get": {
+                "tags": [
+                    "posts"
+                ],
+                "description": "Called when an image of a post failed to load in the visitor's browser: checks that the images of a post that has no finished deviation are still there. A Derpibooru image that went missing is looked up again and replaced when it can be (a derpimerge log entry); otherwise the post is marked broken (and a reserver of a request loses the reservation). Staff get the post, everybody else is told the post is gone",
+                "operationId": "GetPostsIdReload",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/OneBasedId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "broken": {
+                                            "description": "True when the post became unavailable and the visitor may not see it",
+                                            "type": "boolean"
+                                        },
+                                        "post": {
+                                            "$ref": "#/components/schemas/PostItem"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The post does not exist",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/posts/{id}/unbreak": {
             "post": {
                 "tags": [

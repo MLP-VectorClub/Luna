@@ -527,6 +527,83 @@ class PostManagementController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *   path="/posts/{id}/reload",
+     *   operationId="GetPostsIdReload",
+     *   description="Called when an image of a post failed to load in the visitor's browser: checks that the images of a post that has no finished deviation are still there. A Derpibooru image that went missing is looked up again and replaced when it can be (a derpimerge log entry); otherwise the post is marked broken (and a reserver of a request loses the reservation). Staff get the post, everybody else is told the post is gone",
+     *   tags={"posts"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
+     *     @OA\Property(property="broken", type="boolean", description="True when the post became unavailable and the visitor may not see it"),
+     *     @OA\Property(property="post", ref="#/components/schemas/PostItem")
+     *   )),
+     *   @OA\Response(response="404", description="The post does not exist", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function reload(Request $request, int $id): JsonResponse
+    {
+        $post = Post::with(['requester', 'reserver'])->findOrFail($id);
+        $viewer = $request->user();
+        $is_staff = $viewer?->isStaff() ?? false;
+        if ($post->broken && !$is_staff) {
+            throw new HttpException(404, 'The post does not exist');
+        }
+
+        if ($post->deviation_id === null && !$post->broken) {
+            $original_fullsize = (string) $post->fullsize;
+            $original_preview = (string) $post->preview;
+            $response_code = null;
+            $failing_url = $original_fullsize;
+
+            // Both images have to be there (only a 404 counts as missing)
+            $available = DeviantArt::isImageAvailable($failing_url, [404], $response_code);
+            if ($available) {
+                $failing_url = $original_preview;
+                $available = DeviantArt::isImageAvailable($failing_url, [404], $response_code);
+            }
+
+            // A Derpibooru image may have been merged into another one: look it up again
+            if (!$available) {
+                try {
+                    [$provider] = ImageProvider::detect($original_fullsize);
+                    $merged = $provider === 'derpibooru' ? ImageProvider::resolve($original_fullsize) : null;
+                } catch (ImageProviderException) {
+                    $merged = null;
+                }
+                if ($merged !== null && !empty($merged->fullsize) && !empty($merged->preview)) {
+                    $available = true;
+                    $post->forceFill(['fullsize' => $merged->fullsize, 'preview' => $merged->preview])->save();
+                    LogWriter::record('derpimerge', [
+                        'post_id' => $post->id,
+                        'original_fullsize' => $original_fullsize,
+                        'original_preview' => $original_preview,
+                        'new_fullsize' => $post->fullsize,
+                        'new_preview' => $post->preview,
+                    ]);
+                }
+            }
+
+            if (!$available) {
+                $update = ['broken' => true];
+                $old_reserver = null;
+                if ($post->isRequest() && $post->reserved_by !== null) {
+                    $old_reserver = $post->reserved_by;
+                    $update['reserved_by'] = null;
+                }
+                $post->forceFill($update)->save();
+                BrokenPost::create(['post_id' => $post->id, 'reserved_by' => $old_reserver ?? $post->reserved_by, 'response_code' => (int) $response_code, 'failing_url' => $failing_url]);
+
+                if (!$is_staff) {
+                    return response()->json(['broken' => true]);
+                }
+            }
+        }
+
+        return response()->json(['post' => $post->fresh(['requester', 'reserver'])->toContract($viewer)]);
+    }
+
+    /**
      * @OA\Post(
      *   path="/posts/{id}/unbreak",
      *   operationId="PostPostsIdUnbreak",

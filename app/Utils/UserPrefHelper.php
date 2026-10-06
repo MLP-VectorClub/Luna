@@ -351,6 +351,11 @@ class UserPrefHelper
     {
         self::validate($key, $value);
 
+        // Winterchilla logs every change of an account limitation (the admin preferences), whoever makes it
+        if (str_starts_with($key->value, 'a_')) {
+            LogWriter::record('staff_limits', ['setting' => $key->value, 'allow' => $value, 'user_id' => $user->id]);
+        }
+
         $default_value = self::default($key);
 
         /** @var UserPref $pref */

@@ -233,6 +233,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         $manage = PostManagementController::class;
         Route::get('/', [PostsController::class, 'index']);
         Route::get('{id}/location', [$manage, 'location'])->whereNumber('id');
+        Route::get('{id}/reload', [$manage, 'reload'])->whereNumber('id');
         Route::get('{id}/deviation', [PostsController::class, 'deviation'])->whereNumber('id');
 
         Route::middleware('auth:sanctum')->group(function () use ($manage) {
