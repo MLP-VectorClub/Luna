@@ -33,6 +33,10 @@ class DeviantartUser extends Model
         'created_at', 'updated_at'
     ];
 
+    protected $casts = [
+        'access_expires' => 'datetime',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -35,6 +35,8 @@ return [
     SocialProvider::DeviantArt->value => [
         'client_id' => env('DEVIANTART_CLIENT_ID'),
         'client_secret' => env('DEVIANTART_CLIENT_SECRET'),
+        // Refresh DeviantArt tokens in the background and require a DeviantArt sign-in once they stop working, see App\Utils\DeviantArtTokens
+        'token_sync' => env('DEVIANTART_TOKEN_SYNC', false),
         'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord->value)
     ],
 

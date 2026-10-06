@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SocialAuthRequest;
 use App\Models\User;
 use App\Utils\AccountHelper;
+use App\Utils\DeviantArtTokens;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -106,6 +107,18 @@ class SigninController extends Controller
 
         if (!Hash::check($data['password'], $password)) {
             abort(401);
+        }
+
+        // Members signed in with DeviantArt first, so their DeviantArt tokens have to keep working
+        $da_user = DeviantArtTokens::enabled() ? $user->daUser : null;
+        if ($da_user !== null) {
+            $status = DeviantArtTokens::check($da_user);
+            if ($status === DeviantArtTokens::REVOKED) {
+                return response()->json(['message' => trans('errors.auth.deviantart_required'), 'deviantArtRequired' => true], 403);
+            }
+            if ($status === DeviantArtTokens::UNAVAILABLE) {
+                return response()->json(['message' => trans('errors.auth.deviantart_unavailable')], 503);
+            }
         }
 
         return AccountHelper::authResponse($request, $user, false, $data['remember'] ?? false);
