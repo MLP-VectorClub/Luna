@@ -11242,6 +11242,7 @@
                 "required": [
                     "id",
                     "device",
+                    "userAgent",
                     "ip",
                     "lastActiveAt",
                     "createdAt",
@@ -11257,6 +11258,11 @@
                         "description": "Browser and operating system the session was started from",
                         "type": "string",
                         "example": "Firefox on Linux"
+                    },
+                    "userAgent": {
+                        "description": "The raw User-Agent header the session was started with",
+                        "type": "string",
+                        "nullable": true
                     },
                     "ip": {
                         "description": "IP address the session was last used from",

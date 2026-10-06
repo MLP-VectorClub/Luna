@@ -39,6 +39,7 @@ class BrowserSessionsTest extends TestCase
         $this->assertSame([hash('sha256', 'newer-session'), hash('sha256', 'older-session')], array_column($response->json('sessions'), 'id'));
         $first = $response->json('sessions.0');
         $this->assertSame('Firefox 131 on GNU/Linux', $first['device']);
+        $this->assertSame(self::FIREFOX, $first['userAgent']);
         $this->assertSame('203.0.113.5', $first['ip']);
         $this->assertFalse($first['current']);
         $this->assertNotNull($first['createdAt']);
