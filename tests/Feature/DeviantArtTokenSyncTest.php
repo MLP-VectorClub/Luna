@@ -37,6 +37,7 @@ class DeviantArtTokenSyncTest extends TestCase
 
     private function fakeDeviantArt(int $status, array $body = []): void
     {
+        Http::swap(new \Illuminate\Http\Client\Factory());
         Http::fake([DeviantArtTokens::TOKEN_URL => Http::response($body, $status)]);
     }
 
@@ -139,6 +140,29 @@ class DeviantArtTokenSyncTest extends TestCase
         $this->fakeDeviantArt(500);
 
         $this->postJson('/users/signin', ['email' => $user->email, 'password' => 'correct-horse-battery'])->assertStatus(503);
+    }
+
+    public function testTheCurrentUserCheckRenewsTheSessionOrEndsIt(): void
+    {
+        config(['services.deviantart.token_sync' => true]);
+        [$user, $record] = $this->member();
+        $this->actingAs($user, 'sanctum');
+
+        $this->fakeDeviantArt(200, ['access_token' => 'new-access', 'refresh_token' => 'new-refresh', 'expires_in' => 3600]);
+        $this->getJson('/users/me')->assertOk()->assertJsonPath('user.id', $user->id);
+        $this->assertSame('new-refresh', $record->fresh()->refresh);
+
+        // The token is valid now, DeviantArt is not asked again
+        Http::swap(new \Illuminate\Http\Client\Factory());
+        Http::fake();
+        $this->getJson('/users/me')->assertOk();
+        Http::assertNothingSent();
+
+        DB::table('deviantart_users')->where('id', self::DA_ID)->update(['access_expires' => now()->subMinute()]);
+        $user->unsetRelation('daUser'); // the test reuses one user object for every request
+        $this->fakeDeviantArt(400, ['error' => 'invalid_grant']);
+        $this->getJson('/users/me')->assertUnauthorized()->assertJsonPath('deviantArtRequired', true);
+        $this->assertNull($record->fresh()->refresh);
     }
 
     public function testUsersWithoutADeviantArtLinkSignInAsBefore(): void

@@ -3,7 +3,9 @@
 namespace App\Utils;
 
 use App\Models\DeviantartUser;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -93,14 +95,31 @@ class DeviantArtTokens
      */
     public static function check(DeviantartUser $record): string
     {
-        if (!empty($record->access) && $record->access_expires !== null && $record->access_expires->isFuture()) {
+        if (self::valid($record)) {
             return self::OK;
         }
-        $result = self::refresh($record);
-        if ($result === self::REVOKED) {
-            self::signOut($record);
-        }
 
-        return $result;
+        // A refresh token works once, so parallel requests of one user (the browser sends several) must not all use it
+        try {
+            return Cache::lock('deviantart-refresh:'.$record->id, 20)->block(10, function () use ($record) {
+                $record = $record->fresh();
+                if ($record === null || self::valid($record)) {
+                    return self::OK;
+                }
+                $result = self::refresh($record);
+                if ($result === self::REVOKED) {
+                    self::signOut($record);
+                }
+
+                return $result;
+            });
+        } catch (LockTimeoutException) {
+            return self::UNAVAILABLE;
+        }
+    }
+
+    private static function valid(DeviantartUser $record): bool
+    {
+        return !empty($record->access) && $record->access_expires !== null && $record->access_expires->isFuture();
     }
 }

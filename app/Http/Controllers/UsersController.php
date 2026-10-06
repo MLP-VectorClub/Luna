@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Models\DeviantartUser;
 use App\Models\User;
+use App\Utils\DeviantArtTokens;
 use App\Utils\Core;
 use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
@@ -122,6 +123,13 @@ class UsersController extends Controller
         /** @var User $user */
         $user = $request->user();
 
+        // The DeviantArt session of a member is renewed here when it ran out (the old site did it on every request); when DeviantArt
+        // refuses it the user has been signed out everywhere and has to sign in with DeviantArt again
+        $da_user = DeviantArtTokens::enabled() ? $user->daUser : null;
+        if ($da_user !== null && DeviantArtTokens::check($da_user) === DeviantArtTokens::REVOKED) {
+            return response()->json(['message' => trans('errors.auth.deviantart_required'), 'deviantArtRequired' => true], 401);
+        }
+
         return response()->camelJson([
             'user' => [
                 'id' => $user->id,
@@ -130,7 +138,7 @@ class UsersController extends Controller
                 'avatar_url' => $user->avatar_url,
                 'avatar_provider' => $user->avatar_provider,
             ],
-            // Luna has no DeviantArt session to refresh in the background
+            // Renewing the DeviantArt session happens above before the answer, nothing is left to wait for
             'session_updating' => false,
         ]);
     }
