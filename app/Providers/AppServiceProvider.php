@@ -14,6 +14,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,6 +47,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Regenerating the OpenAPI document by hand also updates the copy in source control (not on the server, where the working tree stays clean)
+        Event::listen(CommandFinished::class, function (CommandFinished $event) {
+            if ($event->command === 'l5-swagger:generate' && $event->exitCode === 0 && !$this->app->environment('production') && !$this->app->runningUnitTests()) {
+                Artisan::call('openapi:sync');
+            }
+        });
+
         // Requests that arrive through the local nginx (the front end's /api proxy and its server side renders) carry the visitor's address in
         // X-Forwarded-For. Cloudflare's ranges are trusted by Monicahq's middleware, which merges these in. Only a process on this machine can be the
         // 127.0.0.1 hop, so the header cannot be spoofed from outside
