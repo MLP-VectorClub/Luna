@@ -38,6 +38,8 @@ class ShowManagementTest extends TestCase
             ->assertJsonPath('show.aired', true)
             ->assertJsonPath('show.canEdit', false)
             ->assertJsonPath('show.relatedAppearances.0.label', 'Twilight')
+            ->assertJsonPath('show.postedByUser.id', $show->posted_by)
+            ->assertJsonStructure(['show' => ['postedByUser' => ['id', 'name']]])
             ->assertJsonMissingPath('show.posted_by');
         $this->as(Role::Staff);
         $this->getJson("/show/{$show->id}")->assertJsonPath('show.canEdit', true);

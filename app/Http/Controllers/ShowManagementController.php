@@ -62,10 +62,11 @@ class ShowManagementController extends Controller
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"show"}, @OA\Property(property="show", allOf={
      *     @OA\Schema(ref="#/components/schemas/Show"),
-     *     @OA\Schema(type="object", required={"aired", "willAir", "canEdit", "userVote", "relatedAppearances"},
+     *     @OA\Schema(type="object", required={"aired", "willAir", "canEdit", "userVote", "relatedAppearances", "postedByUser"},
      *       @OA\Property(property="aired", type="boolean", description="Whether the show has already aired"),
      *       @OA\Property(property="willAir", type="string", format="date-time", description="When the show will have aired (air time plus its running time)"),
      *       @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit the show"),
+     *       @OA\Property(property="postedByUser", ref="#/components/schemas/PostUser", nullable=true, description="The user who created the entry (postedBy holds the ID), for the added by line"),
      *       @OA\Property(property="userVote", type="integer", minimum=1, maximum=5, nullable=true, description="The rating (1-5) the signed in visitor gave, null when they have not voted or are not signed in"),
      *       @OA\Property(property="relatedAppearances", type="array", @OA\Items(ref="#/components/schemas/PreviewAppearance"))
      *     )
@@ -82,6 +83,7 @@ class ShowManagementController extends Controller
             'aired' => $show->hasAired(),
             'willAir' => $show->willHaveAiredBy()->toIso8601String(),
             'canEdit' => $is_staff,
+            'postedByUser' => $show->poster === null ? null : ['id' => $show->poster->id, 'name' => $show->poster->name],
             'userVote' => $this->userVote($show, $request->user()),
             'relatedAppearances' => $show->appearances()->orderBy('appearances.id')->get()
                 ->filter(fn(Appearance $a) => $a->owner_id === null || $is_staff)

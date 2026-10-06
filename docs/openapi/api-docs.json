@@ -7409,7 +7409,8 @@
                                                         "willAir",
                                                         "canEdit",
                                                         "userVote",
-                                                        "relatedAppearances"
+                                                        "relatedAppearances",
+                                                        "postedByUser"
                                                     ],
                                                     "properties": {
                                                         "aired": {
@@ -7424,6 +7425,15 @@
                                                         "canEdit": {
                                                             "description": "Whether the current user may edit the show",
                                                             "type": "boolean"
+                                                        },
+                                                        "postedByUser": {
+                                                            "oneOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/PostUser"
+                                                                }
+                                                            ],
+                                                            "nullable": true,
+                                                            "description": "The user who created the entry (postedBy holds the ID), for the added by line"
                                                         },
                                                         "userVote": {
                                                             "description": "The rating (1-5) the signed in visitor gave, null when they have not voted or are not signed in",
