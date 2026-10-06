@@ -193,6 +193,39 @@ class AdminController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *   path="/notifications",
+     *   operationId="GetNotifications",
+     *   description="The signed in user's unread notifications, oldest first. A post notification carries the post and its show (null when the post is gone)",
+     *   tags={"notifications"},
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"notifications"}, @OA\Property(property="notifications", type="array",
+     *     @OA\Items(type="object", required={"id", "type", "createdAt", "post"},
+     *       @OA\Property(property="id", type="integer"),
+     *       @OA\Property(property="type", type="string", enum={"post-finished", "post-approved"}),
+     *       @OA\Property(property="createdAt", type="string", format="date-time"),
+     *       @OA\Property(property="post", type="object", nullable=true, required={"id", "show"}, @OA\Property(property="id", type="integer"), @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))
+     *     )))),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function notifications(Request $request): JsonResponse
+    {
+        $list = Notification::where('recipient_id', $request->user()->id)->whereNull('read_at')->orderBy('id')->get();
+        $posts = Post::with('show')->whereIn('id', $list->map(fn (Notification $n) => $n->data['id'] ?? 0)->all())->get()->keyBy('id');
+
+        return response()->json(['notifications' => $list->map(function (Notification $n) use ($posts) {
+            $post = $posts->get($n->data['id'] ?? 0);
+
+            return [
+                'id' => $n->id,
+                'type' => $n->type,
+                'createdAt' => $n->created_at?->toIso8601String(),
+                'post' => $post === null ? null : ['id' => $post->id, 'show' => ShowController::mapShowListItem($post->show)],
+            ];
+        })->values()]);
+    }
+
+    /**
      * @OA\Post(
      *   path="/notifications/{id}/read",
      *   operationId="PostNotificationsIdRead",

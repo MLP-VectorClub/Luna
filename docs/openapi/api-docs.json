@@ -401,6 +401,86 @@
                 }
             }
         },
+        "/notifications": {
+            "get": {
+                "tags": [
+                    "notifications"
+                ],
+                "description": "The signed in user's unread notifications, oldest first. A post notification carries the post and its show (null when the post is gone)",
+                "operationId": "GetNotifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "notifications"
+                                    ],
+                                    "properties": {
+                                        "notifications": {
+                                            "type": "array",
+                                            "items": {
+                                                "required": [
+                                                    "id",
+                                                    "type",
+                                                    "createdAt",
+                                                    "post"
+                                                ],
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "post-finished",
+                                                            "post-approved"
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "post": {
+                                                        "required": [
+                                                            "id",
+                                                            "show"
+                                                        ],
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "show": {
+                                                                "$ref": "#/components/schemas/ShowListItem"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/notifications/{id}/read": {
             "post": {
                 "tags": [

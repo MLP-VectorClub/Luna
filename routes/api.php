@@ -212,6 +212,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
     });
     // The old site published this as a static file that other tools read, so it is public (and kept for an hour, building it takes a while)
     Route::get('color-guide/export', [AdminController::class, 'export'])->middleware('cacheResponse:3600');
+    Route::middleware('auth:sanctum')->get('notifications', [AdminController::class, 'notifications']);
     Route::middleware('auth:sanctum')->post('notifications/{id}/read', [AdminController::class, 'readNotification'])->whereNumber('id');
 
     Route::prefix('tags')->group(function () {

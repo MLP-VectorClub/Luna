@@ -7,6 +7,8 @@ use App\Enums\Role;
 use App\Models\Appearance;
 use App\Models\Log;
 use App\Models\Notification;
+use App\Models\Show;
+use App\Models\Post;
 use App\Models\User;
 use Elasticsearch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,6 +77,27 @@ class AdminTest extends TestCase
         $this->getJson("/admin/logs/{$with->id}")->assertOk()->assertJsonPath('data.target', 5)->assertJsonPath('details', []);
         $this->getJson("/admin/logs/{$without->id}")->assertStatus(409)->assertJsonPath('unclickable', true);
         $this->getJson('/admin/logs/987654')->assertNotFound();
+    }
+
+    public function testListingUnreadNotifications(): void
+    {
+        $user = $this->as(Role::User);
+        $other = User::factory()->create();
+        $show = Show::create(['type' => 'episode', 'season' => 1, 'episode' => 1, 'title' => 'Friendship is Magic', 'posted_by' => $other->id, 'airs' => '2010-10-10 15:00', 'no' => 1]);
+        $post = Post::create(['show_id' => $show->id, 'requested_by' => $user->id, 'type' => 'chr', 'label' => 'Twilight', 'preview' => 'https://example.com/a.png', 'fullsize' => 'https://example.com/a.png']);
+        $unread = Notification::send($user->id, 'post-finished', ['id' => $post->id]);
+        $gone = Notification::send($user->id, 'post-approved', ['id' => 987654]);
+        Notification::create(['recipient_id' => $user->id, 'type' => 'post-approved', 'data' => ['id' => $post->id], 'read_at' => now()]);
+        Notification::send($other->id, 'post-finished', ['id' => $post->id]);
+
+        $this->getJson('/notifications')->assertOk()
+            ->assertJsonCount(2, 'notifications')
+            ->assertJsonPath('notifications.0.id', $unread->id)
+            ->assertJsonPath('notifications.0.type', 'post-finished')
+            ->assertJsonPath('notifications.0.post.id', $post->id)
+            ->assertJsonPath('notifications.0.post.show.id', $show->id)
+            ->assertJsonPath('notifications.1.id', $gone->id)
+            ->assertJsonPath('notifications.1.post', null);
     }
 
     public function testMarkingNotificationsAsRead(): void
