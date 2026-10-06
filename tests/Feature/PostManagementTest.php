@@ -148,6 +148,28 @@ class PostManagementTest extends TestCase
         $this->assertDatabaseHas('logs', ['entry_type' => 'res_overtake']);
     }
 
+    public function testDevelopersCanReserveForAnotherUser(): void
+    {
+        $member = User::factory()->create(['role' => Role::Member]);
+        (new DeviantartUser(['name' => 'TargetUser', 'avatar_url' => 'https://example.com/a.png']))->forceFill(['id' => 'c9a2b1d0-0000-4000-8000-0000000000aa', 'user_id' => $member->id])->save();
+        $plain = User::factory()->create(['role' => Role::User]);
+        (new DeviantartUser(['name' => 'PlainUser', 'avatar_url' => 'https://example.com/b.png']))->forceFill(['id' => 'c9a2b1d0-0000-4000-8000-0000000000ab', 'user_id' => $plain->id])->save();
+        $post = $this->request(User::factory()->create(['role' => Role::User]));
+
+        // Only developers get to use it, for everybody else it is ignored
+        $this->as(Role::Staff);
+        $this->postJson("/posts/{$post->id}/reservation", ['as' => 'TargetUser'])->assertOk()->assertJsonPath('post.reservedBy.id', fn ($id) => $id !== $member->id);
+        Post::whereKey($post->id)->update(['reserved_by' => null, 'reserved_at' => null]);
+
+        $this->as(Role::Developer);
+        $this->postJson("/posts/{$post->id}/reservation", ['as' => 'Nobody At All'])->assertJsonValidationErrors('as');
+        $this->postJson("/posts/{$post->id}/reservation", ['as' => 'PlainUser'])->assertStatus(409)->assertJsonPath('retry', true);
+        $this->assertNull($post->fresh()->reserved_by);
+        $this->postJson("/posts/{$post->id}/reservation", ['as' => 'PlainUser', 'screwit' => 1])->assertOk()->assertJsonPath('post.reservedBy.id', $plain->id);
+        Post::whereKey($post->id)->update(['reserved_by' => null, 'reserved_at' => null]);
+        $this->postJson("/posts/{$post->id}/reservation", ['as' => 'TargetUser'])->assertOk()->assertJsonPath('post.reservedBy.id', $member->id);
+    }
+
     public function testReservationLimitAndPermissionPreference(): void
     {
         $member = $this->as(Role::Member);

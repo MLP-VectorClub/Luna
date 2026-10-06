@@ -6149,7 +6149,7 @@
                 "tags": [
                     "posts"
                 ],
-                "description": "Reserve a request, or take over one that has been reserved for over 3 weeks. Requires membership",
+                "description": "Reserve a request, or take over one that has been reserved for over 3 weeks. Requires membership. Developers can reserve it for another user with `as`",
                 "operationId": "PostPostsIdReservation",
                 "parameters": [
                     {
@@ -6161,6 +6161,26 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "as": {
+                                        "description": "Developers only: the DeviantArt name of the user to reserve the request for",
+                                        "type": "string"
+                                    },
+                                    "screwit": {
+                                        "description": "Developers only: reserve for a user without the permission to reserve anyway (the 409 with `retry` asks for it)",
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Reserved",

@@ -205,9 +205,13 @@ class PostManagementController extends Controller
      * @OA\Post(
      *   path="/posts/{id}/reservation",
      *   operationId="PostPostsIdReservation",
-     *   description="Reserve a request, or take over one that has been reserved for over 3 weeks. Requires membership",
+     *   description="Reserve a request, or take over one that has been reserved for over 3 weeks. Requires membership. Developers can reserve it for another user with `as`",
      *   tags={"posts"},
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\RequestBody(required=false, @OA\JsonContent(type="object",
+     *     @OA\Property(property="as", type="string", description="Developers only: the DeviantArt name of the user to reserve the request for"),
+     *     @OA\Property(property="screwit", type="boolean", description="Developers only: reserve for a user without the permission to reserve anyway (the 409 with `retry` asks for it)")
+     *   )),
      *   @OA\Response(response="200", description="Reserved", @OA\JsonContent(type="object", required={"post"}, @OA\Property(property="post", ref="#/components/schemas/PostItem"))),
      *   @OA\Response(response="403", description="Not allowed to reserve", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="409", description="Already reserved, broken, over the reservation limit, or not a request", @OA\JsonContent(type="object", required={"message"},
