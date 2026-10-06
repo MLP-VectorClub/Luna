@@ -44,7 +44,7 @@ class PostsController extends Controller
         $viewer = $request->user();
         $requests = $valid['kind'] === 'request';
 
-        $posts = Post::with(['requester', 'reserver'])->where('show_id', $show->id)
+        $posts = Post::with(['requester', 'reserver', 'approval.user'])->where('show_id', $show->id)
             ->when($requests, fn($query) => $query->whereNotNull('requested_by'), fn($query) => $query->whereNull('requested_by'))
             ->when(!($viewer?->isStaff() ?? false), fn($query) => $query->where('broken', false))
             ->orderByRaw('finished_at asc nulls last')

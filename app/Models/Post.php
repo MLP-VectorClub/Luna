@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\UserPrefKey;
+use App\Utils\UserPrefHelper;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use OpenApi\Annotations as OA;
 
 class Post extends Model
@@ -47,6 +50,12 @@ class Post extends Model
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    /** Who approved the post and when (the first entry, like the old site) */
+    public function approval(): HasOne
+    {
+        return $this->hasOne(LockedPost::class)->oldestOfMany();
     }
 
     public function reserver(): BelongsTo
@@ -103,7 +112,7 @@ class Post extends Model
      *   schema="PostItem",
      *   description="A request or reservation on a show's page, as data",
      *   type="object",
-     *   required={"id", "kind", "showId", "label", "previewUrl", "fullsizeUrl", "postedAt", "postedBy", "reservedBy", "reservedAt", "finishedAt", "deviationId", "approved", "broken", "overdue", "canEdit"},
+     *   required={"id", "kind", "showId", "label", "previewUrl", "fullsizeUrl", "postedAt", "postedBy", "reservedBy", "reservedAt", "finishedAt", "deviationId", "approved", "approvedAt", "approvedBy", "broken", "overdue", "canEdit"},
      *   additionalProperties=false,
      *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
      *   @OA\Property(property="kind", type="string", enum={"request", "reservation"}),
@@ -114,14 +123,28 @@ class Post extends Model
      *   @OA\Property(property="fullsizeUrl", type="string"),
      *   @OA\Property(property="postedAt", type="string", format="date-time"),
      *   @OA\Property(property="postedBy", ref="#/components/schemas/PostUser", nullable=true),
-     *   @OA\Property(property="reservedBy", ref="#/components/schemas/PostUser", nullable=true),
+     *   @OA\Property(property="reservedBy", ref="#/components/schemas/PostReserver", nullable=true),
      *   @OA\Property(property="reservedAt", type="string", format="date-time", nullable=true),
      *   @OA\Property(property="finishedAt", type="string", format="date-time", nullable=true, description="Set once the post has a deviation"),
      *   @OA\Property(property="deviationId", type="string", nullable=true, description="ID of the finished deviation (https://fav.me/{id})"),
      *   @OA\Property(property="approved", type="boolean", description="Whether the finished post has been accepted to the club gallery"),
+     *   @OA\Property(property="approvedAt", type="string", format="date-time", nullable=true, description="When the post was approved, null when it is not or the date was not kept"),
+     *   @OA\Property(property="approvedBy", ref="#/components/schemas/PostUser", nullable=true, description="Who approved the post, only given to staff"),
      *   @OA\Property(property="broken", type="boolean", description="Whether the image was deemed unavailable; only staff see broken posts"),
      *   @OA\Property(property="overdue", type="boolean", description="Reserved and unfinished for over 3 weeks, so others may reserve it"),
      *   @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit the post")
+     * )
+     * @OA\Schema(
+     *   schema="PostReserver",
+     *   description="The user who reserved a post, with what is needed to show them next to it",
+     *   type="object",
+     *   required={"id", "name", "avatarUrl", "avatarProvider", "vectorApp"},
+     *   additionalProperties=false,
+     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
+     *   @OA\Property(property="name", type="string"),
+     *   @OA\Property(property="avatarUrl", type="string", nullable=true),
+     *   @OA\Property(property="avatarProvider", ref="#/components/schemas/AvatarProvider"),
+     *   @OA\Property(property="vectorApp", type="string", nullable=true, description="The vector program the user chose to show publicly")
      * )
      * @OA\Schema(
      *   schema="PostUser",
@@ -146,11 +169,17 @@ class Post extends Model
             'fullsizeUrl' => $this->fullsize,
             'postedAt' => $iso($this->postedAt()),
             'postedBy' => $user($this->poster()),
-            'reservedBy' => $user($this->reserver),
+            'reservedBy' => $this->reserver === null ? null : $user($this->reserver) + [
+                'avatarUrl' => $this->reserver->avatar_url,
+                'avatarProvider' => $this->reserver->avatar_provider,
+                'vectorApp' => self::vectorApp($this->reserver),
+            ],
             'reservedAt' => $iso($this->reserved_at),
             'finishedAt' => $iso($this->finished_at),
             'deviationId' => $this->deviation_id,
             'approved' => $this->lock,
+            'approvedAt' => $this->lock ? $iso($this->approval?->created_at) : null,
+            'approvedBy' => $this->lock && ($viewer?->isStaff() ?? false) ? $user($this->approval?->user) : null,
             'broken' => $this->broken,
             'overdue' => $this->isOverdue(),
             'canEdit' => $this->canBeEditedBy($viewer),
@@ -160,5 +189,18 @@ class Post extends Model
         }
 
         return $result;
+    }
+
+    /** @var array<int, ?string> The public vector program of every user looked at, a list of posts repeats the same few reservers */
+    private static array $vectorApps = [];
+
+    private static function vectorApp(User $user): ?string
+    {
+        if (!array_key_exists($user->id, self::$vectorApps)) {
+            $app = UserPrefHelper::get($user, UserPrefKey::Personal_VectorApp);
+            self::$vectorApps[$user->id] = $app instanceof \BackedEnum ? $app->value : $app;
+        }
+
+        return self::$vectorApps[$user->id];
     }
 }
