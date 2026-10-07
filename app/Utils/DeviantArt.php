@@ -5,6 +5,7 @@ namespace App\Utils;
 use App\Exceptions\ImageProviderException;
 use App\Jobs\RefreshDeviation;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -18,6 +19,27 @@ class DeviantArt
 {
     private const OEMBED_URL = 'https://backend.deviantart.com/oembed';
     private const CLUB_GALLERY_MARKER = 'gmi-groupname="MLP-VectorClub">';
+
+    /** A request to DeviantArt: through the configured proxy ({@see config('services.deviantart.proxy')}), when there is one */
+    public static function http(): PendingRequest
+    {
+        $proxy = config('services.deviantart.proxy');
+
+        return Http::timeout(10)->when($proxy, fn (PendingRequest $request) => $request->withOptions(['proxy' => $proxy]));
+    }
+
+    /** The client for any address: proxied when it is on one of DeviantArt's own hosts, direct for other image hosts */
+    public static function httpFor(string $url): PendingRequest
+    {
+        return self::isDeviantArtHost($url) ? self::http() : Http::timeout(10);
+    }
+
+    private static function isDeviantArtHost(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        return (bool) preg_match('~(^|\.)(deviantart\.(com|net)|wixmp\.com|sta\.sh|fav\.me)$~', $host);
+    }
 
     public static function trimOutgoingGateFromUrl(string $url): string
     {
@@ -162,8 +184,7 @@ class DeviantArt
             return null;
         }
         try {
-            $proxy = config('services.deviantart.oembed_proxy');
-            $response = Http::timeout(10)->when($proxy, fn ($request) => $request->withOptions(['proxy' => $proxy]))->get(self::OEMBED_URL, ['url' => $url]);
+            $response = self::http()->get(self::OEMBED_URL, ['url' => $url]);
         } catch (ConnectionException $e) {
             throw new ImageProviderException('Image could not be retrieved; '.$e->getMessage());
         }
@@ -212,7 +233,7 @@ class DeviantArt
         }
 
         try {
-            $response = Http::timeout(10)->withoutRedirecting()->get("http://fav.me/$id");
+            $response = self::http()->withoutRedirecting()->get("http://fav.me/$id");
         } catch (ConnectionException $e) {
             throw new ImageProviderException('Image could not be retrieved; '.$e->getMessage());
         }
@@ -291,7 +312,7 @@ class DeviantArt
             return true;
         }
         try {
-            $response = Http::timeout(10)->head($url);
+            $response = self::httpFor($url)->head($url);
         } catch (ConnectionException $e) {
             $response_code = 0;
 
@@ -316,7 +337,7 @@ class DeviantArt
 
         $numeric_id = intval(mb_substr($deviation_id, 1), 36);
         try {
-            $response = Http::timeout(10)->get('https://www.deviantart.com/global/difi/', ['c' => ["\"DeviationView\",\"getAllGroups\",[\"$numeric_id\"]"], 't' => 'json']);
+            $response = self::http()->get('https://www.deviantart.com/global/difi/', ['c' => ["\"DeviationView\",\"getAllGroups\",[\"$numeric_id\"]"], 't' => 'json']);
         } catch (ConnectionException $e) {
             return 1;
         }

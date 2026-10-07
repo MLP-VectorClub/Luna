@@ -37,8 +37,9 @@ return [
         'client_secret' => env('DEVIANTART_CLIENT_SECRET'),
         // Refresh DeviantArt tokens in the background and require a DeviantArt sign-in once they stop working, see App\Utils\DeviantArtTokens
         'token_sync' => env('DEVIANTART_TOKEN_SYNC', false),
-        // Proxy for the public oEmbed requests (same variable as Winterchilla's), e.g. socks5h://127.0.0.1:40000 for Cloudflare WARP; empty for none
-        'oembed_proxy' => env('OEMBED_PROXY_URL') ?: null,
+        // Proxy for the public requests to DeviantArt (short link redirects, oEmbed, club gallery check, their image hosts), e.g. socks5h://127.0.0.1:40000 for
+        // Cloudflare WARP; empty for none. OEMBED_PROXY_URL is Winterchilla's name for it. Sign-in and token requests do not use it
+        'proxy' => env('DEVIANTART_PROXY_URL') ?: env('OEMBED_PROXY_URL') ?: null,
         'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord->value)
     ],
 

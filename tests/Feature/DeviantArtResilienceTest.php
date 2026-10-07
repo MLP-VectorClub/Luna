@@ -145,4 +145,16 @@ class DeviantArtResilienceTest extends TestCase
         $this->assertOembedRequests(2);
         $this->assertCount(1, Http::recorded(fn ($request) => $request->url() === 'http://fav.me/dres001'));
     }
+
+    public function testDeviantArtHostsGoThroughTheProxyAndOthersDoNot(): void
+    {
+        config(['services.deviantart.proxy' => 'socks5h://127.0.0.1:40000']);
+
+        $this->assertSame('socks5h://127.0.0.1:40000', DeviantArt::httpFor('https://images-wixmp-abc.wixmp.com/f/a.png')->getOptions()['proxy']);
+        $this->assertSame('socks5h://127.0.0.1:40000', DeviantArt::http()->getOptions()['proxy']);
+        $this->assertArrayNotHasKey('proxy', DeviantArt::httpFor('https://derpicdn.net/img/a.png')->getOptions());
+
+        config(['services.deviantart.proxy' => null]);
+        $this->assertArrayNotHasKey('proxy', DeviantArt::http()->getOptions());
+    }
 }

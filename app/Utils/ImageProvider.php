@@ -167,7 +167,7 @@ class ImageProvider
         }
 
         try {
-            $type = Http::timeout(10)->head($url)->header('Content-Type');
+            $type = DeviantArt::httpFor($url)->head($url)->header('Content-Type');
         } catch (ConnectionException $e) {
             throw new ImageProviderException("Resource URL ($url) could not be reached, please try again.");
         }
