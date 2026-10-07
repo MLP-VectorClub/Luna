@@ -114,3 +114,6 @@ Deploys reload every active php-fpm service (`deploy_restart` in `deploy.conf`),
 - Opcache revalidates every 180s locally, after deleting `bootstrap/cache/packages.php` or changing providers, php-fpm can keep serving the old one for a few minutes
 - `vendor/` must be owned by the deploy user, not root (a stray `sudo composer` breaks installs)
 - Regenerate docs with `php artisan l5-swagger:generate`, Celestia builds its API types from `/generated/api-docs.json`
+
+### Double size sprites are pixel doubled
+The `2x` sprite conversion (`size=600`, the file "Open image in new tab" shows, like Winterchilla's 600 px sprite) is an exact nearest neighbor doubling: medialibrary makes it with smooth interpolation, `App\Listeners\PixelateDoubleSizeSprite` (on `ConversionHasBeenCompletedEvent`) replaces the file with `App\Utils\PixelUpscale::double`. Existing sprites need `php artisan media-library:regenerate --only=2x --force` once after deploying (production, and the data cutover's imported sprites). Tests: `PixelUpscaleTest`, `testSpriteUploadAndRemoval`.

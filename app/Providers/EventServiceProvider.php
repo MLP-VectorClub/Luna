@@ -19,6 +19,9 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        \Spatie\MediaLibrary\Conversions\Events\ConversionHasBeenCompletedEvent::class => [
+            \App\Listeners\PixelateDoubleSizeSprite::class,
+        ],
         SocialiteWasCalled::class => [
             'SocialiteProviders\\Deviantart\\DeviantartExtendSocialite@handle',
             'SocialiteProviders\\Discord\\DiscordExtendSocialite@handle',

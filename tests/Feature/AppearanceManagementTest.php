@@ -188,6 +188,26 @@ class AppearanceManagementTest extends TestCase
         $this->postJson("/appearances/{$appearance->id}/sprite", ['sprite' => $png(300, 300)])->assertOk()->assertJsonStructure(['path']);
         $this->assertTrue($appearance->fresh()->hasSprite());
 
+        // The double size file is an exact pixel doubling of the upload, not a smoothed enlargement
+        $media = $appearance->fresh()->spriteFile();
+        $double = $media->getPath(Appearance::DOUBLE_SIZE_CONVERSION);
+        $this->assertFileExists($double);
+        $this->assertSame([600, 600], array_slice(getimagesize($double), 0, 2));
+        $this->deleteJson("/appearances/{$appearance->id}/sprite")->assertOk();
+
+        // A pattern that a smooth enlargement would blur: alternating black and white columns stay black and white
+        $stripes = imagecreatetruecolor(300, 300);
+        imagefilledrectangle($stripes, 0, 0, 299, 299, imagecolorallocate($stripes, 255, 255, 255));
+        for ($x = 0; $x < 300; $x += 2) {
+            imageline($stripes, $x, 0, $x, 299, imagecolorallocate($stripes, 0, 0, 0));
+        }
+        ob_start();
+        imagepng($stripes);
+        $content = ob_get_clean();
+        $this->postJson("/appearances/{$appearance->id}/sprite", ['sprite' => UploadedFile::fake()->createWithContent('stripes.png', $content)])->assertOk();
+        $out = imagecreatefrompng($appearance->fresh()->spriteFile()->getPath(Appearance::DOUBLE_SIZE_CONVERSION));
+        $this->assertSame([0, 0, 255, 255, 0, 0], array_map(fn ($x) => imagecolorat($out, $x, 10) & 0xFF, [0, 1, 2, 3, 4, 5]));
+
         $this->deleteJson("/appearances/{$appearance->id}/sprite")->assertOk();
         $this->deleteJson("/appearances/{$appearance->id}/sprite")->assertNotFound();
     }
