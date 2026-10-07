@@ -25,6 +25,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('cloudflare:reload')->daily();
+        // Fills the throughput and wait time graphs of the Horizon dashboard
+        $schedule->command('horizon:snapshot')->everyFiveMinutes();
         $schedule->command('deviantart:warm-deviations')->everyTenMinutes()->withoutOverlapping();
         // Keeps the DeviantArt tokens of members alive (does nothing unless DEVIANTART_TOKEN_SYNC is on)
         $schedule->command('deviantart:refresh-tokens')->daily();

@@ -8,8 +8,8 @@
 #
 # Run as www-data, like the web app, so what the commands write under storage/ stays writable for it.
 #
-# Not carried over: /etc/cron.hourly/luna-worker.sh ran `queue:work --stop-when-empty` hourly as root. Production
-# uses QUEUE_CONNECTION=sync, so there was no queue for it to work and it only risked root-owned files.
+# Not carried over: /etc/cron.hourly/luna-worker.sh ran `queue:work --stop-when-empty` hourly as root; the queue is
+# worked by luna-horizon.service now (setup/luna-horizon.service), and horizon:snapshot (Horizon's metrics) runs from here.
 MAILTO=""
 PATH=/usr/local/bin:/usr/bin:/bin
 
