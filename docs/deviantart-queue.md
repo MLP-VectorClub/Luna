@@ -11,6 +11,6 @@ a miss queues `App\Jobs\RefreshDeviation` and answers `202 {pending, retryAfter}
 - **Details older than a week** (`deviation-fresh:*`) are served as they are and refreshed in the background.
 - **Warming:** `deviantart:warm-deviations` (scheduled every ten minutes) queues up to 40 finished posts whose details are missing or old, so the cache fills at a
   steady pace instead of when visitors scroll.
-- **Needs a worker** when `QUEUE_CONNECTION` is not `sync`: `php artisan queue:work redis --queue=deviantart,default` (supervisor/systemd). With `sync` (the current
+- **Needs a worker** when `QUEUE_CONNECTION` is not `sync`: `php artisan queue:work redis --queue=deviantart,default` or, with Horizon (installed, dashboard at `/horizon` for developers only, `php artisan horizon` under supervisor/systemd), `php artisan horizon` (supervisor/systemd). With `sync` (the current
   production setting) the job runs inside the request: pauses and the negative caches still apply, stale details are served without refreshing, and a fetch that fails
   answers 502. The scheduler (`schedule:run` every minute) must run for the warming.
