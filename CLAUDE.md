@@ -117,3 +117,12 @@ Deploys reload every active php-fpm service (`deploy_restart` in `deploy.conf`),
 
 ### Double size sprites are pixel doubled
 The `2x` sprite conversion (`size=600`, the file "Open image in new tab" shows, like Winterchilla's 600 px sprite) is an exact nearest neighbor doubling: medialibrary makes it with smooth interpolation, `App\Listeners\PixelateDoubleSizeSprite` (on `ConversionHasBeenCompletedEvent`) replaces the file with `App\Utils\PixelUpscale::double`. Existing sprites need `sudo -u www-data php artisan sprites:pixelate-2x` once after deploying (production, and the data cutover's imported sprites; `--dry-run` first reports files the user cannot write). Do not use `media-library:regenerate` for it: it chmods every file it writes, which only the owner of a file may do, so as www-data it fails with "Disk named `public` cannot be accessed" on the files the deploy user owns. Tests: `PixelUpscaleTest`, `testSpriteUploadAndRemoval`.
+
+### Websocket notifications (Muffins)
+`App\Utils\WebsocketServer` links Luna to the websocket server that Winterchilla also used (the `Muffins` project). `WS_SERVER_HOST` (public address, shown as `wsServerHost`
+of `GET /config`, null when unset), `WS_SERVER_URL` (how Luna reaches it from the server, e.g. `http://127.0.0.1:3672`) and `WS_SERVER_KEY` (the same secret as in Muffins'
+`.env`) enable it; without them nothing changes (notifications are still polled by Celestia every minute). Browsers get a one time token from `POST /users/me/socket-token` (kept
+two minutes in the cache, spent once); Muffins checks it with `POST /internal/websocket/validate` (bearer `WS_SERVER_KEY`, not in the OpenAPI document). `Notification::send` and
+`POST /notifications/{id}/read` tell Muffins (`POST {WS_SERVER_URL}/notify`, 2 second timeout, a down server is only logged) to push the user's count, so open tabs fetch the list again.
+Tests: `WebsocketServerTest`.
+
