@@ -41,6 +41,9 @@ class EventEntriesTest extends TestCase
     private function fakeDeviations(): void
     {
         Http::fake(function ($request) {
+            if (preg_match('~^http://fav\.me/(\w+)$~', $request->url(), $match)) {
+                return Http::response('', 301, ['Location' => "https://www.deviantart.com/someone/art/$match[1]"]);
+            }
             if (str_contains($request->url(), 'backend.deviantart.com/oembed')) {
                 parse_str(parse_url($request->url(), PHP_URL_QUERY), $query);
                 $id = basename($query['url']);

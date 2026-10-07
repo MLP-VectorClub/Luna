@@ -23,6 +23,11 @@ class DeviantArtResilienceTest extends TestCase
         RateLimiter::clear('deviantart-oembed');
     }
 
+    private function assertOembedRequests(int $expected): void
+    {
+        $this->assertCount($expected, Http::recorded(fn ($request) => str_contains($request->url(), 'backend.deviantart.com/oembed')));
+    }
+
     private function oembed(): array
     {
         return ['type' => 'photo', 'url' => 'https://img.example/f.png', 'thumbnail_url' => 'http://img.example/t.png', 'title' => 'Title', 'author_name' => 'Author'];
@@ -30,12 +35,12 @@ class DeviantArtResilienceTest extends TestCase
 
     public function testASyncQueueFetchesOnceAndCaches(): void
     {
-        Http::fake(['backend.deviantart.com/*' => Http::response($this->oembed())]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response($this->oembed())]);
 
         $image = DeviantArt::lookup('dabc001');
         $this->assertSame('Title', $image->title);
         DeviantArt::lookup('dabc001');
-        Http::assertSentCount(1);
+        $this->assertOembedRequests(1);
     }
 
     public function testAnAsyncQueueAnswersPendingAndTheJobFillsTheCache(): void
@@ -46,14 +51,14 @@ class DeviantArtResilienceTest extends TestCase
         $this->assertSame(DeviantArt::PENDING, DeviantArt::lookup('dabc002'));
         Bus::assertDispatched(RefreshDeviation::class, fn (RefreshDeviation $job) => $job->id === 'dabc002');
 
-        Http::fake(['backend.deviantart.com/*' => Http::response($this->oembed())]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response($this->oembed())]);
         (new RefreshDeviation('dabc002'))->handle();
         $this->assertSame('Title', DeviantArt::lookup('dabc002')->title);
     }
 
     public function testRepeatedDenialsPauseAllRequestsToDeviantArt(): void
     {
-        Http::fake(['backend.deviantart.com/*' => Http::response('', 403)]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response('', 403)]);
 
         foreach (['d1', 'd2', 'd3'] as $id) {
             try {
@@ -63,7 +68,7 @@ class DeviantArtResilienceTest extends TestCase
             }
         }
         $this->assertGreaterThan(0, DeviantArt::blockedFor());
-        Http::assertSentCount(3);
+        $this->assertOembedRequests(3);
 
         // Neither new submissions nor the denied ones reach DeviantArt while paused
         foreach (['d4', 'd1'] as $id) {
@@ -72,12 +77,12 @@ class DeviantArtResilienceTest extends TestCase
             } catch (ImageProviderException) {
             }
         }
-        Http::assertSentCount(3);
+        $this->assertOembedRequests(3);
     }
 
     public function testASingleDeniedSubmissionIsNotAskedAgainRightAway(): void
     {
-        Http::fake(['backend.deviantart.com/*' => Http::response('', 403)]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response('', 403)]);
 
         for ($i = 0; $i < 3; $i++) {
             try {
@@ -85,13 +90,13 @@ class DeviantArtResilienceTest extends TestCase
             } catch (ImageProviderException) {
             }
         }
-        Http::assertSentCount(1);
+        $this->assertOembedRequests(1);
         $this->assertSame(0, DeviantArt::blockedFor());
     }
 
     public function testRateLimitingHonoursRetryAfter(): void
     {
-        Http::fake(['backend.deviantart.com/*' => Http::response('', 429, ['Retry-After' => '900'])]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response('', 429, ['Retry-After' => '900'])]);
         try {
             DeviantArt::submission('dlim001');
         } catch (ImageProviderException) {
@@ -102,24 +107,42 @@ class DeviantArtResilienceTest extends TestCase
 
     public function testMissingSubmissionsAreRemembered(): void
     {
-        Http::fake(['backend.deviantart.com/*' => Http::response('', 404)]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response('', 404)]);
         $this->assertNull(DeviantArt::submission('dgone01'));
         $this->assertNull(DeviantArt::submission('dgone01'));
-        Http::assertSentCount(1);
+        $this->assertOembedRequests(1);
     }
 
     public function testTheJobWaitsOutAPauseAndKeepsStaleDetailsWhenARefreshFails(): void
     {
         Cache::put('deviation:fav.me:dold001', ['provider' => 'fav.me', 'id' => 'dold001', 'preview' => 'https://img.example/t.png', 'fullsize' => null, 'title' => 'Old', 'author' => null, 'type' => null], 60);
-        Http::fake(['backend.deviantart.com/*' => Http::response('', 500)]);
+        Http::fake(['fav.me/*' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/a/art/Title-123']), 'backend.deviantart.com/*' => Http::response('', 500)]);
 
         $job = new RefreshDeviation('dold001');
         $job->handle();
-        Http::assertSentCount(1);
+        $this->assertOembedRequests(1);
         $this->assertSame('Old', DeviantArt::cachedSubmission('dold001')->title);
 
         DeviantArt::block();
         $job->handle();
-        Http::assertSentCount(1);
+        $this->assertOembedRequests(1);
+    }
+
+    public function testFavMeLinksAreResolvedOverHttpBeforeAskingOembed(): void
+    {
+        Http::fake([
+            'http://fav.me/dres001' => Http::response('', 301, ['Location' => 'https://www.deviantart.com/someone/art/Some-Title-123']),
+            'backend.deviantart.com/*' => Http::response($this->oembed()),
+        ]);
+
+        $this->assertSame('Title', DeviantArt::submission('dres001')->title);
+        Http::assertSent(fn ($request) => $request->url() === 'http://fav.me/dres001');
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'backend.deviantart.com/oembed') && $request['url'] === 'https://www.deviantart.com/someone/art/Some-Title-123');
+
+        // The resolved address is remembered
+        Cache::forget('deviation:fav.me:dres001');
+        DeviantArt::submission('dres001', 'fav.me', true);
+        $this->assertOembedRequests(2);
+        $this->assertCount(1, Http::recorded(fn ($request) => $request->url() === 'http://fav.me/dres001'));
     }
 }

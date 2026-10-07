@@ -58,6 +58,9 @@ class PostManagementTest extends TestCase
             if (str_contains($url, 'cloudflare.com')) {
                 return Http::response('');
             }
+            if (preg_match('~^http://fav\.me/(\w+)$~', $url, $match)) {
+                return Http::response('', 301, ['Location' => "https://www.deviantart.com/someone/art/$match[1]"]);
+            }
             if (str_contains($url, 'backend.deviantart.com/oembed')) {
                 parse_str(parse_url($url, PHP_URL_QUERY), $query);
                 $id = basename($query['url']);

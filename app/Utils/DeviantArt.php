@@ -153,7 +153,14 @@ class DeviantArt
             throw new ImageProviderException('Image could not be retrieved; DeviantArt is busy, try again later');
         }
 
-        $url = $provider === 'sta.sh' ? "https://sta.sh/$id" : "https://fav.me/$id";
+        // oEmbed does not accept fav.me short links (it answers 404 "not a deviation URL"), they are resolved to the full address first, and only
+        // http://fav.me redirects at all, https://fav.me answers with nothing
+        $url = $provider === 'sta.sh' ? "http://sta.sh/$id" : self::resolveFavMe($id, $provider);
+        if ($url === null) {
+            Cache::put("deviation-missing:$provider:$id", true, now()->addDay());
+
+            return null;
+        }
         try {
             $proxy = config('services.deviantart.oembed_proxy');
             $response = Http::timeout(10)->when($proxy, fn ($request) => $request->withOptions(['proxy' => $proxy]))->get(self::OEMBED_URL, ['url' => $url]);
@@ -166,18 +173,7 @@ class DeviantArt
 
             return null;
         }
-        if ($response->status() === 429) {
-            self::block((int) $response->header('Retry-After'));
-            throw new ImageProviderException('Image could not be retrieved; DeviantArt asked us to slow down');
-        }
-        if ($response->status() === 403) {
-            Cache::put("deviation-failed:$provider:$id", true, now()->addMinutes(30));
-            self::countDenial();
-            throw new ImageProviderException('Got access denied while loading image');
-        }
-        if ($response->serverError()) {
-            self::countDenial();
-        }
+        self::checkRefusal($response, $provider, $id);
         if (!$response->successful() || empty($response->json())) {
             throw new ImageProviderException('Image could not be retrieved; the server answered '.$response->status());
         }
@@ -201,6 +197,58 @@ class DeviantArt
         Cache::forget(self::BLOCK_LEVEL_KEY);
 
         return $image;
+    }
+
+    /**
+     * The full address a fav.me short link leads to (kept for a month, it does not change), null when the link leads nowhere
+     *
+     * @throws ImageProviderException
+     */
+    private static function resolveFavMe(string $id, string $provider): ?string
+    {
+        $cache_key = "deviation-url:$id";
+        if (($cached = Cache::get($cache_key)) !== null) {
+            return $cached;
+        }
+
+        try {
+            $response = Http::timeout(10)->withoutRedirecting()->get("http://fav.me/$id");
+        } catch (ConnectionException $e) {
+            throw new ImageProviderException('Image could not be retrieved; '.$e->getMessage());
+        }
+        $location = $response->header('Location');
+        if ($response->redirect() && $location !== '') {
+            Cache::put($cache_key, $location, now()->addDays(30));
+
+            return $location;
+        }
+        self::checkRefusal($response, $provider, $id);
+        if (!$response->successful() && $response->status() !== 404) {
+            throw new ImageProviderException('Image could not be retrieved; the server answered '.$response->status());
+        }
+
+        return null;
+    }
+
+    /**
+     * Turns the answers that mean DeviantArt is refusing us into pauses and exceptions
+     *
+     * @throws ImageProviderException
+     */
+    private static function checkRefusal(\Illuminate\Http\Client\Response $response, string $provider, string $id): void
+    {
+        if ($response->status() === 429) {
+            self::block((int) $response->header('Retry-After'));
+            throw new ImageProviderException('Image could not be retrieved; DeviantArt asked us to slow down');
+        }
+        if ($response->status() === 403) {
+            Cache::put("deviation-failed:$provider:$id", true, now()->addMinutes(30));
+            self::countDenial();
+            throw new ImageProviderException('Got access denied while loading image');
+        }
+        if ($response->serverError()) {
+            self::countDenial();
+        }
     }
 
     private static function detectType(array $json): ?string
