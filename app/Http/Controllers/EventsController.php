@@ -150,6 +150,7 @@ class EventsController extends Controller
      *     @OA\Property(property="author", type="string", nullable=true),
      *     @OA\Property(property="previewUrl", type="string"),
      *     @OA\Property(property="fullsizeUrl", type="string"))),
+     *   @OA\Response(response="202", description="The details are being fetched in the background, ask again after retryAfter seconds", @OA\JsonContent(type="object", required={"pending", "retryAfter"}, @OA\Property(property="pending", type="boolean"), @OA\Property(property="retryAfter", type="integer"))),
      *   @OA\Response(response="404", description="Unknown event, no result yet or the submission could not be found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="502", description="DeviantArt could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
      * )
@@ -160,9 +161,12 @@ class EventsController extends Controller
         abort_if($event->result_favme === null, 404, 'The event has no finished image');
 
         try {
-            $submission = DeviantArt::submission($event->result_favme);
+            $submission = DeviantArt::lookup($event->result_favme);
         } catch (ImageProviderException) {
             abort(502, 'DeviantArt could not be reached');
+        }
+        if ($submission === DeviantArt::PENDING) {
+            return response()->json(['pending' => true, 'retryAfter' => 5], 202);
         }
         abort_if($submission === null, 404, 'The submission could not be found');
 

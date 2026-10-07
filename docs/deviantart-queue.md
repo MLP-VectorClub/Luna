@@ -1,0 +1,16 @@
+# DeviantArt lookups: queue, pauses, warming
+
+Pages never wait for DeviantArt. `GET /posts/{id}/deviation` and `GET /events/{id}/finished-image` answer from the cache (`deviation:{provider}:{id}`, 30 days);
+a miss queues `App\Jobs\RefreshDeviation` and answers `202 {pending, retryAfter}` until the job has filled the cache (the front end asks again).
+
+- **Refusals pause everything.** 429 (honours `Retry-After`) or three distinct 403/5xx within two minutes make `DeviantArt::block()` stop all requests for
+  5 minutes, doubling up to 2 hours while it keeps happening (reset by the next success). One denied submission is remembered for 30 minutes, a missing one (404) for a day.
+  Only the start of a pause is logged (a warning, so one Discord message instead of one per request).
+- **The job** is unique per submission, takes at most 20 requests a minute (`RateLimiter` key `deviantart-oembed`), waits out pauses by releasing itself and
+  retries for up to 6 hours. A failed refresh keeps the old details.
+- **Details older than a week** (`deviation-fresh:*`) are served as they are and refreshed in the background.
+- **Warming:** `deviantart:warm-deviations` (scheduled every ten minutes) queues up to 40 finished posts whose details are missing or old, so the cache fills at a
+  steady pace instead of when visitors scroll.
+- **Needs a worker** when `QUEUE_CONNECTION` is not `sync`: `php artisan queue:work redis --queue=deviantart,default` (supervisor/systemd). With `sync` (the current
+  production setting) the job runs inside the request: pauses and the negative caches still apply, stale details are served without refreshing, and a fetch that fails
+  answers 502. The scheduler (`schedule:run` every minute) must run for the warming.

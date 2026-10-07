@@ -4837,6 +4837,28 @@
                             }
                         }
                     },
+                    "202": {
+                        "description": "The details are being fetched in the background, ask again after retryAfter seconds",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "pending",
+                                        "retryAfter"
+                                    ],
+                                    "properties": {
+                                        "pending": {
+                                            "type": "boolean"
+                                        },
+                                        "retryAfter": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Unknown event, no result yet or the submission could not be found",
                         "content": {
@@ -7079,6 +7101,28 @@
                                         "fullsizeUrl": {
                                             "type": "string",
                                             "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "The details are being fetched in the background, ask again after retryAfter seconds",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "pending",
+                                        "retryAfter"
+                                    ],
+                                    "properties": {
+                                        "pending": {
+                                            "type": "boolean"
+                                        },
+                                        "retryAfter": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"

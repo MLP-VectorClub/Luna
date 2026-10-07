@@ -70,6 +70,7 @@ class PostsController extends Controller
      *     @OA\Property(property="previewUrl", type="string", nullable=true),
      *     @OA\Property(property="fullsizeUrl", type="string", nullable=true)
      *   )),
+     *   @OA\Response(response="202", description="The details are being fetched in the background, ask again after retryAfter seconds", @OA\JsonContent(type="object", required={"pending", "retryAfter"}, @OA\Property(property="pending", type="boolean"), @OA\Property(property="retryAfter", type="integer"))),
      *   @OA\Response(response="404", description="No such post, the post is not finished, or DeviantArt does not know the submission", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="502", description="DeviantArt could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
      * )
@@ -85,9 +86,12 @@ class PostsController extends Controller
         }
 
         try {
-            $submission = DeviantArt::submission($post->deviation_id);
+            $submission = DeviantArt::lookup($post->deviation_id);
         } catch (ImageProviderException $e) {
             abort(502, 'DeviantArt could not be reached');
+        }
+        if ($submission === DeviantArt::PENDING) {
+            return response()->json(['pending' => true, 'retryAfter' => 5], 202);
         }
         if ($submission === null) {
             abort(404, 'The submission could not be found');

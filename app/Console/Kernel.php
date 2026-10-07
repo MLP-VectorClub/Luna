@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('cloudflare:reload')->daily();
+        $schedule->command('deviantart:warm-deviations')->everyTenMinutes()->withoutOverlapping();
         // Keeps the DeviantArt tokens of members alive (does nothing unless DEVIANTART_TOKEN_SYNC is on)
         $schedule->command('deviantart:refresh-tokens')->daily();
         // GDPR retention, these were Winterchilla's cron scripts

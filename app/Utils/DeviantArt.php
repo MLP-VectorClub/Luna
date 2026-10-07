@@ -3,6 +3,7 @@
 namespace App\Utils;
 
 use App\Exceptions\ImageProviderException;
+use App\Jobs\RefreshDeviation;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
@@ -35,19 +36,121 @@ class DeviantArt
      */
     public const CLUB_GALLERY_CACHE_PREFIX = 'test-club-gallery:';
 
-    public static function submission(string $id, string $provider = 'fav.me'): ?ResolvedImage
+    /** The answer of {@see lookup()} while a background job is still fetching the submission */
+    public const PENDING = 'pending';
+
+    private const BLOCKED_KEY = 'deviantart:blocked-until';
+    private const BLOCK_LEVEL_KEY = 'deviantart:block-level';
+    private const DENIALS_KEY = 'deviantart:denials';
+    /** Distinct denials within a couple of minutes that mean DeviantArt is refusing us in general, not just that one submission */
+    private const DENIALS_BEFORE_BLOCK = 3;
+
+    /**
+     * Seconds until DeviantArt may be asked again. After it refused us (403/429/5xx) we stay quiet with a growing pause (5 minutes, doubling up to 2 hours,
+     * or whatever Retry-After said) instead of sending every visitor's request into the same wall
+     */
+    public static function blockedFor(): int
+    {
+        return max(0, (int) Cache::get(self::BLOCKED_KEY, 0) - time());
+    }
+
+    public static function block(?int $retry_after = null): void
+    {
+        if (self::blockedFor() > 0) {
+            return;
+        }
+        $level = (int) Cache::get(self::BLOCK_LEVEL_KEY, 0);
+        $seconds = max($retry_after ?? 0, min(7200, 300 * 2 ** $level));
+        Cache::put(self::BLOCK_LEVEL_KEY, $level + 1, now()->addHours(6));
+        Cache::put(self::BLOCKED_KEY, time() + $seconds, $seconds);
+        Log::warning("DeviantArt is refusing requests, not asking again for $seconds seconds");
+    }
+
+    private static function countDenial(): void
+    {
+        Cache::add(self::DENIALS_KEY, 0, 120);
+        if (Cache::increment(self::DENIALS_KEY) >= self::DENIALS_BEFORE_BLOCK) {
+            Cache::forget(self::DENIALS_KEY);
+            self::block();
+        }
+    }
+
+    public static function cachedSubmission(string $id, string $provider = 'fav.me'): ?ResolvedImage
+    {
+        if ($provider === 'sta.sh') {
+            $id = self::normalizeStashId($id);
+        }
+        $cached = Cache::get("deviation:$provider:$id");
+
+        return $cached === null ? null : new ResolvedImage(...$cached);
+    }
+
+    /**
+     * What the pages show for a submission without ever making the visitor wait for DeviantArt: the cached details, or {@see PENDING} while the queue fetches
+     * them (or a refresh of details older than a week, which are served meanwhile). With the sync queue the job runs right here, so a failure is thrown.
+     *
+     * @return ResolvedImage|string|null null when the submission does not exist
+     * @throws ImageProviderException when DeviantArt could not be asked and nothing is cached
+     */
+    public static function lookup(string $id, string $provider = 'fav.me'): ResolvedImage|string|null
+    {
+        $cached = self::cachedSubmission($id, $provider);
+        if (self::fakeProviders()) {
+            return $cached;
+        }
+        $key = $provider === 'sta.sh' ? self::normalizeStashId($id) : $id;
+        // Details that are merely old are served as they are; refreshing them is the queue's business, never a visitor's wait
+        $sync = config('queue.default') === 'sync';
+        if ($cached !== null && ($sync || Cache::has("deviation-fresh:$provider:$key"))) {
+            return $cached;
+        }
+        if ($cached === null && Cache::has("deviation-missing:$provider:$key")) {
+            return null;
+        }
+
+        RefreshDeviation::dispatch($id, $provider);
+
+        $cached = self::cachedSubmission($id, $provider);
+        if ($cached !== null) {
+            return $cached;
+        }
+        if (Cache::has("deviation-missing:$provider:$key")) {
+            return null;
+        }
+        if ($sync) {
+            throw new ImageProviderException('Image could not be retrieved right now');
+        }
+
+        return self::PENDING;
+    }
+
+    /**
+     * @param  bool  $force  ask DeviantArt even when the details are cached (a failed refresh leaves the old details in place)
+     * @return ResolvedImage|null null when the submission does not exist
+     * @throws ImageProviderException
+     */
+    public static function submission(string $id, string $provider = 'fav.me', bool $force = false): ?ResolvedImage
     {
         if ($provider === 'sta.sh') {
             $id = self::normalizeStashId($id);
         }
 
         $cache_key = "deviation:$provider:$id";
-        $cached = Cache::get($cache_key);
+        $cached = $force ? null : Cache::get($cache_key);
         if ($cached !== null) {
             return new ResolvedImage(...$cached);
         }
         if (self::fakeProviders()) {
             return null;
+        }
+        if (!$force && Cache::has("deviation-missing:$provider:$id")) {
+            return null;
+        }
+        if (Cache::has("deviation-failed:$provider:$id")) {
+            throw new ImageProviderException('Image could not be retrieved; DeviantArt refused this submission a moment ago');
+        }
+        if (self::blockedFor() > 0) {
+            throw new ImageProviderException('Image could not be retrieved; DeviantArt is busy, try again later');
         }
 
         $url = $provider === 'sta.sh' ? "https://sta.sh/$id" : "https://fav.me/$id";
@@ -58,11 +161,21 @@ class DeviantArt
         }
 
         if ($response->status() === 404) {
+            Cache::put("deviation-missing:$provider:$id", true, now()->addDay());
+
             return null;
         }
+        if ($response->status() === 429) {
+            self::block((int) $response->header('Retry-After'));
+            throw new ImageProviderException('Image could not be retrieved; DeviantArt asked us to slow down');
+        }
         if ($response->status() === 403) {
-            Log::error("DeviantArt denied access to $url");
+            Cache::put("deviation-failed:$provider:$id", true, now()->addMinutes(30));
+            self::countDenial();
             throw new ImageProviderException('Got access denied while loading image');
+        }
+        if ($response->serverError()) {
+            self::countDenial();
         }
         if (!$response->successful() || empty($response->json())) {
             throw new ImageProviderException('Image could not be retrieved; the server answered '.$response->status());
@@ -83,6 +196,8 @@ class DeviantArt
         $image->fullsize ??= $image->preview;
 
         Cache::put($cache_key, get_object_vars($image), now()->addDays(30));
+        Cache::put("deviation-fresh:$provider:$id", true, now()->addDays(7));
+        Cache::forget(self::BLOCK_LEVEL_KEY);
 
         return $image;
     }
