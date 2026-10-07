@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appearance;
+use App\Models\CutieMark;
 use App\Models\Log;
 use App\Models\Notification;
 use App\Models\Post;
@@ -53,7 +54,10 @@ class AdminController extends Controller
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"appearances", "pagination"},
      *     @OA\Property(property="appearances", type="array", @OA\Items(allOf={
      *       @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
-     *       @OA\Schema(type="object", required={"private", "createdAt"}, @OA\Property(property="private", type="boolean"), @OA\Property(property="createdAt", type="string", format="date-time"))
+     *       @OA\Schema(type="object", required={"private", "createdAt", "owner", "sprite", "cutieMarks"}, @OA\Property(property="private", type="boolean"), @OA\Property(property="createdAt", type="string", format="date-time"),
+     *         @OA\Property(property="owner", type="object", nullable=true, required={"id", "name"}, @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string")),
+     *         @OA\Property(property="sprite", nullable=true, allOf={@OA\Schema(ref="#/components/schemas/Sprite")}),
+     *         @OA\Property(property="cutieMarks", type="array", @OA\Items(ref="#/components/schemas/CutieMark")))
      *     })),
      *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
      *   )),
@@ -70,12 +74,17 @@ class AdminController extends Controller
         ], ['size.between' => 'The size must be between 1 and 100.'])->validate();
         $size = (int) ($valid['size'] ?? 10);
 
-        $pagination = Appearance::whereNotNull('owner_id')->orderByDesc('created_at')->orderByDesc('id')->paginate($size, page: (int) ($valid['page'] ?? 1));
+        $pagination = Appearance::with('owner')->whereNotNull('owner_id')->orderByDesc('created_at')->orderByDesc('id')->paginate($size, page: (int) ($valid['page'] ?? 1));
 
         return response()->camelJson([
             'appearances' => $pagination->getCollection()->map(fn(Appearance $a) => ColorGuideHelper::mapPreviewAppearance($a) + [
                 'private' => (bool) $a->private,
                 'created_at' => $a->created_at?->toIso8601String(),
+                'owner' => $a->owner ? ['id' => $a->owner->id, 'name' => $a->owner->name] : null,
+                'sprite' => ColorGuideHelper::mapSprite($a),
+                'cutie_marks' => $a->cutiemarks()->get()
+                    ->filter(fn (CutieMark $cutiemark) => $cutiemark->vectorFile() !== null)
+                    ->map(fn (CutieMark $cutiemark) => ColorGuideHelper::mapCutieMark($cutiemark))->values()->toArray(),
             ])->values(),
             'pagination' => [
                 'current_page' => $pagination->currentPage(),

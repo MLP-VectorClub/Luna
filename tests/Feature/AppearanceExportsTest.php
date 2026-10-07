@@ -147,6 +147,9 @@ class AppearanceExportsTest extends TestCase
         $this->assertSame($owner->id, $item['ownerId']);
         $this->assertArrayHasKey('createdAt', $item);
         $this->assertArrayHasKey('previewData', $item);
+        $this->assertSame(['id' => $owner->id, 'name' => $owner->name], $item['owner']);
+        $this->assertArrayHasKey('sprite', $item);
+        $this->assertSame([], $item['cutieMarks']);
 
         $this->getJson('/admin/pcg-appearances?size=1&page=2')->assertOk()->assertJsonPath('pagination.currentPage', 2)->assertJsonCount(1, 'appearances');
         $this->getJson('/admin/pcg-appearances?page=0')->assertStatus(422);
