@@ -1,0 +1,24 @@
+# Laravel Horizon (the queue worker) for Luna. Install on the server with:
+#   sudo cp setup/luna-horizon.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now luna-horizon.service
+# Needs QUEUE_CONNECTION=redis (and, since other apps share the Redis, REDIS_PREFIX / CACHE_PREFIX / HORIZON_PREFIX pinned) in Luna's .env first.
+# deploy.conf restarts it after every deploy once the unit exists; `php artisan horizon:terminate` also makes it restart itself.
+[Unit]
+Description=Luna Laravel Horizon Queue Worker
+After=network.target redis-server.service postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/Luna
+
+ExecStart=/usr/bin/php artisan horizon
+ExecStop=/usr/bin/php artisan horizon:terminate
+
+# Horizon exits on horizon:terminate and after crashes, systemd brings it back
+Restart=always
+RestartSec=3
+# Let running jobs finish when stopping (Horizon's own timeout is 60 seconds)
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

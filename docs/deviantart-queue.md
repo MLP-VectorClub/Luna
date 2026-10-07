@@ -14,3 +14,5 @@ a miss queues `App\Jobs\RefreshDeviation` and answers `202 {pending, retryAfter}
 - **Needs a worker** when `QUEUE_CONNECTION` is not `sync`: `php artisan queue:work redis --queue=deviantart,default` or, with Horizon (installed, dashboard at `/horizon` for developers only, `php artisan horizon` under supervisor/systemd), `php artisan horizon` (supervisor/systemd). With `sync` (the current
   production setting) the job runs inside the request: pauses and the negative caches still apply, stale details are served without refreshing, and a fetch that fails
   answers 502. The scheduler (`schedule:run` every minute) must run for the warming.
+
+**Service:** `setup/luna-horizon.service` (copy of the `when-horizon` unit's pattern). Install steps are in the file; `deploy.conf` restarts it on every deploy once it exists. Before enabling, pin `REDIS_PREFIX`, `CACHE_PREFIX` and `HORIZON_PREFIX` in `.env` (the Redis is shared with other apps) and set `QUEUE_CONNECTION=redis`.
