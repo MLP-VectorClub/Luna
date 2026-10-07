@@ -57,6 +57,20 @@ class PostReloadTest extends TestCase
         $this->getJson('/posts/987654/reload')->assertNotFound();
     }
 
+    public function testADeviantArtImageWithADeadTokenBreaksThePostButOtherHostsDoNot(): void
+    {
+        $dead = $this->request(['preview' => 'https://images-wixmp-abc.wixmp.com/f/a.jpg?token=dead', 'fullsize' => 'https://images-wixmp-abc.wixmp.com/f/a.jpg?token=dead']);
+        $this->fakeImages(['wixmp.com' => 401]);
+        $this->getJson("/posts/{$dead->id}/reload")->assertOk()->assertExactJson(['broken' => true]);
+        $this->assertSame(401, BrokenPost::where('post_id', $dead->id)->first()->response_code);
+
+        // Other hosts answering 401/403 may just dislike being asked from a server, only a 404 counts there
+        $other = $this->request();
+        $this->fakeImages(['img.example' => 401]);
+        $this->getJson("/posts/{$other->id}/reload")->assertOk()->assertJsonMissingPath('broken');
+        $this->assertFalse($other->fresh()->broken);
+    }
+
     public function testAMissingImageBreaksThePostAndFreesItsReserver(): void
     {
         $reserver = User::factory()->create(['role' => Role::Member]);

@@ -311,6 +311,11 @@ class DeviantArt
 
             return true;
         }
+        // DeviantArt's image host answers 401 (or 410) once the token in an image address stops working, such an image is gone for good
+        // (403 is not counted: it can just as well mean that the host dislikes the address we ask from)
+        if ($only_fails !== [] && self::isDeviantArtHost($url)) {
+            $only_fails = array_values(array_unique([...$only_fails, 401, 410]));
+        }
         try {
             $response = self::httpFor($url)->head($url);
         } catch (ConnectionException $e) {
