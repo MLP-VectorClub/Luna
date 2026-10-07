@@ -16,3 +16,4 @@ a miss queues `App\Jobs\RefreshDeviation` and answers `202 {pending, retryAfter}
   answers 502. The scheduler (`schedule:run` every minute) must run for the warming.
 
 **Service:** `setup/luna-horizon.service` (copy of the `when-horizon` unit's pattern). Install steps are in the file; `deploy.conf` restarts it on every deploy once it exists. Before enabling, pin `REDIS_PREFIX`, `CACHE_PREFIX` and `HORIZON_PREFIX` in `.env` (the Redis is shared with other apps) and set `QUEUE_CONNECTION=redis`.
+- **Proxy:** set `OEMBED_PROXY_URL` (same variable as Winterchilla, e.g. `socks5h://127.0.0.1:40000` for the Cloudflare WARP proxy) to send the oEmbed requests through it; the club gallery check (DiFi) and image availability checks go direct.

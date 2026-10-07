@@ -155,7 +155,8 @@ class DeviantArt
 
         $url = $provider === 'sta.sh' ? "https://sta.sh/$id" : "https://fav.me/$id";
         try {
-            $response = Http::timeout(10)->get(self::OEMBED_URL, ['url' => $url]);
+            $proxy = config('services.deviantart.oembed_proxy');
+            $response = Http::timeout(10)->when($proxy, fn ($request) => $request->withOptions(['proxy' => $proxy]))->get(self::OEMBED_URL, ['url' => $url]);
         } catch (ConnectionException $e) {
             throw new ImageProviderException('Image could not be retrieved; '.$e->getMessage());
         }
