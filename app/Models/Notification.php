@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Utils\WebsocketServer;
 use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
@@ -25,6 +26,9 @@ class Notification extends Model
             ->whereRaw("data->>'id' = ?", [(string) ($data['id'] ?? '')])
             ->update(['read_at' => now()]);
 
-        return self::create(['recipient_id' => $recipient_id, 'type' => $type, 'data' => $data]);
+        $notification = self::create(['recipient_id' => $recipient_id, 'type' => $type, 'data' => $data]);
+        WebsocketServer::notifyUser($recipient_id);
+
+        return $notification;
     }
 }

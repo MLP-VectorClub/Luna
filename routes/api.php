@@ -30,6 +30,7 @@ use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\UserPrefsController;
 use App\Http\Controllers\UserEmailController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\WebsocketController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
 
@@ -46,6 +47,9 @@ use Illuminate\Support\Facades\App;
 
 // The contract suite fires hundreds of requests, rate limits only apply outside the testing environment
 $throttle = fn(int $per_minute) => App::environment('testing') ? 'throttle:100000,1' : "throttle:$per_minute,1";
+
+// The websocket server (Muffins) checks the tokens of browsers here, with the shared key
+Route::post('internal/websocket/validate', [WebsocketController::class, 'validateToken'])->middleware($throttle(300));
 
 Route::middleware($throttle(12))->group(function () {
     Route::prefix('users')->group(function () {
@@ -110,6 +114,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->whereNumber('id')->middleware('role:staff');
             Route::post('email/verify', [UserEmailController::class, 'verify'])->middleware('role:staff');
             Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
+            Route::post('me/socket-token', [WebsocketController::class, 'token']);
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('sessions', [UsersController::class, 'sessions']);
             Route::delete('sessions/{id}', [UsersController::class, 'deleteSession'])->where('id', '[0-9a-f]{64}');

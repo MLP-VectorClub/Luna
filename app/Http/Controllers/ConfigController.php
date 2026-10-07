@@ -72,7 +72,7 @@ class ConfigController extends Controller
      *         @OA\Property(property="username", ref="#/components/schemas/RegexPattern"),
      *         @OA\Property(property="episodeTitle", ref="#/components/schemas/RegexPattern")
      *       ),
-     *       @OA\Property(property="wsServerHost", type="string", nullable=true, description="Always null in Luna, it has no websocket server"),
+     *       @OA\Property(property="wsServerHost", type="string", nullable=true, description="Address of the websocket server that pushes notifications, null when there is none"),
      *       @OA\Property(property="discordInviteLink", type="string")
      *     )
      *   )
@@ -92,7 +92,7 @@ class ConfigController extends Controller
                 'username' => ['source' => '^([A-Za-z\-\d]{1,20})$', 'flags' => ''],
                 'episode_title' => ['source' => '^([A-Za-z\s]+: )?[ -~]{5,100}$', 'flags' => 'u'],
             ],
-            'ws_server_host' => null,
+            'ws_server_host' => config('services.websocket.host'),
             'discord_invite_link' => 'https://discord.mlpvector.club',
         ])->header('Cache-Control', 'public, max-age=300');
     }

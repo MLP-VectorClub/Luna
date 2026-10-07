@@ -11,6 +11,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Utils\AppearanceIndex;
 use App\Utils\ColorGuideHelper;
+use App\Utils\WebsocketServer;
 use Elastic\Transport\Exception\NoNodeAvailableException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -251,6 +252,8 @@ class AdminController extends Controller
         $notification = Notification::where('recipient_id', $request->user()->id)->findOrFail($id);
         if ($notification->read_at === null) {
             $notification->update(['read_at' => now()]);
+            // The user's other open tabs
+            WebsocketServer::notifyUser($notification->recipient_id);
         }
 
         return response()->noContent();

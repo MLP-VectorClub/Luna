@@ -3742,7 +3742,7 @@
                                             "additionalProperties": false
                                         },
                                         "wsServerHost": {
-                                            "description": "Always null in Luna, it has no websocket server",
+                                            "description": "Address of the websocket server that pushes notifications, null when there is none",
                                             "type": "string",
                                             "nullable": true
                                         },
@@ -10514,6 +10514,61 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/socket-token": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "description": "A one time token that lets the signed in user's browser identify itself to the websocket server (which pushes notifications). It works for one connection and a couple of minutes, ask for a new one for every (re)connection. 404 when there is no websocket server",
+                "operationId": "PostUsersMeSocketToken",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "token",
+                                        "expiresIn"
+                                    ],
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "expiresIn": {
+                                            "description": "Seconds",
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There is no websocket server",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
                                 }
                             }
                         }

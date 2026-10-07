@@ -32,6 +32,16 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // The websocket server (Muffins) that tells signed in browsers about new notifications right away, see App\Utils\WebsocketServer
+    'websocket' => [
+        // Its public address, which browsers connect to (shown as `wsServerHost` of GET /config); empty when there is no server
+        'host' => env('WS_SERVER_HOST') ?: null,
+        // Where Luna reaches it from the server itself, e.g. http://127.0.0.1:3672
+        'url' => env('WS_SERVER_URL') ?: null,
+        // Shared secret: Luna sends it to announce notifications, Muffins sends it to check the one time tokens of browsers
+        'key' => env('WS_SERVER_KEY') ?: null,
+    ],
+
     SocialProvider::DeviantArt->value => [
         'client_id' => env('DEVIANTART_CLIENT_ID'),
         'client_secret' => env('DEVIANTART_CLIENT_SECRET'),
