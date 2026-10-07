@@ -176,6 +176,29 @@ class AppearanceManagementTest extends TestCase
         $this->assertDatabaseCount('color_groups', 0);
     }
 
+    public function testTheCommandRewritesExistingDoubleSizeSprites(): void
+    {
+        Storage::fake('public');
+        $appearance = $this->official();
+        $this->as(Role::Staff);
+        $stripes = imagecreatetruecolor(300, 300);
+        imagefilledrectangle($stripes, 0, 0, 299, 299, imagecolorallocate($stripes, 255, 255, 255));
+        for ($x = 0; $x < 300; $x += 2) {
+            imageline($stripes, $x, 0, $x, 299, imagecolorallocate($stripes, 0, 0, 0));
+        }
+        ob_start();
+        imagepng($stripes);
+        $content = ob_get_clean();
+        $this->postJson("/appearances/{$appearance->id}/sprite", ['sprite' => UploadedFile::fake()->createWithContent('stripes.png', $content)])->assertOk();
+        $double = $appearance->fresh()->spriteFile()->getPath(Appearance::DOUBLE_SIZE_CONVERSION);
+        // As it is after the medialibrary's smooth conversion alone
+        copy($appearance->fresh()->spriteFile()->getPath(), $double);
+
+        $this->artisan('sprites:pixelate-2x', ['--dry-run' => true])->expectsOutputToContain('Can rewrite 1')->assertSuccessful();
+        $this->artisan('sprites:pixelate-2x')->expectsOutputToContain('Rewrote 1')->assertSuccessful();
+        $this->assertSame([600, 600], array_slice(getimagesize($double), 0, 2));
+    }
+
     public function testSpriteUploadAndRemoval(): void
     {
         Storage::fake('public');

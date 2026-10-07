@@ -41,4 +41,43 @@ class PixelUpscaleTest extends TestCase
         $this->assertFalse(PixelUpscale::double($file, $file.'.out'));
         unlink($file);
     }
+
+    public function testAReadOnlyFolderIsReportedAndNothingIsChanged(): void
+    {
+        if (function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            $this->markTestSkipped('root can write anywhere');
+        }
+        $dir = sys_get_temp_dir().'/px-'.uniqid();
+        mkdir($dir);
+        $from = "$dir/in.png";
+        imagepng(imagecreatetruecolor(2, 2), $from);
+        $to = "$dir/out/out.png";
+        mkdir(dirname($to));
+        file_put_contents($to, 'old');
+        chmod(dirname($to), 0555);
+
+        $reason = PixelUpscale::tryDouble($from, $to);
+
+        $this->assertStringContainsString('not writable', (string) $reason);
+        $this->assertSame('old', file_get_contents($to));
+        $this->assertSame([], glob(dirname($to).'/.*.tmp'));
+        chmod(dirname($to), 0755);
+    }
+
+    public function testTheReplacedFileKeepsItsMode(): void
+    {
+        $dir = sys_get_temp_dir().'/px-'.uniqid();
+        mkdir($dir);
+        $from = "$dir/in.png";
+        $to = "$dir/out.png";
+        imagepng(imagecreatetruecolor(3, 3), $from);
+        file_put_contents($to, 'old');
+        chmod($to, 0664);
+
+        $this->assertNull(PixelUpscale::tryDouble($from, $to));
+
+        $this->assertSame(0664, fileperms($to) & 0777);
+        $this->assertSame([6, 6], array_slice(getimagesize($to), 0, 2));
+    }
 }
+

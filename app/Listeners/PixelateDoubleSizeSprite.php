@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Models\Appearance;
 use App\Utils\PixelUpscale;
+use Illuminate\Support\Facades\Log;
 use Spatie\MediaLibrary\Conversions\Events\ConversionHasBeenCompletedEvent;
 
 /**
@@ -19,8 +20,9 @@ class PixelateDoubleSizeSprite
         }
 
         $target = $media->getPath(Appearance::DOUBLE_SIZE_CONVERSION);
-        if (is_file($target)) {
-            PixelUpscale::double($media->getPath(), $target);
+        if (is_file($target) && ($reason = PixelUpscale::tryDouble($media->getPath(), $target)) !== null) {
+            // The smooth version stays, which is a usable sprite: say why it was not replaced
+            Log::warning("The double size sprite of media #$media->id was not made pixel exact: $reason");
         }
     }
 }
