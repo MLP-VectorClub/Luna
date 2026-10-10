@@ -11593,6 +11593,10 @@
                     },
                     "avatarProvider": {
                         "$ref": "#/components/schemas/AvatarProvider"
+                    },
+                    "discordServerMember": {
+                        "description": "Whether the user has a linked Discord account that is a member of the club's server, so the front end can leave out its invitation",
+                        "type": "boolean"
                     }
                 },
                 "type": "object",

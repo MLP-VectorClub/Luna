@@ -92,6 +92,7 @@ class UsersController extends Controller
      *   @OA\Property(property="role", ref="#/components/schemas/DatabaseRole"),
      *   @OA\Property(property="avatarUrl", type="string", format="uri", nullable=true),
      *   @OA\Property(property="avatarProvider", ref="#/components/schemas/AvatarProvider"),
+     *   @OA\Property(property="discordServerMember", type="boolean", description="Whether the user has a linked Discord account that is a member of the club's server, so the front end can leave out its invitation"),
      * )
      * @OA\Get(
      *   path="/users/me",
@@ -137,6 +138,7 @@ class UsersController extends Controller
                 'role' => $user->role,
                 'avatar_url' => $user->avatar_url,
                 'avatar_provider' => $user->avatar_provider,
+                'discord_server_member' => $user->discordMember !== null && $user->discordMember->access !== null && $user->discordMember->joined_at !== null,
             ],
             // Renewing the DeviantArt session happens above before the answer, nothing is left to wait for
             'session_updating' => false,

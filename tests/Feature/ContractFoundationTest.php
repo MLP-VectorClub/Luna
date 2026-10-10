@@ -72,4 +72,32 @@ class ContractFoundationTest extends TestCase
         $this->withToken($token)->getJson('/users/me')->assertOk()->assertJsonPath('user.id', $user->id);
         $this->postJson('/test/login/987654')->assertNotFound();
     }
+
+    public function testCurrentUserSaysWhetherTheyAreOnTheDiscordServer(): void
+    {
+        $user = $this->user(Role::User);
+        $token = $user->createToken('t')->plainTextToken;
+        $me = function () use ($token) {
+            // The test app keeps the user it resolved for the previous request
+            $this->app['auth']->forgetGuards();
+
+            return $this->withToken($token)->getJson('/users/me')->assertOk()->json('user.discordServerMember');
+        };
+
+        // No Discord account
+        $this->assertFalse($me());
+
+        // A member the site knows about but that was never linked by its owner does not count
+        $member = (new \App\Models\DiscordMember(['username' => 'crazy', 'discriminator' => 0]))
+            ->forceFill(['id' => '72062699806130176', 'user_id' => $user->id, 'joined_at' => now(), 'access' => null]);
+        $member->save();
+        $this->assertFalse($me());
+
+        // Linked, but has not joined the server
+        $member->forceFill(['access' => 'token', 'joined_at' => null])->save();
+        $this->assertFalse($me());
+
+        $member->forceFill(['joined_at' => now()])->save();
+        $this->assertTrue($me());
+    }
 }
