@@ -92,6 +92,7 @@ use OpenApi\Annotations as OA;
  *   description="Shows this appearance is linked to",
  *   @OA\Items(ref="#/components/schemas/ShowListItem")),
  *   @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit this appearance (its owner, or staff)"),
+ *   @OA\Property(property="token", nullable=true, ref="#/components/schemas/AppearanceToken", description="The share token of a private appearance (the `token` query parameter that opens it for anybody), only for those who may edit it; null otherwise"),
  *   @OA\Property(property="cutieMarks", type="array", minItems=0, @OA\Items(ref="#/components/schemas/CutieMark")))}
  * )
  *

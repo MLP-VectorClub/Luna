@@ -494,6 +494,8 @@ class ColorGuideHelper
         $user = Auth::user();
         $appearance = array_merge(self::mapAppearance($a, false, true), [
             'can_edit' => $a->canBeManagedBy($user),
+            // The secret of the share link of a private appearance, for the people who may hand it out
+            'token' => $a->private && $a->canBeManagedBy($user) ? $a->token : null,
             'related_appearances' => $a->relatedAppearances()->get()
                 ->filter(fn (Appearance $related) => $related->owner_id === null || $related->canBeManagedBy($user))
                 ->map(fn (Appearance $related) => self::mapPreviewAppearance($related))

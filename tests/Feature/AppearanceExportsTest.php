@@ -85,6 +85,29 @@ class AppearanceExportsTest extends TestCase
         }
     }
 
+    public function testOnlyThoseWhoMayEditSeeTheShareToken(): void
+    {
+        $owner = $this->user();
+        $private = $this->appearance(['owner_id' => $owner->id, 'private' => true]);
+        $public = $this->appearance(['owner_id' => $owner->id, 'label' => 'Public']);
+        $token = $private->fresh()->token;
+        $path = fn (Appearance $a, string $query = '') => "/appearances/{$a->id}$query";
+
+        // A guest with the token sees the page, but not the token itself
+        $this->getJson($path($private, "?token=$token"))->assertOk()->assertJsonPath('token', null);
+
+        $this->actingAs($this->user(), 'sanctum');
+        $this->getJson($path($private))->assertForbidden();
+        $this->getJson($path($private, "?token=$token"))->assertOk()->assertJsonPath('token', null);
+
+        $this->actingAs($owner, 'sanctum');
+        $this->getJson($path($private))->assertOk()->assertJsonPath('token', $token);
+        $this->getJson($path($public))->assertOk()->assertJsonPath('token', null);
+
+        $this->actingAs($this->user(Role::Staff), 'sanctum');
+        $this->getJson($path($private))->assertOk()->assertJsonPath('token', $token);
+    }
+
     public function testShareTokensOpenCutieMarkDownloadsOfPrivateAppearances(): void
     {
         $appearance = $this->appearance(['owner_id' => $this->user()->id, 'private' => true]);
