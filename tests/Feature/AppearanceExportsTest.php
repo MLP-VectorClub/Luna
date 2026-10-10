@@ -71,6 +71,34 @@ class AppearanceExportsTest extends TestCase
         $this->getJson("/appearances/{$appearance->id}/palette?format=json")->assertOk();
     }
 
+    public function testPrivateAppearancesOpenWithTheirShareToken(): void
+    {
+        $appearance = $this->appearance(['owner_id' => $this->user()->id, 'private' => true]);
+        $token = $appearance->fresh()->token;
+        $this->assertNotEmpty($token);
+
+        foreach (['palette?format=json', 'palette?format=gpl', 'image?type=preview&format=svg', 'image?type=facing&format=svg'] as $path) {
+            $this->getJson("/appearances/{$appearance->id}/$path")->assertForbidden();
+            $this->getJson("/appearances/{$appearance->id}/$path&token=wrong")->assertForbidden();
+            $this->getJson("/appearances/{$appearance->id}/$path&token=")->assertForbidden();
+            $this->get("/appearances/{$appearance->id}/$path&token=$token")->assertOk();
+        }
+    }
+
+    public function testShareTokensOpenCutieMarkDownloadsOfPrivateAppearances(): void
+    {
+        $appearance = $this->appearance(['owner_id' => $this->user()->id, 'private' => true]);
+        $token = $appearance->fresh()->token;
+        $cutieMark = CutieMark::create(['appearance_id' => $appearance->id, 'facing' => 'left', 'rotation' => 0]);
+
+        // The file does not exist here, so what tells the token apart is 403 against anything else
+        $this->getJson("/cutie-marks/{$cutieMark->id}/download")->assertForbidden();
+        $this->getJson("/cutie-marks/{$cutieMark->id}/download?token=wrong")->assertForbidden();
+        $this->assertNotSame(403, $this->getJson("/cutie-marks/{$cutieMark->id}/download?token=$token")->status());
+        $this->getJson("/appearances/{$appearance->id}/cutie-marks/{$cutieMark->id}/download")->assertForbidden();
+        $this->assertNotSame(403, $this->getJson("/appearances/{$appearance->id}/cutie-marks/{$cutieMark->id}/download?token=$token")->status());
+    }
+
     public function testImages(): void
     {
         $appearance = $this->appearance();

@@ -35,6 +35,7 @@ class AppearanceExportsController extends Controller
      *   security={},
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\Parameter(in="query", name="format", required=true, @OA\Schema(type="string", enum={"json", "gpl"})),
+     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
      *   @OA\Response(response="200", description="The palette file, as an attachment named after the appearance", @OA\MediaType(mediaType="application/octet-stream", @OA\Schema(type="string", format="binary"))),
      *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
@@ -43,7 +44,7 @@ class AppearanceExportsController extends Controller
      */
     public function palette(Request $request, int $id)
     {
-        $appearance = $this->visible($id);
+        $appearance = $this->visible($request, $id);
         $valid = Validator::make($request->query(), ['format' => ['required', 'string', Rule::in(['json', 'gpl'])]])->validate();
 
         $groups = $appearance->colorGroups()->with(['colors' => fn($query) => $query->whereNotNull('hex')->orderBy('order')])->get();
@@ -80,6 +81,7 @@ class AppearanceExportsController extends Controller
      *   @OA\Parameter(in="query", name="type", required=true, @OA\Schema(type="string", enum={"palette", "sprite", "preview", "facing"})),
      *   @OA\Parameter(in="query", name="format", required=true, @OA\Schema(type="string", enum={"png", "svg"})),
      *   @OA\Parameter(in="query", name="facing", required=false, @OA\Schema(type="string", default="left", enum={"left", "right"})),
+     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
      *   @OA\Response(response="200", description="The image", @OA\MediaType(mediaType="image/png", @OA\Schema(type="string", format="binary")), @OA\MediaType(mediaType="image/svg+xml", @OA\Schema(type="string"))),
      *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="404", description="Appearance not found, or it has no sprite", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
@@ -88,7 +90,7 @@ class AppearanceExportsController extends Controller
      */
     public function image(Request $request, int $id)
     {
-        $appearance = $this->visible($id);
+        $appearance = $this->visible($request, $id);
         $valid = Validator::make($request->query(), [
             'type' => ['required', 'string', Rule::in(['palette', 'sprite', 'preview', 'facing'])],
             'format' => ['required', 'string', Rule::in(['png', 'svg'])],
@@ -164,6 +166,7 @@ class AppearanceExportsController extends Controller
      *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\Parameter(in="path", name="cutieMarkId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\Parameter(in="query", name="source", required=false, @OA\Schema(type="boolean", default=false)),
+     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
      *   @OA\Response(response="200", description="The cutie mark file", @OA\MediaType(mediaType="application/octet-stream", @OA\Schema(type="string", format="binary"))),
      *   @OA\Response(response="401", description="`source` was requested but nobody is signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="403", description="`source` was requested without the staff role, or the appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
@@ -184,7 +187,7 @@ class AppearanceExportsController extends Controller
                 throw new AuthorizationException();
             }
         } else {
-            $this->assertVisible($appearance);
+            $this->assertVisible($request, $appearance);
         }
 
         $file = $cutie_mark->vectorFile();
@@ -203,16 +206,17 @@ class AppearanceExportsController extends Controller
      *   security={},
      *   @OA\Parameter(in="path", name="cutieMarkId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
      *   @OA\Parameter(in="path", name="disposition", required=true, @OA\Schema(type="string", enum={"image", "download"})),
+     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
      *   @OA\Response(response="200", description="The cutie mark file", @OA\MediaType(mediaType="image/svg+xml", @OA\Schema(type="string", format="binary"))),
      *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="404", description="Cutie mark not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
      * )
      */
-    public function cutieMarkById(int $cutieMarkId, string $disposition)
+    public function cutieMarkById(Request $request, int $cutieMarkId, string $disposition)
     {
         $cutie_mark = CutieMark::findOrFail($cutieMarkId);
         $appearance = Appearance::findOrFail($cutie_mark->appearance_id);
-        $this->assertVisible($appearance);
+        $this->assertVisible($request, $appearance);
 
         $file = $cutie_mark->vectorFile();
         abort_if($file === null, 404, 'The cutie mark has no file');
@@ -224,17 +228,17 @@ class AppearanceExportsController extends Controller
         return $this->attachment($svg, "{$appearance->label} - cutie mark {$cutie_mark->id}.svg", 'image/svg+xml');
     }
 
-    private function visible(int $id): Appearance
+    private function visible(Request $request, int $id): Appearance
     {
         $appearance = Appearance::findOrFail($id);
-        $this->assertVisible($appearance);
+        $this->assertVisible($request, $appearance);
 
         return $appearance;
     }
 
-    private function assertVisible(Appearance $appearance): void
+    private function assertVisible(Request $request, Appearance $appearance): void
     {
-        if (!$appearance->private) {
+        if (!$appearance->private || $appearance->tokenMatches($request->query('token'))) {
             return;
         }
         $user = Auth::guard('sanctum')->user();

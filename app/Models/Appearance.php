@@ -107,6 +107,12 @@ class Appearance extends Model implements Sortable, HasMedia
         return $this->hasMany(ColorGroup::class)->orderBy('order');
     }
 
+    /** Whether the share token of a private appearance (the `token` query parameter of its links) is the right one */
+    public function tokenMatches(mixed $token): bool
+    {
+        return is_string($token) && $token !== '' && $this->token !== null && hash_equals((string) $this->token, $token);
+    }
+
     public function tags()
     {
         return $this->belongsToMany(Tag::class, 'tagged');

@@ -254,8 +254,7 @@ class AppearancesController extends Controller
                 return null;
             }
 
-            $token = $request->query('token');
-            if (is_string($token) && $token !== '' && $appearance->token !== null && hash_equals((string) $appearance->token, $token)) {
+            if ($appearance->tokenMatches($request->query('token'))) {
                 return null;
             }
 

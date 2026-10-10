@@ -796,6 +796,14 @@
                                 "gpl"
                             ]
                         }
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/AppearanceToken"
+                        }
                     }
                 ],
                 "responses": {
@@ -898,6 +906,14 @@
                                 "right"
                             ]
                         }
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/AppearanceToken"
+                        }
                     }
                 ],
                 "responses": {
@@ -983,6 +999,14 @@
                             "type": "boolean",
                             "default": false
                         }
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/AppearanceToken"
+                        }
                     }
                 ],
                 "responses": {
@@ -1057,6 +1081,14 @@
                                 "image",
                                 "download"
                             ]
+                        }
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/AppearanceToken"
                         }
                     }
                 ],
