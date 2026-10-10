@@ -64,6 +64,25 @@ class TagsTest extends TestCase
         $this->postJson('/tags', ['name' => 'fine', 'type' => 'nonsense'])->assertJsonValidationErrors('type');
     }
 
+    public function testAppearanceTagsSayWhichOnesAreSynonyms(): void
+    {
+        $base = $this->tag('base');
+        $alias = $this->tag('alias', ['synonym_of' => $base->id]);
+        $appearance = Appearance::create(['label' => 'Tagged', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 1]);
+        $appearance->tags()->attach($base->id);
+
+        // Staff who have not hidden synonyms get them next to the tags, marked with the tag they stand for
+        $staff = User::factory()->create(['role' => Role::Staff]);
+        $this->actingAs($staff, 'sanctum')->putJson("/users/{$staff->id}/preferences/cg_hidesynon", ['value' => 0])->assertOk();
+        $tags = collect($this->getJson("/appearances/{$appearance->id}")->assertOk()->json('tags'))->keyBy('name');
+        $this->assertSame(null, $tags['base']['synonymOf']);
+        $this->assertSame($base->id, $tags['alias']['synonymOf']);
+
+        // Everybody else only sees the regular tag
+        $this->app['auth']->forgetGuards();
+        $this->getJson("/appearances/{$appearance->id}")->assertOk()->assertJsonCount(1, 'tags')->assertJsonPath('tags.0.synonymOf', null);
+    }
+
     public function testListIsPublicAndPaginated(): void
     {
         $this->tag('listed');

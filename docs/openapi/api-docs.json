@@ -12613,6 +12613,15 @@
                             null
                         ],
                         "nullable": true
+                    },
+                    "synonymOf": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/OneBasedId"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "The tag this one is a synonym of, null for regular tags. Staff see synonyms next to the tags of an appearance, the guide shows them faded"
                     }
                 },
                 "type": "object",

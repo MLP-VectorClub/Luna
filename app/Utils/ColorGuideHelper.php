@@ -455,10 +455,7 @@ class ColorGuideHelper
      */
     public static function mapAppearance(Appearance $a, bool $compact = false, bool $double_size_sprite = false): array
     {
-        static $is_staff = null;
-        if ($is_staff === null) {
-            $is_staff = Permission::sufficient(Role::Staff);
-        }
+        $is_staff = Permission::sufficient(Role::Staff);
 
         $appearance = array_merge(ColorGuideHelper::mapAutocompleteAppearance($a, $double_size_sprite), [
             'has_cutie_marks' => $a->has_cutie_marks,
@@ -588,6 +585,7 @@ class ColorGuideHelper
             'id' => $t->id,
             'name' => $t->name,
             'type' => $t->type,
+            'synonym_of' => $t->synonym_of,
         ];
     }
 

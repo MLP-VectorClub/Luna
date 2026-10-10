@@ -347,7 +347,9 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="type", type="string",
  *   description="Category this tag belongs to, or null if uncategorized",
  *   nullable=true,
- *   enum={"app", "cat", "gen", "spec", "char", "warn", null})
+ *   enum={"app", "cat", "gen", "spec", "char", "warn", null}),
+ *   @OA\Property(property="synonymOf", ref="#/components/schemas/OneBasedId", nullable=true,
+ *   description="The tag this one is a synonym of, null for regular tags. Staff see synonyms next to the tags of an appearance, the guide shows them faded")
  * )
  *
  * @OA\Schema(
