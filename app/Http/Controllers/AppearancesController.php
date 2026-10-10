@@ -254,7 +254,10 @@ class AppearancesController extends Controller
                 return null;
             }
 
-            // TODO Check token parameter and allow if matches
+            $token = $request->query('token');
+            if (is_string($token) && $token !== '' && $appearance->token !== null && hash_equals((string) $appearance->token, $token)) {
+                return null;
+            }
 
             return response()->camelJson(['message' => trans('errors.color_guide.appearance_private')], 403);
         }
@@ -379,7 +382,7 @@ class AppearancesController extends Controller
         $params = Validator::make($request->only('size'), [
             'size' => ['required', 'integer', new Enum(SpriteSize::class)],
         ])->valid();
-        $double_size = isset($params['size']) && $params['size'] === SpriteSize::Double;
+        $double_size = isset($params['size']) && (int) $params['size'] === SpriteSize::Double->value;
 
         $sprite_file = $appearance->spriteFile();
         if ($sprite_file === null) {
