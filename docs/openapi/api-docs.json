@@ -12282,6 +12282,49 @@
                                 "description": "Whether the current user may edit this appearance (its owner, or staff)",
                                 "type": "boolean"
                             },
+                            "majorChanges": {
+                                "description": "The major changes of an official appearance, newest first (always empty for personal guide appearances); `user` is only sent to staff",
+                                "type": "array",
+                                "items": {
+                                    "required": [
+                                        "id",
+                                        "reason",
+                                        "user",
+                                        "createdAt"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "$ref": "#/components/schemas/OneBasedId"
+                                        },
+                                        "reason": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "required": [
+                                                "id",
+                                                "name"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "$ref": "#/components/schemas/OneBasedId"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true,
+                                            "additionalProperties": false
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            },
                             "token": {
                                 "oneOf": [
                                     {

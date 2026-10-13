@@ -494,6 +494,16 @@ class ColorGuideHelper
         $user = Auth::user();
         $appearance = array_merge(self::mapAppearance($a, false, true), [
             'can_edit' => $a->canBeManagedBy($user),
+            // The major changes of an official appearance, newest first; who made one is for staff only (like on the old site's page)
+            'major_changes' => $a->owner_id === null
+                ? MajorChange::where('appearance_id', $a->id)->with(Permission::sufficient(Role::Staff) ? 'user' : [])->orderByDesc('created_at')->orderByDesc('id')->get()
+                    ->map(fn (MajorChange $change) => [
+                        'id' => $change->id,
+                        'reason' => $change->reason,
+                        'user' => Permission::sufficient(Role::Staff) && $change->user ? ['id' => $change->user->id, 'name' => $change->user->name] : null,
+                        'created_at' => $change->created_at->toISOString(),
+                    ])->values()->all()
+                : [],
             // The secret of the share link of a private appearance, for the people who may hand it out
             'token' => $a->private && $a->canBeManagedBy($user) ? $a->token : null,
             'related_appearances' => $a->relatedAppearances()->get()

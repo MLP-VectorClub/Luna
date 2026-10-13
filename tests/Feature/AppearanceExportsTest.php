@@ -108,6 +108,26 @@ class AppearanceExportsTest extends TestCase
         $this->getJson($path($private))->assertOk()->assertJsonPath('token', $token);
     }
 
+    public function testTheAppearanceListsItsMajorChangesAndOnlyStaffSeeWhoMadeThem(): void
+    {
+        $staff = $this->user(Role::Staff);
+        $appearance = $this->appearance();
+        \App\Models\MajorChange::create(['appearance_id' => $appearance->id, 'reason' => 'Older change', 'user_id' => $staff->id, 'created_at' => now()->subDays(2)]);
+        \App\Models\MajorChange::create(['appearance_id' => $appearance->id, 'reason' => 'Newest change', 'user_id' => $staff->id, 'created_at' => now()->subDay()]);
+        $personal = $this->appearance(['owner_id' => $this->user()->id, 'label' => 'Personal']);
+
+        $guest = $this->getJson("/appearances/{$appearance->id}")->assertOk();
+        $this->assertSame(['Newest change', 'Older change'], array_column($guest->json('majorChanges'), 'reason'));
+        $this->assertSame([null, null], array_column($guest->json('majorChanges'), 'user'));
+
+        $this->actingAs($staff, 'sanctum');
+        $seen = $this->getJson("/appearances/{$appearance->id}")->assertOk()->json('majorChanges.0');
+        $this->assertSame(['id' => $staff->id, 'name' => $staff->name], $seen['user']);
+
+        // Personal guide appearances have none
+        $this->getJson("/appearances/{$personal->id}")->assertOk()->assertJsonPath('majorChanges', []);
+    }
+
     public function testShareTokensOpenCutieMarkDownloadsOfPrivateAppearances(): void
     {
         $appearance = $this->appearance(['owner_id' => $this->user()->id, 'private' => true]);

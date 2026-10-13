@@ -92,6 +92,12 @@ use OpenApi\Annotations as OA;
  *   description="Shows this appearance is linked to",
  *   @OA\Items(ref="#/components/schemas/ShowListItem")),
  *   @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit this appearance (its owner, or staff)"),
+ *   @OA\Property(property="majorChanges", type="array", description="The major changes of an official appearance, newest first (always empty for personal guide appearances); `user` is only sent to staff",
+ *   @OA\Items(type="object", additionalProperties=false, required={"id", "reason", "user", "createdAt"},
+ *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
+ *     @OA\Property(property="reason", type="string"),
+ *     @OA\Property(property="user", type="object", nullable=true, additionalProperties=false, required={"id", "name"}, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="name", type="string")),
+ *     @OA\Property(property="createdAt", type="string", format="date-time"))),
  *   @OA\Property(property="token", nullable=true, ref="#/components/schemas/AppearanceToken", description="The share token of a private appearance (the `token` query parameter that opens it for anybody), only for those who may edit it; null otherwise"),
  *   @OA\Property(property="cutieMarks", type="array", minItems=0, @OA\Items(ref="#/components/schemas/CutieMark")))}
  * )
