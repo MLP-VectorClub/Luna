@@ -4,7 +4,7 @@
 # deploy.conf restarts it after every deploy once the unit exists; `php artisan horizon:terminate` also makes it restart itself.
 [Unit]
 Description=Luna Laravel Horizon Queue Worker
-After=network.target redis-server.service postgresql.service
+After=network.target valkey-server.service postgresql.service
 
 [Service]
 User=www-data
