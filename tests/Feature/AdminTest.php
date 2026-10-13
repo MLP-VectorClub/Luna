@@ -130,7 +130,7 @@ class AdminTest extends TestCase
         Appearance::create(['label' => 'Personal', 'owner_id' => User::factory()->create()->id, 'notes_src' => null]);
         // The old site published this file for everybody (other tools read it)
         $response = $this->getJson('/color-guide/export')->assertOk();
-        $this->assertStringEndsWith('/dist/mlpvc-colorguide-schema.json?v1.1', $response->json('$schema'));
+        $this->assertStringEndsWith('/dist/mlpvc-colorguide-schema.json?v1.2', $response->json('$schema'));
         $this->assertCount(1, $response->json('Appearances'));
         $this->assertSame('Twilight', array_values($response->json('Appearances'))[0]['label']);
     }

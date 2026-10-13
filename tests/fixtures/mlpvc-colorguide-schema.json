@@ -10,16 +10,34 @@
       "format": "uri"
     },
     "Appearances": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/Appearance"
-      }
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Appearance"
+          }
+        },
+        {
+          "type": "array",
+          "maxItems": 0,
+          "description": "An empty list stands for no entries"
+        }
+      ]
     },
     "Tags": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/Tag"
-      }
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Tag"
+          }
+        },
+        {
+          "type": "array",
+          "maxItems": 0,
+          "description": "An empty list stands for no entries"
+        }
+      ]
     }
   },
   "definitions": {
@@ -79,6 +97,11 @@
               "additionalProperties": {
                 "$ref": "#/definitions/ColorGroup"
               }
+            },
+            {
+              "type": "array",
+              "maxItems": 0,
+              "description": "An empty list stands for no entries"
             }
           ]
         },
