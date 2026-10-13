@@ -8,6 +8,7 @@ use App\Enums\Role;
 use App\Enums\SpriteSize;
 use App\Enums\UserPrefKey;
 use App\Models\Appearance;
+use App\Models\Tag;
 use App\Models\PinnedAppearance;
 use App\Models\User;
 use App\Utils\ColorGuideHelper;
@@ -193,7 +194,9 @@ class AppearancesController extends Controller
                 throw new \RuntimeException("Unhandled sort field {$sort->value}");
         }
 
-        $results = $appearances->map(fn (Appearance $a) => ColorGuideHelper::mapAppearance($a, true));
+        // The other names of characters (synonyms of their tags), for the "AKA" of the list items
+        $character_synonyms = Tag::where('type', 'char')->whereNotNull('synonym_of')->get()->groupBy('synonym_of');
+        $results = $appearances->map(fn (Appearance $a) => ColorGuideHelper::mapAppearance($a, true, false, $character_synonyms));
 
         return response()->camelJson([
             'appearances' => $results,

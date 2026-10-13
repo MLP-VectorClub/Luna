@@ -453,7 +453,7 @@ class ColorGuideHelper
      *
      * @return array
      */
-    public static function mapAppearance(Appearance $a, bool $compact = false, bool $double_size_sprite = false): array
+    public static function mapAppearance(Appearance $a, bool $compact = false, bool $double_size_sprite = false, ?Collection $character_synonyms = null): array
     {
         $is_staff = Permission::sufficient(Role::Staff);
 
@@ -463,11 +463,8 @@ class ColorGuideHelper
         ]);
 
         if (!$compact) {
-            $show_synonyms = false;
-            if ($is_staff) {
-                $hide_synonym_tags = UserPrefHelper::get(Auth::user(), UserPrefKey::ColorGuide_HideSynonymTags);
-                $show_synonyms = !$hide_synonym_tags;
-            }
+            // Staff always see the synonyms next to the tags, the old site's `Tags::getFor` ignored the "hide synonym tags" preference for them
+            $show_synonyms = $is_staff;
 
             $tag_mapper = fn (Tag $t) => self::mapTag($t);
             $appearance['tags'] = TagHelper::getFor($a->id, $show_synonyms, true)->map($tag_mapper);
@@ -476,8 +473,13 @@ class ColorGuideHelper
             $appearance['last_major_change'] = $last_change === null ? null : Carbon::parse($last_change)->toISOString();
             $appearance['color_groups'] = self::getColorGroups($a);
         } else {
-            // The full list shows tags and notes too, but not the color groups. Only regular tags, synonyms stay hidden here
-            $appearance['tags'] = $a->tags->whereNull('synonym_of')->sortBy([['type', 'asc'], ['name', 'asc']])->values()->map(fn (Tag $t) => self::mapTag($t));
+            // The full list shows tags and notes too, but not the color groups. Regular tags, plus the synonyms of character tags (the other names the
+            // list shows after "AKA", like the old list did), which the caller looks up for the whole list at once
+            $tags = $a->tags->whereNull('synonym_of');
+            if ($character_synonyms !== null) {
+                $tags = $tags->concat($tags->flatMap(fn (Tag $t) => $character_synonyms[$t->id] ?? []))->unique('id');
+            }
+            $appearance['tags'] = $tags->sortBy([['type', 'asc'], ['name', 'asc']])->values()->map(fn (Tag $t) => self::mapTag($t));
             $appearance['notes'] = $a->notes_rend;
         }
 

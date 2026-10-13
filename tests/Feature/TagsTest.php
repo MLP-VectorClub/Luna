@@ -71,9 +71,9 @@ class TagsTest extends TestCase
         $appearance = Appearance::create(['label' => 'Tagged', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 1]);
         $appearance->tags()->attach($base->id);
 
-        // Staff who have not hidden synonyms get them next to the tags, marked with the tag they stand for
+        // Staff always get the synonyms next to the tags (whatever the "hide synonym tags" preference says), marked with the tag they stand for
         $staff = User::factory()->create(['role' => Role::Staff]);
-        $this->actingAs($staff, 'sanctum')->putJson("/users/{$staff->id}/preferences/cg_hidesynon", ['value' => 0])->assertOk();
+        $this->actingAs($staff, 'sanctum')->putJson("/users/{$staff->id}/preferences/cg_hidesynon", ['value' => 1])->assertOk();
         $tags = collect($this->getJson("/appearances/{$appearance->id}")->assertOk()->json('tags'))->keyBy('name');
         $this->assertSame(null, $tags['base']['synonymOf']);
         $this->assertSame($base->id, $tags['alias']['synonymOf']);
@@ -81,6 +81,18 @@ class TagsTest extends TestCase
         // Everybody else only sees the regular tag
         $this->app['auth']->forgetGuards();
         $this->getJson("/appearances/{$appearance->id}")->assertOk()->assertJsonCount(1, 'tags')->assertJsonPath('tags.0.synonymOf', null);
+    }
+
+    public function testTheFullListCarriesTheOtherNamesOfCharacters(): void
+    {
+        $character = Tag::create(['name' => 'cheerilee', 'type' => 'char']);
+        Tag::create(['name' => 'cherilee', 'type' => 'char', 'synonym_of' => $character->id]);
+        Tag::create(['name' => 'wrong type', 'type' => 'app', 'synonym_of' => $character->id]);
+        $appearance = Appearance::create(['label' => '80s Outfit', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 1]);
+        $appearance->tags()->attach($character->id);
+
+        $tags = collect($this->getJson('/appearances/full?guide=pony')->assertOk()->json('appearances.0.tags'))->pluck('name')->all();
+        $this->assertEqualsCanonicalizing(['cheerilee', 'cherilee'], $tags);
     }
 
     public function testListIsPublicAndPaginated(): void
