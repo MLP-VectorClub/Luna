@@ -417,6 +417,7 @@ class AdminController extends Controller
         $data['Appearances'] = (object) $data['Appearances'];
         $data['Tags'] = (object) $data['Tags'];
 
-        return response()->json($data, 200, ['Last-Modified' => now()->toRfc7231String()]);
+        // Tools on other sites read this file
+        return response()->json($data, 200, ['Last-Modified' => now()->toRfc7231String(), 'Access-Control-Allow-Origin' => '*']);
     }
 }

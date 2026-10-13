@@ -148,7 +148,8 @@ class AdminTest extends TestCase
         $twilight->tags()->attach($character->id);
         $twilight->relatedAppearances()->attach($dash->id);
 
-        $data = json_decode($this->getJson('/color-guide/export')->assertOk()->getContent());
+        $response = $this->getJson('/color-guide/export')->assertOk()->assertHeader('Access-Control-Allow-Origin', '*');
+        $data = json_decode($response->getContent());
         $validator = new Validator();
         $validator->validate($data, json_decode(file_get_contents(base_path('tests/fixtures/mlpvc-colorguide-schema.json'))));
 
