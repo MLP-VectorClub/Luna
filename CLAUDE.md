@@ -90,7 +90,7 @@ The 2020 "nutshell names" mode stays (user decision, 2026-10-03). Winterchilla s
 1. `scripts/load-contract-seed.sh` builds the `luna_contract` DB from `tests/fixtures/contract-seed.sql` (a copy of Winterchilla's `scripts/dump-contract-seed.sh` output, do not run that script against the shared test DB; pass another path to use a fresher dump) and attaches `tests/fixtures/cutiemark.svg` to the seeded cutie marks
 2. `scripts/serve-contract.sh` serves Luna on :8766 (APP_ENV=testing, response cache off, restart after code changes)
 3. In Winterchilla: `env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_PATH= CONTRACT_AUTH=bearer 'CONTRACT_LOGIN_URL=/test/login/{id}' vendor/bin/pest tests/Browser/Api/<File>.php`
-- Remaining failures are tests that assert Winterchilla UI fields (`li`, `url`, `goto`, `cgs`, `newhtml`...), tests of `x-internal` endpoints, and Winterchilla-only file checks
+- The whole suite passes against Luna (`--exclude-group=winterchilla-only`, 179 tests): the tests that assert Winterchilla's own API shape (UI fields such as `li`, `url`, `html`, routes Luna replaced like `/users/signout` and `/users/session/status`, `x-internal` endpoints, file checks, other status codes for the same case) carry that group. Run each file after a fresh `scripts/load-contract-seed.sh`: the tests change the data and later ones depend on it
 - `php artisan l5-swagger:generate && php scripts/diff-contract.php [--by-tag]` lists the contract operations Luna still lacks
 
 Deploys reload every active php-fpm service (`deploy_restart` in `deploy.conf`), which clears the PHP stat cache and opcache of all workers; there is deliberately no API endpoint for it (Winterchilla's `DELETE /admin/stat-cache` is not ported, an endpoint can only reach one worker).

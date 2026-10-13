@@ -36,3 +36,6 @@ echo "Attached the fixture to ".App\Models\CutieMark::where("id", ">=", 900000)-
 # theirs) becomes one there too, so the account page has a session of someone else's to list
 "${PSQL[@]}" -d luna_contract -c "INSERT INTO luna_sessions (id, user_id, ip_address, user_agent, payload, last_activity, created_at)
   SELECT 'seeded-session-' || id, user_id, '127.0.0.1', user_agent, '', EXTRACT(EPOCH FROM last_visit)::int, created FROM sessions"
+
+# The seed was dumped some time ago, the Discord member that "was synced just now" has to be in its cooldown again
+"${PSQL[@]}" -d luna_contract -c "UPDATE discord_members SET last_synced = now() WHERE last_synced IS NOT NULL"
