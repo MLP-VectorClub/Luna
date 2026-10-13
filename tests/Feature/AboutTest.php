@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Role;
 use App\Models\User;
+use App\Utils\SettingsHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -45,5 +46,17 @@ class AboutTest extends TestCase
         // Ordered by name, regular users are left out and private fields never leak
         $this->assertSame(['alpha_member', 'zed_staff'], array_column($response->json(), 'name'));
         $response->assertJsonMissingPath('0.email')->assertJsonMissingPath('0.password');
+    }
+
+    public function testADeveloperIsListedUnderTheDeveloperRoleLabel(): void
+    {
+        User::factory()->create(['name' => 'the_dev', 'role' => Role::Developer]);
+
+        // Nobody is told about the developer role, until the label setting says otherwise it is the role of staff
+        SettingsHelper::set('dev_role_label', 'staff');
+        $this->assertSame(['staff'], array_column($this->getJson('/about/members')->assertOk()->json(), 'role'));
+
+        SettingsHelper::set('dev_role_label', 'admin');
+        $this->assertSame(['admin'], array_column($this->getJson('/about/members')->assertOk()->json(), 'role'));
     }
 }

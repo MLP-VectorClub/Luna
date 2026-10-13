@@ -139,7 +139,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function publicResponse(): array
     {
         $data = $this->toArray();
-        if ($data['role'] === Role::Developer) {
+        if ($data['role'] === Role::Developer->value) {
             $data['role'] = SettingsHelper::get('dev_role_label');
         }
         return $data;
