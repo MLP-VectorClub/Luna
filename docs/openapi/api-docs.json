@@ -630,7 +630,7 @@
                 "tags": [
                     "admin"
                 ],
-                "description": "State of the ElasticSearch server behind the color guide search. Requires developer permission",
+                "description": "State of the OpenSearch server behind the color guide search. Requires developer permission",
                 "operationId": "GetAdminSearchStatus",
                 "responses": {
                     "200": {
@@ -735,7 +735,7 @@
                         }
                     },
                     "503": {
-                        "description": "ElasticSearch is down",
+                        "description": "OpenSearch is down",
                         "content": {
                             "application/json": {
                                 "schema": {

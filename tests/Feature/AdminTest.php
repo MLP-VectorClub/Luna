@@ -10,7 +10,6 @@ use App\Models\Notification;
 use App\Models\Show;
 use App\Models\Post;
 use App\Models\User;
-use Elasticsearch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

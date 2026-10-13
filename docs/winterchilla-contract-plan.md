@@ -102,7 +102,7 @@ Before Winterchilla can point at Luna's database:
   Luna's PHPUnit suite keeps using its own `luna_test` DB with factories for unit-level tests; the cross-implementation run uses a second DB (`luna_contract`).
 - Network seams the contract tests rely on that Luna needs equivalents for: Redis-seeded deviations (post image checks), the fake OAuth provider, club-gallery
   marker files, Discord. Plan: Laravel `Http::fake()` bound by a test-environment service provider, driven by the same fixture URLs.
-- ElasticSearch for `/appearances` and `/tags/autocomplete`: local ES service exists; the contract DB needs the `appearances` index built (Winterchilla's `POST /color-guide/reindex` equivalent → artisan command).
+- OpenSearch for `/appearances` and `/tags/autocomplete`: local ES service exists; the contract DB needs the `appearances` index built (Winterchilla's `POST /color-guide/reindex` equivalent → artisan command).
 
 **Step 1 – cross-cutting.** Error envelope, `optional-auth` and `role:` middleware, policies, pagination resource (`currentPage/totalPages/totalItems/itemsPerPage`),
 permission flags helper, `Log` model + writer (every write endpoint logs like Winterchilla), `GET /config`, Setting model, `/users/*` gaps (related fields, preferences).
@@ -154,7 +154,7 @@ cd ../Winterchilla && env CONTRACT_BASE_URL=http://127.0.0.1:8766 CONTRACT_API_P
 ```
 
 - 2026-10-01: schema alignment migration, foundation (`/config`, middleware, `{message}` errors, test login, `/users/me`), settings, notices, useful links, user preferences, tags (with
-  ElasticSearch index updates through `AppearanceIndex`), color groups, appearance management (create / update / delete / pin / relations / tags / shows / order / template / selective clear /
+  OpenSearch index updates through `AppearanceIndex`), color groups, appearance management (create / update / delete / pin / relations / tags / shows / order / template / selective clear /
   sprites), shows (details, create, update, delete, votes, next, latest, prefill, appearance links), admin logs, notification read, color guide export and reindex, personal guide
   (appearances, slots, points, point history, recalculation) and `PUT /users/{id}/role`. **91 of 127 operations done, 36 left.** Luna's own suite has 92 tests.
 - Left: posts (16), events and entries (13), user profile and contributions (2, they need the post mapping), Discord link/sync (2), cutie marks and SVG sanitizing (3).

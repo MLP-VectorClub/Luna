@@ -25,4 +25,4 @@ It drops and recreates the target database, so never aim it at the database Luna
 - Everything in the database Luna served, including what Luna holds itself: Sanctum tokens and browser sessions (everyone is signed out once), notifications and anything created through Luna or Celestia since the last import.
 - Winterchilla keeps getting writes, so the copy is only as fresh as the import: repeat it at the cutover.
 - Imported DeviantArt tokens are Winterchilla's live ones. Luna must not refresh them (`DEVIANTART_TOKEN_SYNC` stays off until the cutover), a refresh token works only once.
-- The Elasticsearch `appearances` index is shared and keyed by the same ids, nothing to rebuild for an unchanged import.
+- The OpenSearch `appearances` index is shared and keyed by the same ids, nothing to rebuild for an unchanged import.

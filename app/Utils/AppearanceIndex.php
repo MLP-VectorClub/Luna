@@ -5,16 +5,13 @@ namespace App\Utils;
 use App\Models\Appearance;
 use App\Models\PinnedAppearance;
 use App\Models\Tag;
-use Elastic\Elasticsearch\Exception\ClientResponseException;
-use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Elastic\Transport\Exception\NoNodeAvailableException;
-use Elasticsearch;
+use OpenSearch\Common\Exceptions\OpenSearchException;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Keeps the `appearances` ElasticSearch index (shared with Winterchilla) in sync. Only official guide appearances are indexed,
- * personal guide ones are never searched. Does nothing in the testing environment, which has no ElasticSearch.
+ * Keeps the `appearances` OpenSearch index (shared with Winterchilla) in sync. Only official guide appearances are indexed,
+ * personal guide ones are never searched. Does nothing in the testing environment, which has no OpenSearch.
  */
 class AppearanceIndex
 {
@@ -28,13 +25,16 @@ class AppearanceIndex
 
         $body = self::body($appearance);
         try {
-            Elasticsearch::connection()->update([
+            Search::client()->update([
                 'index' => self::INDEX,
                 'id' => $appearance->id,
                 'body' => ['doc' => $body, 'upsert' => $body],
             ]);
-        } catch (NoNodeAvailableException|ServerResponseException $e) {
-            Log::error("ElasticSearch server was down when attempting to index appearance {$appearance->id}");
+        } catch (OpenSearchException $e) {
+            if (!Search::isDown($e)) {
+                throw $e;
+            }
+            Log::error("OpenSearch server was down when attempting to index appearance {$appearance->id}");
         }
     }
 
@@ -45,14 +45,14 @@ class AppearanceIndex
         }
 
         try {
-            Elasticsearch::connection()->delete(['index' => self::INDEX, 'id' => $appearance->id]);
-        } catch (ClientResponseException $e) {
-            // Not indexed, nothing to remove
-            if ($e->getCode() !== 404) {
+            Search::client()->delete(['index' => self::INDEX, 'id' => $appearance->id]);
+        } catch (OpenSearchException $e) {
+            if (Search::isDown($e)) {
+                Log::error("OpenSearch server was down when attempting to remove appearance {$appearance->id}");
+            } elseif (Search::status($e) !== 404) {
+                // (A 404 means it was not indexed, nothing to remove)
                 throw $e;
             }
-        } catch (NoNodeAvailableException|ServerResponseException $e) {
-            Log::error("ElasticSearch server was down when attempting to remove appearance {$appearance->id}");
         }
     }
 
@@ -63,12 +63,12 @@ class AppearanceIndex
      */
     public static function rebuild(): int
     {
-        $client = Elasticsearch::connection();
+        $client = Search::client();
         try {
             $client->indices()->delete(['index' => self::INDEX]);
-        } catch (ClientResponseException $e) {
+        } catch (OpenSearchException $e) {
             // The index does not exist yet
-            if ($e->getCode() !== 404) {
+            if (Search::status($e) !== 404) {
                 throw $e;
             }
         }
@@ -102,7 +102,7 @@ class AppearanceIndex
                 $body[] = ['index' => ['_index' => self::INDEX, '_id' => $appearance->id]];
                 $body[] = self::body($appearance);
             }
-            $response = $client->bulk(['body' => $body])->asArray();
+            $response = $client->bulk(['body' => $body]);
             if (!empty($response['errors'])) {
                 throw new \RuntimeException('Bulk indexing reported errors: '.json_encode($response['items']));
             }

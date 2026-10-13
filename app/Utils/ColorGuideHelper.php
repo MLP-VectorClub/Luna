@@ -22,15 +22,12 @@ use Illuminate\Support\Carbon;
 use App\Models\Tag;
 use App\Pagination;
 use App\ShowHelper;
-use Elastic\Elasticsearch\Exception\ClientResponseException;
-use Elastic\Elasticsearch\Exception\ServerResponseException;
-use Elastic\Transport\Exception\NoNodeAvailableException;
-use Elasticsearch;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
+use OpenSearch\Common\Exceptions\OpenSearchException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function is_array;
 
@@ -39,8 +36,8 @@ class ColorGuideHelper
     public static function isElasticAvailable(): bool
     {
         try {
-            return Elasticsearch::connection()->ping()->asBool();
-        } catch (NoNodeAvailableException|ServerResponseException $e) {
+            return Search::client()->ping();
+        } catch (OpenSearchException $e) {
             return false;
         }
     }
@@ -52,8 +49,7 @@ class ColorGuideHelper
      * @param  GuideName  $guide
      * @param  string|null  $search_for
      * @return LengthAwarePaginator
-     * @throws ClientResponseException
-     * @throws ServerResponseException
+     * @throws OpenSearchException
      */
     public static function searchGuide(
         int $page,
@@ -89,10 +85,10 @@ class ColorGuideHelper
 
         try {
             $search_results = self::searchElastic($search_query, $paginator);
-        } catch (ClientResponseException|ServerResponseException $e) {
-            $status = $e->getResponse()->getStatusCode();
+        } catch (OpenSearchException $e) {
+            $status = Search::status($e);
             $message = $e->getMessage();
-            $is_paging_error = ($status === 400 || $e instanceof ServerResponseException)
+            $is_paging_error = ($status === 400 || $status >= 500)
                 && (Str::contains($message, 'Result window is too large, from + size must be less than or equal to')
                     || Str::contains($message, 'Failed to parse int parameter [from] with value'));
 
@@ -134,7 +130,7 @@ class ColorGuideHelper
     }
 
     /**
-     * Performs an ElasticSearch search operation
+     * Performs an OpenSearch search operation
      *
      * @param  array  $body
      * @param  LengthAwarePaginator  $paginator
@@ -149,7 +145,7 @@ class ColorGuideHelper
             'size' => $paginator->perPage(),
         ];
 
-        return Elasticsearch::connection()->search($params)->asArray();
+        return Search::client()->search($params);
     }
 
     /**

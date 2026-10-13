@@ -11,14 +11,14 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Utils\AppearanceIndex;
 use App\Utils\ColorGuideHelper;
+use App\Utils\Search;
 use App\Utils\WebsocketServer;
-use Elastic\Transport\Exception\NoNodeAvailableException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
-use Elasticsearch;
 use OpenApi\Annotations as OA;
+use OpenSearch\Common\Exceptions\OpenSearchException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AdminController extends Controller
@@ -284,7 +284,7 @@ class AdminController extends Controller
      * @OA\Get(
      *   path="/admin/search-status",
      *   operationId="GetAdminSearchStatus",
-     *   description="State of the ElasticSearch server behind the color guide search. Requires developer permission",
+     *   description="State of the OpenSearch server behind the color guide search. Requires developer permission",
      *   tags={"admin"},
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"down", "indices", "nodes"},
      *     @OA\Property(property="down", type="boolean"), @OA\Property(property="indices", type="array", @OA\Items(type="string")), @OA\Property(property="nodes", type="array", @OA\Items(type="string")))),
@@ -295,8 +295,8 @@ class AdminController extends Controller
     public function searchStatus(): JsonResponse
     {
         try {
-            $client = Elasticsearch::connection();
-            if (!$client->ping()->asBool()) {
+            $client = Search::client();
+            if (!$client->ping()) {
                 return response()->json(['down' => true, 'indices' => [], 'nodes' => []]);
             }
             $describe = fn(array $rows) => array_map(function (array $row, int $no) {
@@ -309,10 +309,14 @@ class AdminController extends Controller
 
                 return trim($line);
             }, $rows, array_keys($rows));
-            $indices = array_values(array_filter($client->cat()->indices(['format' => 'json'])->asArray(), fn(array $index) => ($index['index'] ?? null) === 'appearances'));
+            $indices = array_values(array_filter($client->cat()->indices(['format' => 'json']), fn(array $index) => ($index['index'] ?? null) === 'appearances'));
 
-            return response()->json(['down' => false, 'indices' => $describe($indices), 'nodes' => $describe($client->cat()->nodes(['format' => 'json'])->asArray())]);
-        } catch (\Throwable $e) {
+            return response()->json(['down' => false, 'indices' => $describe($indices), 'nodes' => $describe($client->cat()->nodes(['format' => 'json']))]);
+        } catch (OpenSearchException $e) {
+            if (!Search::isDown($e)) {
+                throw $e;
+            }
+
             return response()->json(['down' => true, 'indices' => [], 'nodes' => []]);
         }
     }
@@ -326,15 +330,18 @@ class AdminController extends Controller
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
      *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="503", description="ElasticSearch is down", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     *   @OA\Response(response="503", description="OpenSearch is down", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
      * )
      */
     public function reindex(): JsonResponse
     {
         try {
             $count = AppearanceIndex::rebuild();
-        } catch (NoNodeAvailableException $e) {
-            throw new HttpException(503, 'Re-index failed, ElasticSearch server is down!');
+        } catch (OpenSearchException $e) {
+            if (!Search::isDown($e)) {
+                throw $e;
+            }
+            throw new HttpException(503, 'Re-index failed, the OpenSearch server is down!');
         }
 
         return response()->json(['message' => "Re-index successful, $count ".($count === 1 ? 'appearance was' : 'appearances were').' indexed']);

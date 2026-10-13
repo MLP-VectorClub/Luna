@@ -7,7 +7,7 @@ return [
         'deviantart_unavailable' => 'DeviantArt could not be reached to check your sign-in, please try again in a moment.',
     ],
     'color_guide' => [
-        'elastic_down' => 'The ElasticSearch server is unreachable',
+        'elastic_down' => 'The OpenSearch server is unreachable',
         'appearance_private' => 'This appearance is private and you do not have permission to view it',
     ]
 ];

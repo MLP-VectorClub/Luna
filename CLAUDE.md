@@ -9,14 +9,14 @@ Upgraded from Laravel 9.0.0-beta.1 to Laravel 12 on PHP 8.5 (`composer.json` req
 ### Done
 - Dependencies bumped, unused/abandoned packages removed (websockets, restcord, activitylog, ignition, php-cs-fixer, doctrine/dbal, nojacko email-validator, ongr dsl)
 - DBAL is gone: `citext` / `mlp_generation` column types are registered as grammar macros in `AppServiceProvider`
-- Elasticsearch moved to the ES 8 client (`mailerlite/laravel-elasticsearch`), queries in `ColorGuideHelper` are plain arrays. Prod runs ES 8.19, index `appearances` is created by Winterchilla
+- Search runs on OpenSearch through `opensearch-project/opensearch-php` (the fork of the Elasticsearch 7.10 client, array requests and responses; the ES 8 client and the mailerlite wrapper are gone, `config/opensearch.php` + `App\Utils\Search` build the client and classify failures: `Search::status`, `errorBody`, `isDown`), queries in `ColorGuideHelper` are plain arrays. The index `appearances` is shared with Winterchilla
 - OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves the docs at the route itself, no trailing filename)
 - Old migrations run on a fresh database again (`unsignedFloat` removed, activity_log no longer reads the removed package's config)
 - Test suite: PHPUnit 11, now 195 tests (see the Winterchilla contract section)
 - Deployed to production (`ffd40e0`), including the `expires_at` fix that unblocks successful signins (password login confirmed working on production)
 
 ### Left
-- More tests: signup validation (422 cases), `AccountHelper::create` (first user becomes developer, later ones get 503), appearance detail and private appearances, search/autocomplete with the `Elasticsearch` facade mocked, user prefs, social signin
+- More tests: signup validation (422 cases), `AccountHelper::create` (first user becomes developer, later ones get 503), appearance detail and private appearances, search/autocomplete with `Search::client()` replaced by a fake, user prefs, social signin
 - `StrictEmail` is now `email:rfc,dns`, the old package also blocked disposable domains and that is gone. The rule's DNS part is untested (needs network)
 - Untested against real data: sprite/cutie mark uploads (medialibrary 11), OAuth callbacks
 
@@ -30,7 +30,7 @@ progress log are in `docs/winterchilla-contract-plan.md`. Deployed to production
 - Foundation: `GET /config`, `role:` and `optional.auth` middleware, `{message}` error bodies (`ConflictException` adds extra fields to a 409), `POST /test/login/{id}` (APP_ENV=testing only), `/users/me` as `{user, sessionUpdating}`
 - Settings, notices, useful links, user preferences (+ `PUT /users/{id}/role`), tags, color groups, appearances (reads and all management except cutie marks), sprites, shows (incl. votes, next, latest, prefill), admin logs, notification read, color guide export and reindex, personal guide (slots, points, history), post lists, post write flows (create, edit, reserve, finish, approve, delete, change image, unbreak, direct reservations), user profile and contributions, event reads, the disabled event writes (501 like Winterchilla), cutie marks (`App\Http\Controllers\CutieMarksController`, stored as medialibrary files holding the sanitized SVG) and SVG sanitizing (`App\Utils\SvgHelper`, enshrined/svg-sanitize, minified by the sanitizer, no svgo), Discord sync and unlink (`DiscordController`, Laravel `Http` against discord.com, needs `DISCORD_CLIENT_ID/SECRET/BOT_TOKEN/SERVER_ID`)
 - Image links go through `App\Utils\ImageProvider` and `DeviantArt` (oEmbed, Derpibooru, Imgur, Lightshot, club gallery check), always via Laravel's `Http` client so tests fake them
-- `App\Utils\AppearanceIndex` keeps the shared ElasticSearch `appearances` index in sync; `LogWriter` writes the shared `logs` table
+- `App\Utils\AppearanceIndex` keeps the shared OpenSearch `appearances` index in sync; `LogWriter` writes the shared `logs` table
 
 ### Cutie mark colors follow the guide
 Like Winterchilla's tokenized files: `CutieMark::storeSvg` replaces every color of the sanitized SVG that the appearance's `Cutie Mark` color group has by a token (`SvgHelper::tokenize`, `<!--@ID:RRGGBB[,ALPHA]-->`, unknown colors `<!--#/RRGGBBAA-->`) kept in the media's `tokenized` custom property, and serves the file with the current colors. Saving that color group (`ColorGroupsController`) calls `CutieMark::rerenderAllOf`, which writes a new file (new hash name, so the URL changes and nothing stale is cached). The token carries its own hex, so a deleted color keeps rendering. Marks stored without tokens (no color group at the time, or imported by `fs:migrate`) stay as they are until `php artisan cutiemarks:tokenize` (`--dry-run` to preview; run it once after the data cutover). Colors changed by other routes than the color group save (deleting the group contents, templates) do not re-render, the files keep their last colors. Tests: `SvgTokensTest`, `CutieMarksTest`.
@@ -41,7 +41,7 @@ Like Winterchilla's tokenized files: `CutieMark::storeSvg` replaces every color 
 ### Left
 - Cutie mark gaps: no svgo (deliberate: the sanitizer minifies, and the UI contract tests pass without it), attribution by username/deviation needs the DeviantArt user to exist already (no DeviantArt API lookup to create unknown users), the `preview` HTML of Winterchilla is not returned
 - Event entries: `GET|PUT|DELETE /event-entries/{entryid}` are implemented (`EventEntriesController`, PUT answers `{}` without Winterchilla's `entryHtml` UI field); `GET|PUT|DELETE /events/{id}/entries` are placeholders that answer 404 for signed in users like Winterchilla (its route never gets an entry id)
-- Not done and not in the contract: `GET /appearances/{id}/preview` (internal), the real ElasticSearch reindex is untested
+- Not done and not in the contract: `GET /appearances/{id}/preview` (internal), the real OpenSearch reindex and search were tried by hand against OpenSearch 3.8 (2026-10-13), no test talks to a server
 - Before Winterchilla can use Luna's database: the migration rehearsal passed (`scripts/rehearse-cutover.sh`, see the plan; point `LARAVEL_STORAGE_PATH` at a scratch folder when rehearsing `fs:migrate`). `fs:migrate` was rehearsed with the production `fs/` (146 cutie marks and 110 sprites imported). `fs:migrate` skips files without a database record. Shelved by the user (2026-10-03) until Celestia and Luna have full feature parity with Winterchilla: how to load/adopt the production data. Note that production's `luna` database already holds a snapshot of Winterchilla's data (about 1100 users, 493 appearances, 2300 posts) from an earlier import, it is not kept in sync, so it goes stale until the real cutover
 
 ### Self-contained without Winterchilla
@@ -99,7 +99,7 @@ Deploys reload every active php-fpm service (`deploy_restart` in `deploy.conf`),
 
 - URL: `https://api.mlpvector.lc` (nginx vhost is `/etc/nginx/conf.d/luna-lc.conf`, not in the repo; reuses the `mlpvector.lc` cert, which already lists `api.mlpvector.lc`). `CDN_URL=https://api.mlpvector.lc/cdn` serves `storage/app/public`
 - php-fpm: shared pool socket `/run/php-fpm/php-fpm.sock`, no dedicated pool. `ext-exif` is enabled in `/etc/php/php.ini` (medialibrary needs it)
-- Elasticsearch: local service with `xpack.security.enabled: false`, single node, to match prod
+- OpenSearch: local service (`opensearch` package, `systemctl start opensearch`) on :9200 without the security plugin, single node. Not started by the tests (`AppearanceIndex` does nothing under APP_ENV=testing); to try the search for real run `APP_ENV=local DB_DATABASE=luna_contract php artisan tinker` and call `AppearanceIndex::rebuild()`
 - Tests use the `luna_test` database (`DB_DATABASE` is forced in `phpunit.xml`); `tests/TestCase.php` refuses to run against any database not ending in `_test`. Build it with `createdb luna_test`, `psql -f setup/create_extensions.pg.sql`, then `DB_DATABASE=luna_test php artisan migrate`
 
 ## Gotchas
