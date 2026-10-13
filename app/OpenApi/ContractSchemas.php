@@ -488,7 +488,7 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="lastSynced", type="string", format="date-time", nullable=true),
  *   @OA\Property(property="syncCooldown", type="integer", description="Seconds between two syncs"), @OA\Property(property="canSync", type="boolean")),
  *   @OA\Property(property="account", type="object", nullable=true, description="Sign in details for the Security section of the account page, only for the user themselves and staff",
- *   @OA\Property(property="email", type="string", nullable=true), @OA\Property(property="emailVerifiedAt", type="string", format="date-time", nullable=true),
+ *   @OA\Property(property="email", type="string", nullable=true, description="Only the user themselves and developers get the address, it is null for everybody else (staff included)"), @OA\Property(property="emailSet", type="boolean", description="Whether the account has an address at all"), @OA\Property(property="emailVerifiedAt", type="string", format="date-time", nullable=true),
  *   @OA\Property(property="passwordSet", type="boolean")),
  *   @OA\Property(property="developerInfo", type="object", nullable=true, description="Only for developers",
  *   @OA\Property(property="deviantArtId", type="string", nullable=true), @OA\Property(property="discordId", type="string", nullable=true)),

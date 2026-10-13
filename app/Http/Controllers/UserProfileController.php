@@ -115,7 +115,10 @@ class UserProfileController extends Controller
             'discordName' => $user->discordMember?->display_name,
             'discord' => $discord,
             'account' => $same_user || $is_staff ? [
-                'email' => $user->email,
+                // Other people's addresses are for developers only (staff may still start a change for them, see `UserEmailController`)
+                'email' => $same_user || ($visitor !== null && perm(Role::Developer, $visitor->role)) ? $user->email : null,
+                // Whether there is one, for those who do not get to see it
+                'emailSet' => $user->email !== null && $user->email !== '',
                 'emailVerifiedAt' => $user->email_verified_at?->toISOString(),
                 'passwordSet' => $user->password !== null && $user->password !== '',
             ] : null,

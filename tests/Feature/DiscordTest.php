@@ -120,4 +120,24 @@ class DiscordTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => Role::Member]), 'sanctum');
         $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('account', null);
     }
+
+    public function testOnlyTheUserAndDevelopersSeeTheEmailAddress(): void
+    {
+        $user = User::factory()->create(['role' => Role::Member, 'email' => 'private@example.com']);
+
+        // Staff get the rest of the account section, not the address
+        $this->actingAs(User::factory()->create(['role' => Role::Staff]), 'sanctum');
+        $staff = $this->getJson("/users/{$user->id}/profile")->assertOk();
+        $staff->assertJsonPath('account.email', null)->assertJsonPath('account.emailSet', true)->assertJsonStructure(['account' => ['emailVerifiedAt', 'passwordSet']]);
+        $this->assertStringNotContainsString('private@example.com', $staff->getContent());
+
+        $this->actingAs(User::factory()->create(['role' => Role::Admin]), 'sanctum');
+        $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('account.email', null);
+
+        $this->actingAs(User::factory()->create(['role' => Role::Developer]), 'sanctum');
+        $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('account.email', 'private@example.com');
+
+        $this->actingAs($user, 'sanctum');
+        $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('account.email', 'private@example.com');
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\VerifyEmailAddress;
 use App\Models\BlockedEmail;
 use App\Models\EmailVerification;
+use App\Enums\Role;
 use App\Models\User;
 use App\Rules\StrictEmail;
 use Illuminate\Http\JsonResponse;
@@ -64,7 +65,9 @@ class UserEmailController extends Controller
             if (mb_strlen($new_email) < 3 || mb_strlen($new_email) > 128) {
                 $this->fail('newEmail', 'The new e-mail must be between 3 and 128 characters long');
             }
-            if ($user->email !== null && strcasecmp($new_email, $user->email) === 0) {
+            // Whether an address is the one somebody has set is not for staff to find out by trying (developers see it anyway)
+            $may_compare = $same_user || perm(Role::Developer, $request->user()->role);
+            if ($may_compare && $user->email !== null && strcasecmp($new_email, $user->email) === 0) {
                 $this->fail('newEmail', 'You are trying to use same e-mail address '.($same_user ? 'you' : 'this user').' already '.($same_user ? 'have' : 'has').' set');
             }
             if (!(new StrictEmail())->passes('newEmail', $new_email)) {
@@ -84,7 +87,9 @@ class UserEmailController extends Controller
                 }
             }
 
-            if (User::where('email', $new_email)->exists()) {
+            // The user's own address is not "in use by another user", and staff must not learn that it is theirs by the answer
+            $is_current = $user->email !== null && strcasecmp($new_email, $user->email) === 0;
+            if (!$is_current && User::where('email', $new_email)->exists()) {
                 $this->fail('newEmail', 'This e-mail address is already in use by another user');
             }
         }

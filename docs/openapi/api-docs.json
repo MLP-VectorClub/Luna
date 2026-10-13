@@ -13265,8 +13265,13 @@
                         "description": "Sign in details for the Security section of the account page, only for the user themselves and staff",
                         "properties": {
                             "email": {
+                                "description": "Only the user themselves and developers get the address, it is null for everybody else (staff included)",
                                 "type": "string",
                                 "nullable": true
+                            },
+                            "emailSet": {
+                                "description": "Whether the account has an address at all",
+                                "type": "boolean"
                             },
                             "emailVerifiedAt": {
                                 "type": "string",

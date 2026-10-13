@@ -96,6 +96,20 @@ class EmailChangeTest extends TestCase
         Mail::assertSent(VerifyEmailAddress::class, fn($mail) => $mail->hasTo($target->email));
     }
 
+    public function testStaffCannotFindOutAnotherUsersAddressByTryingIt(): void
+    {
+        Mail::fake();
+        $target = User::factory()->create(['role' => Role::User, 'email' => 'secret@example.com']);
+
+        // A developer sees the address anyway, and the owner is told it is unchanged
+        $this->actingAs(User::factory()->create(['role' => Role::Developer]), 'sanctum');
+        $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'secret@example.com'])->assertJsonValidationErrors('newEmail');
+
+        // Staff are not told that the address they typed is the one on the account, that is not an error for them
+        $this->actingAs($this->staff(), 'sanctum');
+        $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'secret@example.com'])->assertOk();
+    }
+
     public function testFailedDeliveryRemovesTheVerification(): void
     {
         Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp down'));
