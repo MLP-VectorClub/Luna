@@ -117,6 +117,9 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::post('me/socket-token', [WebsocketController::class, 'token']);
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('sessions', [UsersController::class, 'sessions']);
+            Route::get('{id}/sessions', [UsersController::class, 'sessionsOf'])->whereNumber('id');
+            Route::delete('{id}/sessions/{sessionId}', [UsersController::class, 'deleteSessionOf'])->whereNumber('id')->where('sessionId', '[0-9a-f]{64}');
+            Route::delete('{id}/sessions', [UsersController::class, 'deleteSessionsOf'])->whereNumber('id');
             Route::delete('sessions/{id}', [UsersController::class, 'deleteSession'])->where('id', '[0-9a-f]{64}');
             Route::get('tokens', [UsersController::class, 'tokens']);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);

@@ -373,6 +373,115 @@ class UsersController extends Controller
         } else {
             Auth::guard('web')->logoutCurrentDevice();
         }
+        // "Sign out everywhere" (the account page's button) also ends every other browser session and access token
+        if ($request->boolean('everywhere')) {
+            self::endAllSessionsOf($user);
+        }
+
+        return response()->noContent();
+    }
+
+    private static function endAllSessionsOf(User $user): void
+    {
+        DB::table(config('session.table'))->where('user_id', $user->id)->delete();
+        $user->tokens()->delete();
+    }
+
+    /** Whoever is asking may look at and end the sessions of a user when it is them or they are staff */
+    private function sessionsTarget(Request $request, int $id): User
+    {
+        $target = User::findOrFail($id);
+        if ($request->user()->id !== $target->id && !$request->user()->isStaff()) {
+            throw new AuthorizationException();
+        }
+
+        return $target;
+    }
+
+    private function mapSessions(User $user, ?string $current): array
+    {
+        return DB::table(config('session.table'))->where('user_id', $user->id)->orderByDesc('last_activity')->get()
+            ->map(fn($row) => [
+                'id' => hash('sha256', $row->id),
+                'device' => Core::describeUserAgent($row->user_agent),
+                'userAgent' => $row->user_agent,
+                'ip' => $row->ip_address,
+                'lastActiveAt' => Date::createFromTimestamp($row->last_activity)->toIso8601String(),
+                'createdAt' => $row->created_at === null ? null : Date::parse($row->created_at)->toIso8601String(),
+                'current' => $current !== null && hash_equals($row->id, $current),
+            ])->values()->all();
+    }
+
+    /**
+     * @OA\Get(
+     *   path="/users/{id}/sessions",
+     *   operationId="GetUsersIdSessions",
+     *   description="Browser sessions of a user, most recently active first: the user themselves or staff (the account page of somebody else). `current` is only ever true for the requester's own.",
+     *   tags={"authentication","users"},
+     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="Success", @OA\JsonContent(type="object", required={"sessions"}, additionalProperties=false,
+     *     @OA\Property(property="sessions", type="array", @OA\Items(ref="#/components/schemas/BrowserSession"))
+     *   )),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Not the user themselves or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="No such user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function sessionsOf(Request $request, int $id): JsonResponse
+    {
+        $target = $this->sessionsTarget($request, $id);
+        $own = $request->user()->id === $target->id;
+        $current = $own && $request->hasSession() ? $request->session()->getId() : null;
+
+        return response()->json(['sessions' => $this->mapSessions($target, $current)]);
+    }
+
+    /**
+     * @OA\Delete(
+     *   path="/users/{id}/sessions/{sessionId}",
+     *   operationId="DeleteUsersIdSessionsSessionId",
+     *   description="Ends one browser session of a user (the user themselves or staff), which signs that browser out",
+     *   tags={"authentication","users"},
+     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Parameter(in="path", name="sessionId", required=true, @OA\Schema(type="string"), description="The `id` from `GET /users/{id}/sessions`"),
+     *   @OA\Response(response="204", description="The session was ended"),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Not the user themselves or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="No such user or session", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function deleteSessionOf(Request $request, int $id, string $sessionId): Response
+    {
+        $target = $this->sessionsTarget($request, $id);
+        $table = config('session.table');
+        $row = DB::table($table)->where('user_id', $target->id)->get(['id'])->first(fn($row) => hash_equals(hash('sha256', $row->id), $sessionId));
+        if ($row === null) {
+            abort(404, 'Session not found');
+        }
+        DB::table($table)->where('id', $row->id)->delete();
+
+        return response()->noContent();
+    }
+
+    /**
+     * @OA\Delete(
+     *   path="/users/{id}/sessions",
+     *   operationId="DeleteUsersIdSessions",
+     *   description="Signs a user out everywhere: ends all of their browser sessions and deletes all of their access tokens. The user themselves or staff.",
+     *   tags={"authentication","users"},
+     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="204", description="Everything of the user was ended"),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Not the user themselves or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="No such user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function deleteSessionsOf(Request $request, int $id): Response
+    {
+        self::endAllSessionsOf($this->sessionsTarget($request, $id));
 
         return response()->noContent();
     }
@@ -501,16 +610,7 @@ class UsersController extends Controller
     public function sessions(Request $request): JsonResponse
     {
         $current = $request->hasSession() ? $request->session()->getId() : null;
-        $sessions = DB::table(config('session.table'))->where('user_id', $request->user()->id)->orderByDesc('last_activity')->get()
-            ->map(fn($row) => [
-                'id' => hash('sha256', $row->id),
-                'device' => Core::describeUserAgent($row->user_agent),
-                'userAgent' => $row->user_agent,
-                'ip' => $row->ip_address,
-                'lastActiveAt' => Date::createFromTimestamp($row->last_activity)->toIso8601String(),
-                'createdAt' => $row->created_at === null ? null : Date::parse($row->created_at)->toIso8601String(),
-                'current' => $current !== null && hash_equals($row->id, $current),
-            ])->values();
+        $sessions = $this->mapSessions($request->user(), $current);
 
         return response()->json(['sessions' => $sessions]);
     }

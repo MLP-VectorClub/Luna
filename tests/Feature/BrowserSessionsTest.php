@@ -98,4 +98,68 @@ class BrowserSessionsTest extends TestCase
 
         $this->assertSame(['foreign'], DB::table('luna_sessions')->pluck('id')->all());
     }
+
+    public function testStaffSeeAndEndTheSessionsOfAnotherUser(): void
+    {
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->storeSession($user, 'phone', ['last_activity' => time() - 60]);
+        $this->storeSession($user, 'laptop');
+        $stranger = User::factory()->create(['role' => Role::User]);
+        $staff = User::factory()->create(['role' => Role::Staff]);
+
+        $this->getJson("/users/{$user->id}/sessions")->assertUnauthorized();
+        $this->actingAs($stranger, 'sanctum');
+        $this->getJson("/users/{$user->id}/sessions")->assertForbidden();
+        $this->deleteJson("/users/{$user->id}/sessions/".hash('sha256', 'phone'))->assertForbidden();
+        $this->deleteJson("/users/{$user->id}/sessions")->assertForbidden();
+
+        $this->actingAs($staff, 'sanctum');
+        $listed = $this->getJson("/users/{$user->id}/sessions")->assertOk()->json('sessions');
+        $this->assertSame([hash('sha256', 'laptop'), hash('sha256', 'phone')], array_column($listed, 'id'));
+        $this->assertSame([false, false], array_column($listed, 'current'));
+        $this->getJson('/users/987654/sessions')->assertNotFound();
+
+        // One session of the user, and only theirs
+        $this->deleteJson("/users/{$user->id}/sessions/".hash('sha256', 'phone'))->assertNoContent();
+        $this->deleteJson("/users/{$user->id}/sessions/".hash('sha256', 'phone'))->assertNotFound();
+        $this->assertSame(['laptop'], DB::table('luna_sessions')->where('user_id', $user->id)->pluck('id')->all());
+
+        // Everything: sessions and access tokens
+        $user->createToken('script');
+        $this->deleteJson("/users/{$user->id}/sessions")->assertNoContent();
+        $this->assertSame(0, DB::table('luna_sessions')->where('user_id', $user->id)->count());
+        $this->assertSame(0, $user->tokens()->count());
+    }
+
+    public function testUsersCanListAndEndTheirOwnSessionsThroughTheirId(): void
+    {
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->storeSession($user, 'only-one');
+        $this->actingAs($user, 'sanctum');
+        $this->assertCount(1, $this->getJson("/users/{$user->id}/sessions")->assertOk()->json('sessions'));
+        $this->deleteJson("/users/{$user->id}/sessions")->assertNoContent();
+        $this->assertSame(0, DB::table('luna_sessions')->where('user_id', $user->id)->count());
+    }
+
+    public function testSigningOutEverywhereEndsTheOtherSessionsAndTokensToo(): void
+    {
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->storeSession($user, 'other-browser');
+        $user->createToken('script');
+        $token = $user->createToken('this one')->plainTextToken;
+
+        $this->withToken($token)->postJson('/users/signout', ['everywhere' => 1])->assertNoContent();
+        $this->assertSame(0, DB::table('luna_sessions')->where('user_id', $user->id)->count());
+        $this->assertSame(0, $user->tokens()->count());
+
+        // Without the flag only the current one goes
+        $other = User::factory()->create(['role' => Role::User]);
+        $this->storeSession($other, 'kept-browser');
+        $keep = $other->createToken('keep');
+        $plain = $other->createToken('this one')->plainTextToken;
+        $this->app['auth']->forgetGuards();
+        $this->withToken($plain)->postJson('/users/signout')->assertNoContent();
+        $this->assertSame(1, DB::table('luna_sessions')->where('user_id', $other->id)->count());
+        $this->assertSame(1, $other->tokens()->count());
+    }
 }

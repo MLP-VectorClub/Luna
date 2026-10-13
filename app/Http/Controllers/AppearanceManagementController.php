@@ -801,7 +801,7 @@ class AppearanceManagementController extends Controller
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"changes", "pagination"},
      *     @OA\Property(property="changes", type="array", @OA\Items(type="object", additionalProperties=false, required={"id", "tagId", "tagName", "added", "user", "createdAt"},
      *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="tagId", type="integer", description="The tag may have been deleted since, in which case it no longer resolves"),
+     *       @OA\Property(property="tagId", type="integer", nullable=true, description="The tag may have been deleted since, in which case it no longer resolves"),
      *       @OA\Property(property="tagName", type="string", nullable=true, description="The tag's name at the time of the change; missing on very old entries"),
      *       @OA\Property(property="added", type="boolean", description="True when the tag was added, false when it was removed"),
      *       @OA\Property(property="user", nullable=true, description="Who made the change; null when the user no longer exists", oneOf={@OA\Schema(ref="#/components/schemas/PostUser")}),

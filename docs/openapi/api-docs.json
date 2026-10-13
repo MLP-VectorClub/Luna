@@ -172,7 +172,7 @@
                                                             },
                                                             "sprite": {
                                                                 "nullable": true,
-                                                                "allOf": [
+                                                                "oneOf": [
                                                                     {
                                                                         "$ref": "#/components/schemas/Sprite"
                                                                     }
@@ -2643,7 +2643,8 @@
                                                     },
                                                     "tagId": {
                                                         "description": "The tag may have been deleted since, in which case it no longer resolves",
-                                                        "type": "integer"
+                                                        "type": "integer",
+                                                        "nullable": true
                                                     },
                                                     "tagName": {
                                                         "description": "The tag's name at the time of the change; missing on very old entries",
@@ -10249,6 +10250,221 @@
                     },
                     "401": {
                         "description": "Unathorized"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{id}/sessions": {
+            "get": {
+                "tags": [
+                    "authentication",
+                    "users"
+                ],
+                "description": "Browser sessions of a user, most recently active first: the user themselves or staff (the account page of somebody else). `current` is only ever true for the requester's own.",
+                "operationId": "GetUsersIdSessions",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/OneBasedId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "sessions"
+                                    ],
+                                    "properties": {
+                                        "sessions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/BrowserSession"
+                                            }
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not the user themselves or staff",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "authentication",
+                    "users"
+                ],
+                "description": "Signs a user out everywhere: ends all of their browser sessions and deletes all of their access tokens. The user themselves or staff.",
+                "operationId": "DeleteUsersIdSessions",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/OneBasedId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Everything of the user was ended"
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not the user themselves or staff",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{id}/sessions/{sessionId}": {
+            "delete": {
+                "tags": [
+                    "authentication",
+                    "users"
+                ],
+                "description": "Ends one browser session of a user (the user themselves or staff), which signs that browser out",
+                "operationId": "DeleteUsersIdSessionsSessionId",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/OneBasedId"
+                        }
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "The `id` from `GET /users/{id}/sessions`",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The session was ended"
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not the user themselves or staff",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such user or session",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

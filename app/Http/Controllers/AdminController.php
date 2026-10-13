@@ -57,7 +57,7 @@ class AdminController extends Controller
      *       @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
      *       @OA\Schema(type="object", required={"private", "createdAt", "owner", "sprite", "cutieMarks"}, @OA\Property(property="private", type="boolean"), @OA\Property(property="createdAt", type="string", format="date-time"),
      *         @OA\Property(property="owner", type="object", nullable=true, required={"id", "name"}, @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string")),
-     *         @OA\Property(property="sprite", nullable=true, allOf={@OA\Schema(ref="#/components/schemas/Sprite")}),
+     *         @OA\Property(property="sprite", nullable=true, oneOf={@OA\Schema(ref="#/components/schemas/Sprite")}),
      *         @OA\Property(property="cutieMarks", type="array", @OA\Items(ref="#/components/schemas/CutieMark")))
      *     })),
      *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
