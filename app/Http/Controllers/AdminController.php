@@ -361,7 +361,7 @@ class AdminController extends Controller
     {
         $data = ['$schema' => rtrim((string) config('app.frontend_url'), '/').'/dist/mlpvc-colorguide-schema.json?v1.1', 'Appearances' => [], 'Tags' => []];
         foreach (Tag::orderBy('id')->get() as $tag) {
-            $data['Tags'][$tag->id] = $tag->only(['id', 'name', 'title', 'type', 'uses', 'synonym_of']);
+            $data['Tags'][$tag->id] = $tag->only(['id', 'name', 'title', 'type', 'uses', 'synonym_of', 'created_at', 'updated_at']);
         }
 
         $appearances = Appearance::whereNull('owner_id')->with(['colorGroups.colors', 'cutiemarks', 'tags', 'relatedAppearances'])
@@ -406,11 +406,16 @@ class AdminController extends Controller
             } else {
                 $entry['ColorGroups']['_hidden'] = true;
             }
+            // The schema wants an object here, which an empty PHP array would not become
+            $entry['ColorGroups'] = (object) $entry['ColorGroups'];
             $entry['TagIDs'] = $appearance->tags->pluck('id')->all();
             $entry['RelatedAppearances'] = $appearance->relatedAppearances->pluck('id')->all();
 
             $data['Appearances'][$appearance->id] = $entry;
         }
+
+        $data['Appearances'] = (object) $data['Appearances'];
+        $data['Tags'] = (object) $data['Tags'];
 
         return response()->json($data, 200, ['Last-Modified' => now()->toRfc7231String()]);
     }

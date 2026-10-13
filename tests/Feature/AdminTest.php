@@ -5,12 +5,16 @@ namespace Tests\Feature;
 use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Models\Appearance;
+use App\Models\Color;
+use App\Models\ColorGroup;
 use App\Models\Log;
 use App\Models\Notification;
 use App\Models\Show;
 use App\Models\Post;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use JsonSchema\Validator;
 use Tests\TestCase;
 
 class AdminTest extends TestCase
@@ -129,6 +133,28 @@ class AdminTest extends TestCase
         $this->assertStringEndsWith('/dist/mlpvc-colorguide-schema.json?v1.1', $response->json('$schema'));
         $this->assertCount(1, $response->json('Appearances'));
         $this->assertSame('Twilight', array_values($response->json('Appearances'))[0]['label']);
+    }
+
+    public function testExportFollowsTheSchemaOtherToolsRead(): void
+    {
+        // The swatch import script and other tools read the file by the schema the old site published (kept in tests/fixtures)
+        $twilight = Appearance::create(['label' => 'Twilight', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => 'Notes', 'order' => 1]);
+        $dash = Appearance::create(['label' => 'Dash', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 2]);
+        Appearance::create(['label' => 'Secret', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 3, 'private' => true]);
+        $group = ColorGroup::create(['appearance_id' => $twilight->id, 'label' => 'Coat', 'order' => 1]);
+        Color::create(['group_id' => $group->id, 'order' => 1, 'label' => 'Fill', 'hex' => '#D19FE4']);
+        $character = Tag::create(['name' => 'twilight sparkle', 'type' => 'char', 'uses' => 1]);
+        Tag::create(['name' => 'twily', 'synonym_of' => $character->id, 'uses' => 0]);
+        $twilight->tags()->attach($character->id);
+        $twilight->relatedAppearances()->attach($dash->id);
+
+        $data = json_decode($this->getJson('/color-guide/export')->assertOk()->getContent());
+        $validator = new Validator();
+        $validator->validate($data, json_decode(file_get_contents(base_path('tests/fixtures/mlpvc-colorguide-schema.json'))));
+
+        $this->assertTrue($validator->isValid(), json_encode($validator->getErrors(), JSON_PRETTY_PRINT));
+        $this->assertCount(3, (array) $data->Appearances);
+        $this->assertCount(2, (array) $data->Tags);
     }
 
     public function testRecentPostsAreForStaff(): void
