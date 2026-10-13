@@ -5589,7 +5589,7 @@
                                                         "type": "number"
                                                     },
                                                     "data": {
-                                                        "description": "Only staff see who granted points (`by`)",
+                                                        "description": "What the change was about. Only staff see who granted points (`by`, with their name as `byName`); entries about a post or an appearance say whether it is `gone`, appearances also whether they are `private` and the `previewColor` of public ones",
                                                         "type": "object",
                                                         "nullable": true
                                                     },

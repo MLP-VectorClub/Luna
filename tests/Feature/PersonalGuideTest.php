@@ -71,6 +71,20 @@ class PersonalGuideTest extends TestCase
         $this->actingAs($staff, 'sanctum');
         $give = collect($this->getJson("/users/{$user->id}/personal-guide/point-history")->json('entries'))->firstWhere('changeType', 'manual_give');
         $this->assertSame($staff->id, $give['data']['by']);
+        // Staff are told the granter's name, the owner is not even told who it was
+        $this->assertSame($staff->name, $give['data']['byName']);
+        // Entries that point at an appearance say whether it is still there and what it looks like
+        $mine = Appearance::create(['label' => 'History Pony', 'owner_id' => $user->id, 'notes_src' => null, 'order' => 1]);
+        $secret = Appearance::create(['label' => 'Secret Pony', 'owner_id' => $user->id, 'notes_src' => null, 'order' => 2, 'private' => true]);
+        $user->recalculatePcgSlotHistory();
+        $entries = collect($this->getJson("/users/{$user->id}/personal-guide/point-history")->json('entries'))->where('changeType', 'appearance_add')->keyBy('data.id');
+        $this->assertFalse($entries[$mine->id]['data']['gone']);
+        $this->assertFalse($entries[$mine->id]['data']['private']);
+        $this->assertTrue($entries[$secret->id]['data']['private']);
+        $this->assertNull($entries[$secret->id]['data']['previewColor']);
+        $mine->delete();
+        $entries = collect($this->getJson("/users/{$user->id}/personal-guide/point-history")->json('entries'))->where('changeType', 'appearance_add')->keyBy('data.id');
+        $this->assertTrue($entries[$mine->id]['data']['gone'] ?? true);
         $this->getJson('/users/987654/personal-guide/point-history')->assertNotFound();
         $this->getJson("/users/{$user->id}/personal-guide/point-history?size=500")->assertJsonValidationErrors('size');
     }

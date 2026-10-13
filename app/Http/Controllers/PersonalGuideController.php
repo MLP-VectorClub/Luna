@@ -7,6 +7,7 @@ use App\Enums\UserPrefKey;
 use App\Models\Appearance;
 use App\Models\PcgPointGrant;
 use App\Models\PcgSlotHistory;
+use App\Models\Post;
 use App\Models\User;
 use App\Utils\ColorGuideHelper;
 use App\Utils\UserPrefHelper;
@@ -90,7 +91,7 @@ class PersonalGuideController extends Controller
      *       @OA\Property(property="changeType", type="string"),
      *       @OA\Property(property="reason", type="string"),
      *       @OA\Property(property="amount", type="number"),
-     *       @OA\Property(property="data", type="object", nullable=true, description="Only staff see who granted points (`by`)"),
+     *       @OA\Property(property="data", type="object", nullable=true, description="What the change was about. Only staff see who granted points (`by`, with their name as `byName`); entries about a post or an appearance say whether it is `gone`, appearances also whether they are `private` and the `previewColor` of public ones"),
      *       @OA\Property(property="createdAt", type="string", format="date-time")
      *     )),
      *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
@@ -121,11 +122,34 @@ class PersonalGuideController extends Controller
         $is_staff = $visitor->isStaff();
         $pagination = PcgSlotHistory::where('user_id', $user->id)->orderByDesc('created_at')->orderByDesc('id')->paginate($size, page: (int) ($valid['page'] ?? 1));
 
+        // What the entries point at, looked up once for the page: who granted points (staff only), which posts and appearances are still there
+        $entries = $pagination->getCollection();
+        $ids = fn (array $types, string $key) => $entries->filter(fn (PcgSlotHistory $e) => in_array($e->change_type, $types, true) && is_array($e->change_data) && isset($e->change_data[$key]))
+            ->map(fn (PcgSlotHistory $e) => $e->change_data[$key])->unique()->values();
+        $granters = $is_staff ? User::whereIn('id', $ids(['manual_give', 'manual_take'], 'by'))->pluck('name', 'id') : collect();
+        $posts = Post::whereIn('id', $ids(['post_approved', 'post_unapproved'], 'id'))->pluck('id')->flip();
+        $appearances = Appearance::whereIn('id', $ids(['appearance_add', 'appearance_del'], 'id'))->get()->keyBy('id');
+
         return response()->json([
-            'entries' => $pagination->getCollection()->map(function (PcgSlotHistory $entry) use ($is_staff) {
+            'entries' => $entries->map(function (PcgSlotHistory $entry) use ($is_staff, $granters, $posts, $appearances) {
                 $data = $entry->change_data;
                 if (is_array($data) && !$is_staff) {
                     unset($data['by']);
+                }
+                if (is_array($data)) {
+                    if ($is_staff && isset($data['by'])) {
+                        $data['byName'] = $granters[$data['by']] ?? null;
+                    }
+                    if (in_array($entry->change_type, ['post_approved', 'post_unapproved'], true) && isset($data['id'])) {
+                        $data['gone'] = !isset($posts[$data['id']]);
+                    }
+                    if (in_array($entry->change_type, ['appearance_add', 'appearance_del'], true) && isset($data['id'])) {
+                        $appearance = $appearances[$data['id']] ?? null;
+                        $data['gone'] = $appearance === null;
+                        $data['private'] = (bool) $appearance?->private;
+                        // The first color of the preview, drawn as a small square next to the name like the old page did
+                        $data['previewColor'] = $appearance && !$appearance->private ? ($appearance->preview_data[0] ?? null) : null;
+                    }
                 }
 
                 return [
