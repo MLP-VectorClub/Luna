@@ -88,7 +88,7 @@ class UserProfileController extends Controller
         $progress = null;
         if ($same_user || $is_staff) {
             $points = $user->pcgAvailablePoints();
-            $progress = ['slots' => intdiv($points, 10), 'requestsToNext' => 10 - ($points % 10)];
+            $progress = ['slots' => (int) floor($points / 10), 'requestsToNext' => 10 - ($points % 10)];
         }
 
         // The Discord section of the account page, for the user themselves and staff

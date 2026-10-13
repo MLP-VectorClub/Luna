@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict NnqdTgHCqAlLng4hnyKoEe323XeCGezvwzAhlaqwykpKsyKhzVzriyJ0PzWl9mg
+\restrict 8mkMaVWPPS8umApnCf7FSugtFwVJbXAjBthlngvxR6NDqxjZF6liFgxqmEY4R8t
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -27,13 +27,13 @@ SET SESSION AUTHORIZATION DEFAULT;
 
 ALTER TABLE public.users DISABLE TRIGGER ALL;
 
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9001, 'TestUser', NULL, 'user', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9002, 'TestAdmin', NULL, 'admin', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9003, 'FreshUser', NULL, 'user', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9004, 'DiscordSynced', NULL, 'user', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9005, 'DiscordLinked', NULL, 'user', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9006, 'DiscordUnlinked', NULL, 'user', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
-INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9007, 'TestDeveloper', NULL, 'developer', NULL, NULL, NULL, '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9001, 'TestUser', NULL, 'user', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9002, 'TestAdmin', NULL, 'admin', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9003, 'FreshUser', NULL, 'user', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9004, 'DiscordSynced', NULL, 'user', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9005, 'DiscordLinked', NULL, 'user', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9006, 'DiscordUnlinked', NULL, 'user', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
+INSERT INTO public.users (id, name, email, role, email_verified_at, password, remember_token, created_at, updated_at) VALUES (9007, 'TestDeveloper', NULL, 'developer', NULL, NULL, NULL, '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02');
 
 
 ALTER TABLE public.users ENABLE TRIGGER ALL;
@@ -44,10 +44,10 @@ ALTER TABLE public.users ENABLE TRIGGER ALL;
 
 ALTER TABLE public.appearances DISABLE TRIGGER ALL;
 
-INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (1, 1, 'Twilight Sparkle', NULL, 'pony', '2026-10-02 10:52:53+02', false, NULL, NULL, '6a4bff0c-5dd8-48f7-ba74-8f0d58102ee0', NULL, '2026-10-02 10:52:53+02', NULL);
-INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (3, NULL, 'Personal Test Pony', NULL, NULL, '2026-10-02 10:52:53+02', false, NULL, NULL, '3c989835-8a41-4616-aa6b-66ea3f4804e7', NULL, '2026-10-02 10:52:53+02', 9001);
-INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (4, NULL, 'Private Test Pony', NULL, NULL, '2026-10-02 10:52:53+02', true, NULL, NULL, '0f0e0d0c-0b0a-4000-8000-00000000f004', NULL, '2026-10-02 10:52:53+02', 9001);
-INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (2, 2, 'Deletable Test Pony', NULL, 'pony', '2026-10-02 10:52:53+02', false, NULL, NULL, '2d48aa5c-96f8-454b-931f-c47539a0fe8d', NULL, '2026-10-02 10:52:53+02', NULL);
+INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (1, 1, 'Twilight Sparkle', NULL, 'pony', '2026-10-13 11:55:19+02', false, NULL, NULL, '19e816b3-f64d-4bc0-a6ce-80801f37fdb4', NULL, '2026-10-13 11:55:19+02', NULL);
+INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (3, NULL, 'Personal Test Pony', NULL, NULL, '2026-10-13 11:55:19+02', false, NULL, NULL, '8eb4508f-fd6b-4864-94f8-e01aa13f0e29', NULL, '2026-10-13 11:55:19+02', 9001);
+INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (4, NULL, 'Private Test Pony', NULL, NULL, '2026-10-13 11:55:19+02', true, NULL, NULL, '0f0e0d0c-0b0a-4000-8000-00000000f004', NULL, '2026-10-13 11:55:19+02', 9001);
+INSERT INTO public.appearances (id, "order", label, notes_src, guide, created_at, private, last_cleared, notes_rend, token, sprite_hash, updated_at, owner_id) VALUES (2, 2, 'Deletable Test Pony', NULL, 'pony', '2026-10-13 11:55:19+02', false, NULL, NULL, '7807804a-bcdc-46b1-8368-ff03e43ec6a7', NULL, '2026-10-13 11:55:19+02', NULL);
 
 
 ALTER TABLE public.appearances ENABLE TRIGGER ALL;
@@ -68,8 +68,8 @@ ALTER TABLE public.blocked_emails ENABLE TRIGGER ALL;
 
 ALTER TABLE public.show DISABLE TRIGGER ALL;
 
-INSERT INTO public.show (season, episode, parts, title, created_at, airs, no, score, notes, id, type, updated_at, posted_by) VALUES (1, 1, 1, 'Friendship is Magic, Part 1', '2026-10-02 10:52:53.724008+02', '2010-10-10 02:00:00+02', 1, 0, NULL, 1, 'episode', NULL, 9002);
-INSERT INTO public.show (season, episode, parts, title, created_at, airs, no, score, notes, id, type, updated_at, posted_by) VALUES (NULL, NULL, 1, 'Equestria Girls', '2026-10-02 10:52:53.724008+02', '2013-06-16 02:00:00+02', 1, 0, NULL, 2, 'movie', NULL, 9002);
+INSERT INTO public.show (season, episode, parts, title, created_at, airs, no, score, notes, id, type, updated_at, posted_by) VALUES (1, 1, 1, 'Friendship is Magic, Part 1', '2026-10-13 11:55:19.197941+02', '2010-10-10 02:00:00+02', 1, 0, NULL, 1, 'episode', NULL, 9002);
+INSERT INTO public.show (season, episode, parts, title, created_at, airs, no, score, notes, id, type, updated_at, posted_by) VALUES (NULL, NULL, 1, 'Equestria Girls', '2026-10-13 11:55:19.197941+02', '2013-06-16 02:00:00+02', 1, 0, NULL, 2, 'movie', NULL, 9002);
 
 
 ALTER TABLE public.show ENABLE TRIGGER ALL;
@@ -80,11 +80,11 @@ ALTER TABLE public.show ENABLE TRIGGER ALL;
 
 ALTER TABLE public.posts DISABLE TRIGGER ALL;
 
-INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (1, 'chr', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Seeded Test Request', '2026-10-02 10:52:53+02', NULL, NULL, false, NULL, false, 1, 9001, NULL);
-INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (2, 'chr', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Deletable Test Request', '2026-10-02 10:52:53+02', NULL, NULL, false, NULL, false, 1, 9001, NULL);
-INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (3, 'obj', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Reserved Test Request', '2026-10-02 10:52:53+02', '2026-10-02 10:52:53+02', 'dfin001', false, '2026-10-02 10:52:53+02', false, 1, 9001, 9002);
-INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (4, 'bg', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Broken Test Request', '2026-10-02 10:52:53+02', NULL, NULL, false, NULL, true, 1, 9001, NULL);
-INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (5, 'obj', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Broken UI Request', '2026-10-02 10:52:53+02', NULL, NULL, false, NULL, true, 1, 9001, NULL);
+INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (1, 'chr', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Seeded Test Request', '2026-10-13 11:55:19+02', NULL, NULL, false, NULL, false, 1, 9001, NULL);
+INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (2, 'chr', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Deletable Test Request', '2026-10-13 11:55:19+02', NULL, NULL, false, NULL, false, 1, 9001, NULL);
+INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (3, 'obj', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Reserved Test Request', '2026-10-13 11:55:19+02', '2026-10-13 11:55:19+02', 'dfin001', false, '2026-10-13 11:55:19+02', false, 1, 9001, 9002);
+INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (4, 'bg', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Broken Test Request', '2026-10-13 11:55:19+02', NULL, NULL, false, NULL, true, 1, 9001, NULL);
+INSERT INTO public.posts (id, type, preview, fullsize, label, requested_at, reserved_at, deviation_id, lock, finished_at, broken, show_id, requested_by, reserved_by) VALUES (5, 'obj', '/img/blank-pixel.png', '/img/blank-pixel.png', 'Broken UI Request', '2026-10-13 11:55:19+02', NULL, NULL, false, NULL, true, 1, 9001, NULL);
 
 
 ALTER TABLE public.posts ENABLE TRIGGER ALL;
@@ -127,10 +127,10 @@ ALTER TABLE public.colors ENABLE TRIGGER ALL;
 
 ALTER TABLE public.deviantart_users DISABLE TRIGGER ALL;
 
-INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009001', 'TestUser', '/img/blank-pixel.png', '2026-10-02 10:52:53+02', NULL, 9001, 'fake-access-token-user', 'fake-refresh-token-user', '2036-10-02 10:52:53+02', 'user');
-INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009002', 'TestAdmin', '/img/blank-pixel.png', '2026-10-02 10:52:53+02', NULL, 9002, 'fake-access-token-admin', 'fake-refresh-token-admin', '2036-10-02 10:52:53+02', 'user');
-INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009007', 'TestDeveloper', '/img/blank-pixel.png', '2026-10-02 10:52:53+02', NULL, 9007, 'fake-access-token-developer', 'fake-refresh-token-developer', '2036-10-02 10:52:53+02', 'user');
-INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009003', 'FreshUser', '/img/blank-pixel.png', '2026-10-02 10:52:53+02', NULL, 9003, 'fake-access-token-fresh', 'fake-refresh-token-fresh', '2036-10-02 10:52:53+02', 'user');
+INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009001', 'TestUser', '/img/blank-pixel.png', '2026-10-13 11:55:19+02', NULL, 9001, 'fake-access-token-user', 'fake-refresh-token-user', '2036-10-13 11:55:19+02', 'user');
+INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009002', 'TestAdmin', '/img/blank-pixel.png', '2026-10-13 11:55:19+02', NULL, 9002, 'fake-access-token-admin', 'fake-refresh-token-admin', '2036-10-13 11:55:19+02', 'user');
+INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009007', 'TestDeveloper', '/img/blank-pixel.png', '2026-10-13 11:55:19+02', NULL, 9007, 'fake-access-token-developer', 'fake-refresh-token-developer', '2036-10-13 11:55:19+02', 'user');
+INSERT INTO public.deviantart_users (id, name, avatar_url, created_at, updated_at, user_id, access, refresh, access_expires, scope) VALUES ('0f0e0d0c-0b0a-4000-8000-000000009003', 'FreshUser', '/img/blank-pixel.png', '2026-10-13 11:55:19+02', NULL, 9003, 'fake-access-token-fresh', 'fake-refresh-token-fresh', '2036-10-13 11:55:19+02', 'user');
 
 
 ALTER TABLE public.deviantart_users ENABLE TRIGGER ALL;
@@ -153,8 +153,8 @@ ALTER TABLE public.cutiemarks ENABLE TRIGGER ALL;
 
 ALTER TABLE public.discord_members DISABLE TRIGGER ALL;
 
-INSERT INTO public.discord_members (id, username, discriminator, nick, avatar_hash, joined_at, access, refresh, scope, expires, last_synced, user_id, display_name) VALUES (900000000000009004, 'discordsynced', 0, NULL, NULL, NULL, 'fake-discord-access-a', 'fake-discord-refresh-a', 'identify', '2036-10-02 10:52:53+02', '2026-10-02 10:52:53+02', 9004, NULL);
-INSERT INTO public.discord_members (id, username, discriminator, nick, avatar_hash, joined_at, access, refresh, scope, expires, last_synced, user_id, display_name) VALUES (900000000000009005, 'discordlinked', 0, NULL, NULL, NULL, 'fake-discord-access-b', 'fake-discord-refresh-b', 'identify', '2036-10-02 10:52:53+02', NULL, 9005, NULL);
+INSERT INTO public.discord_members (id, username, discriminator, nick, avatar_hash, joined_at, access, refresh, scope, expires, last_synced, user_id, display_name) VALUES (900000000000009004, 'discordsynced', 0, NULL, NULL, NULL, 'fake-discord-access-a', 'fake-discord-refresh-a', 'identify', '2036-10-13 11:55:19+02', '2026-10-13 11:55:19+02', 9004, NULL);
+INSERT INTO public.discord_members (id, username, discriminator, nick, avatar_hash, joined_at, access, refresh, scope, expires, last_synced, user_id, display_name) VALUES (900000000000009005, 'discordlinked', 0, NULL, NULL, NULL, 'fake-discord-access-b', 'fake-discord-refresh-b', 'identify', '2036-10-13 11:55:19+02', NULL, 9005, NULL);
 INSERT INTO public.discord_members (id, username, discriminator, nick, avatar_hash, joined_at, access, refresh, scope, expires, last_synced, user_id, display_name) VALUES (900000000000009006, 'discordunlinked', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 9006, NULL);
 
 
@@ -176,7 +176,7 @@ ALTER TABLE public.email_verifications ENABLE TRIGGER ALL;
 
 ALTER TABLE public.events DISABLE TRIGGER ALL;
 
-INSERT INTO public.events (id, name, entry_role, starts_at, ends_at, created_at, desc_src, desc_rend, max_entries, vote_role, result_favme, finalized_at, updated_at, added_by, finalized_by) VALUES (1, 'Test Coloring Event', 'user', '2026-10-01 10:52:53+02', '2026-10-09 10:52:53+02', '2026-10-02 10:52:53+02', 'Test event description.', '<p>Test event description.</p>', NULL, NULL, NULL, NULL, '2026-10-02 10:52:53+02', 9002, NULL);
+INSERT INTO public.events (id, name, entry_role, starts_at, ends_at, created_at, desc_src, desc_rend, max_entries, vote_role, result_favme, finalized_at, updated_at, added_by, finalized_by) VALUES (1, 'Test Coloring Event', 'user', '2026-10-12 11:55:19+02', '2026-10-20 11:55:19+02', '2026-10-13 11:55:19+02', 'Test event description.', '<p>Test event description.</p>', NULL, NULL, NULL, NULL, '2026-10-13 11:55:19+02', 9002, NULL);
 
 
 ALTER TABLE public.events ENABLE TRIGGER ALL;
@@ -187,10 +187,10 @@ ALTER TABLE public.events ENABLE TRIGGER ALL;
 
 ALTER TABLE public.event_entries DISABLE TRIGGER ALL;
 
-INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (1, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3d', '2026-10-02 10:52:53+02', 'Seeded Entry', '2026-10-02 10:52:53+02', 9001);
-INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (2, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3e', '2026-10-02 10:52:53+02', 'Admin Entry', '2026-10-02 10:52:53+02', 9002);
-INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (3, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3f', '2026-10-02 10:52:53+02', 'Doomed Entry', '2026-10-02 10:52:53+02', 9001);
-INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (4, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3g', '2026-10-02 10:52:53+02', 'Withdrawn Entry', '2026-10-02 10:52:53+02', 9001);
+INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (1, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3d', '2026-10-13 11:55:19+02', 'Seeded Entry', '2026-10-13 11:55:19+02', 9001);
+INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (2, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3e', '2026-10-13 11:55:19+02', 'Admin Entry', '2026-10-13 11:55:19+02', 9002);
+INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (3, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3f', '2026-10-13 11:55:19+02', 'Doomed Entry', '2026-10-13 11:55:19+02', 9001);
+INSERT INTO public.event_entries (id, event_id, prev_src, prev_full, prev_thumb, sub_prov, sub_id, created_at, title, updated_at, submitted_by) VALUES (4, 1, NULL, NULL, NULL, 'fav.me', 'd1b2c3g', '2026-10-13 11:55:19+02', 'Withdrawn Entry', '2026-10-13 11:55:19+02', 9001);
 
 
 ALTER TABLE public.event_entries ENABLE TRIGGER ALL;
@@ -231,7 +231,7 @@ ALTER TABLE public.locked_posts ENABLE TRIGGER ALL;
 
 ALTER TABLE public.logs DISABLE TRIGGER ALL;
 
-INSERT INTO public.logs (id, entry_type, created_at, ip, data, updated_at, initiator) VALUES (1, 'rolechange', '2026-10-02 10:52:53+02', '127.0.0.1', '{"target": 9001, "newrole": "member", "oldrole": "user"}', NULL, 9002);
+INSERT INTO public.logs (id, entry_type, created_at, ip, data, updated_at, initiator) VALUES (1, 'rolechange', '2026-10-13 11:55:19+02', '127.0.0.1', '{"target": 9001, "newrole": "member", "oldrole": "user"}', NULL, 9002);
 
 
 ALTER TABLE public.logs ENABLE TRIGGER ALL;
@@ -242,8 +242,8 @@ ALTER TABLE public.logs ENABLE TRIGGER ALL;
 
 ALTER TABLE public.major_changes DISABLE TRIGGER ALL;
 
-INSERT INTO public.major_changes (id, appearance_id, reason, created_at, updated_at, user_id) VALUES (1, 1, 'Seeded older major change', '2026-09-30 10:52:53+02', '2026-09-30 10:52:53+02', 9002);
-INSERT INTO public.major_changes (id, appearance_id, reason, created_at, updated_at, user_id) VALUES (2, 1, 'Seeded newest major change', '2026-10-01 10:52:53+02', '2026-10-01 10:52:53+02', 9002);
+INSERT INTO public.major_changes (id, appearance_id, reason, created_at, updated_at, user_id) VALUES (1, 1, 'Seeded older major change', '2026-10-11 11:55:19+02', '2026-10-11 11:55:19+02', 9002);
+INSERT INTO public.major_changes (id, appearance_id, reason, created_at, updated_at, user_id) VALUES (2, 1, 'Seeded newest major change', '2026-10-12 11:55:19+02', '2026-10-12 11:55:19+02', 9002);
 
 
 ALTER TABLE public.major_changes ENABLE TRIGGER ALL;
@@ -264,9 +264,9 @@ ALTER TABLE public.notices ENABLE TRIGGER ALL;
 
 ALTER TABLE public.notifications DISABLE TRIGGER ALL;
 
-INSERT INTO public.notifications (id, type, data, created_at, read_at, updated_at, recipient_id) VALUES (1, 'post-approved', '{"id": 1, "type": "request"}', '2026-10-02 10:52:53.724008+02', NULL, NULL, 9001);
-INSERT INTO public.notifications (id, type, data, created_at, read_at, updated_at, recipient_id) VALUES (2, 'post-approved', '{"id": 1, "type": "request"}', '2026-10-02 10:52:53.724008+02', NULL, NULL, 9001);
-INSERT INTO public.notifications (id, type, data, created_at, read_at, updated_at, recipient_id) VALUES (3, 'post-approved', '{"id": 1, "type": "request"}', '2026-10-02 10:52:53.724008+02', NULL, NULL, 9002);
+INSERT INTO public.notifications (id, type, data, created_at, read_at, updated_at, recipient_id) VALUES (1, 'post-approved', '{"id": 1, "type": "request"}', '2026-10-13 11:55:19.197941+02', NULL, NULL, 9001);
+INSERT INTO public.notifications (id, type, data, created_at, read_at, updated_at, recipient_id) VALUES (2, 'post-approved', '{"id": 1, "type": "request"}', '2026-10-13 11:55:19.197941+02', NULL, NULL, 9001);
+INSERT INTO public.notifications (id, type, data, created_at, read_at, updated_at, recipient_id) VALUES (3, 'post-approved', '{"id": 1, "type": "request"}', '2026-10-13 11:55:19.197941+02', NULL, NULL, 9002);
 
 
 ALTER TABLE public.notifications ENABLE TRIGGER ALL;
@@ -277,7 +277,7 @@ ALTER TABLE public.notifications ENABLE TRIGGER ALL;
 
 ALTER TABLE public.pcg_point_grants DISABLE TRIGGER ALL;
 
-INSERT INTO public.pcg_point_grants (id, amount, comment, created_at, updated_at, receiver_id, sender_id) VALUES (1, 5, 'Seeded contract test grant', '2026-10-02 10:52:53+02', NULL, 9001, 9002);
+INSERT INTO public.pcg_point_grants (id, amount, comment, created_at, updated_at, receiver_id, sender_id) VALUES (1, 5, 'Seeded contract test grant', '2026-10-13 11:55:19+02', NULL, 9001, 9002);
 
 
 ALTER TABLE public.pcg_point_grants ENABLE TRIGGER ALL;
@@ -338,14 +338,14 @@ ALTER TABLE public.sessions ENABLE TRIGGER ALL;
 
 ALTER TABLE public.settings DISABLE TRIGGER ALL;
 
-INSERT INTO public.settings (name, val, id, "group", created_at, updated_at) VALUES ('about_reservations', '<p>People usually get excited whenever a new episode comes out, and start making vectors of any pose/object/etc. that they found hilarious/interesting enough. It often results in various people unnecessarily doing the very same thing. Vector Reservations can help organize our efforts by listing who''s working on what and to reduce the number of duplicates.</p>', 1, 'default', '2026-10-02 10:52:53.712632+02', NULL);
+INSERT INTO public.settings (name, val, id, "group", created_at, updated_at) VALUES ('about_reservations', '<p>People usually get excited whenever a new episode comes out, and start making vectors of any pose/object/etc. that they found hilarious/interesting enough. It often results in various people unnecessarily doing the very same thing. Vector Reservations can help organize our efforts by listing who''s working on what and to reduce the number of duplicates.</p>', 1, 'default', '2026-10-13 11:55:19.194672+02', NULL);
 INSERT INTO public.settings (name, val, id, "group", created_at, updated_at) VALUES ('reservation_rules', '<ol><li>You MUST have an image to make a reservation! For the best quality, get your references from the episode in 1080p.</li>
 	<li>Making a reservation does NOT forbid other people from working on a pose anyway. It is only information that you are working on it, so other people can coordinate to avoid doing the same thing twice.</li>
 	<li>There are no time limits, but remember that the longer you wait, the greater the chance that someone might take your pose anyway. It''s generally advised to finish your reservations before a new episode comes out.</li>
 	<li>The current limit for reservations is 4 at any given time. You can reserve more after completing or cancelling any previous reservations.</li>
 	<li>Please remember that <strong>you have to be a member of the group in order to make a reservation</strong>. The idea is to add the finished vector to our gallery, so it has to meet all of our quality requirements.</li>
-</ol>', 2, 'default', '2026-10-02 10:52:53.712632+02', NULL);
-INSERT INTO public.settings (name, val, id, "group", created_at, updated_at) VALUES ('dev_role_label', 'staff', 3, 'default', '2026-10-02 10:52:53.712632+02', NULL);
+</ol>', 2, 'default', '2026-10-13 11:55:19.194672+02', NULL);
+INSERT INTO public.settings (name, val, id, "group", created_at, updated_at) VALUES ('dev_role_label', 'staff', 3, 'default', '2026-10-13 11:55:19.194672+02', NULL);
 
 
 ALTER TABLE public.settings ENABLE TRIGGER ALL;
@@ -648,5 +648,5 @@ SELECT pg_catalog.setval('public.users_id_seq', 9007, true);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NnqdTgHCqAlLng4hnyKoEe323XeCGezvwzAhlaqwykpKsyKhzVzriyJ0PzWl9mg
+\unrestrict 8mkMaVWPPS8umApnCf7FSugtFwVJbXAjBthlngvxR6NDqxjZF6liFgxqmEY4R8t
 

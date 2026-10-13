@@ -141,6 +141,19 @@ class PostsAndProfileTest extends TestCase
         $this->assertSame(10, $own->json('personalGuideProgress.requestsToNext'));
     }
 
+    public function testASpentSlotShowsAsNegativeProgress(): void
+    {
+        // -5 points are -1 slots like the old page counted (floor, not truncation towards zero) and 15 requests from the next one
+        $user = $this->user(Role::Member);
+        \App\Models\PcgSlotHistory::create(['user_id' => $user->id, 'change_type' => 'appearance_add', 'change_amount' => -5, 'change_data' => ['id' => 1, 'label' => 'x'], 'created_at' => now()]);
+        \App\Utils\UserPrefHelper::set($user, \App\Enums\UserPrefKey::Pcg_Slots, -5);
+
+        $this->actingAs($user, 'sanctum');
+        $progress = $this->getJson("/users/{$user->id}/profile")->assertOk()->json('personalGuideProgress');
+        $this->assertSame(-1, $progress['slots']);
+        $this->assertSame(15, $progress['requestsToNext']);
+    }
+
     public function testStaffCanPurgeTheCachedContributionCounts(): void
     {
         $user = $this->user(Role::Member);
