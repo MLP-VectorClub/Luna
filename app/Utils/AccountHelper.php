@@ -289,7 +289,7 @@ class AccountHelper
                 'status' => $e->getResponse()->getStatusCode(),
                 'body' => substr((string) $e->getResponse()->getBody(), 0, 300),
             ]);
-            throw ValidationException::withMessages(['code' => 'The sign-in code was rejected, it may have expired or already been used. Please try signing in again.']);
+            throw ValidationException::withMessages(['code' => 'The authorization code was rejected, it may have expired or already been used. Please try again.']);
         }
     }
 
