@@ -81,8 +81,4 @@ jobs:
         run: php artisan migrate --force --no-interaction
 
       - name: Run tests
-        run: vendor/bin/phpunit --display-deprecations 2>&1 | tee phpunit.log; exit "${PIPESTATUS[0]}"
-
-      - name: Show the deprecation messages
-        if: always()
-        run: grep -i -m3 -B1 -A5 'triggered .*deprecation\|PHPUnit deprecation' phpunit.log | head -60 || true
+        run: vendor/bin/phpunit --display-deprecations
