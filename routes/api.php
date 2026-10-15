@@ -113,7 +113,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
             Route::get('me', [UsersController::class, 'me']);
             Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->whereNumber('id')->middleware('role:staff');
-            Route::post('email/verify', [UserEmailController::class, 'verify'])->middleware('role:staff');
+            Route::post('email/verify', [UserEmailController::class, 'verify']);
             Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
             Route::post('me/socket-token', [WebsocketController::class, 'token']);
             Route::post('signout', [UsersController::class, 'signout']);

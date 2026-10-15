@@ -9534,7 +9534,7 @@
                 "tags": [
                     "users"
                 ],
-                "description": "Verifies or blocks an e-mail address based on a verification hash sent to that address. Requires staff permission.",
+                "description": "Verifies or blocks an e-mail address based on a verification hash sent to that address. Verifying requires the verification to belong to the signed in user, blocking only needs the hash.",
                 "operationId": "PostUsersEmailVerify",
                 "requestBody": {
                     "required": true,
@@ -9596,7 +9596,7 @@
                         }
                     },
                     "403": {
-                        "description": "Insufficient permission (staff required)",
+                        "description": "The verification belongs to another user (verify action)",
                         "content": {
                             "application/json": {
                                 "schema": {

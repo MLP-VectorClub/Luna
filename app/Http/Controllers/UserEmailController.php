@@ -8,6 +8,7 @@ use App\Models\EmailVerification;
 use App\Enums\Role;
 use App\Models\User;
 use App\Rules\StrictEmail;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -122,7 +123,7 @@ class UserEmailController extends Controller
      * @OA\Post(
      *   path="/users/email/verify",
      *   operationId="PostUsersEmailVerify",
-     *   description="Verifies or blocks an e-mail address based on a verification hash sent to that address. Requires staff permission.",
+     *   description="Verifies or blocks an e-mail address based on a verification hash sent to that address. Verifying requires the verification to belong to the signed in user, blocking only needs the hash.",
      *   tags={"users"},
      *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"hash", "action"},
      *     @OA\Property(property="hash", type="string", minLength=128, maxLength=128, description="The verification hash sent to the e-mail address"),
@@ -130,7 +131,7 @@ class UserEmailController extends Controller
      *   )),
      *   @OA\Response(response="200", description="The e-mail address was successfully verified or blocked", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
      *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission (staff required)", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="The verification belongs to another user (verify action)", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
      *   @OA\Response(response="422", description="The verification hash or action is invalid, or the hash has expired", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
      * )
      */
@@ -160,6 +161,10 @@ class UserEmailController extends Controller
             BlockedEmail::record($verification->email);
 
             return response()->json(['message' => 'Your e-mail address has been added to our do-not-send list successfully.']);
+        }
+
+        if ($verification->user_id !== $request->user()->id) {
+            throw new AuthorizationException('This verification belongs to another user');
         }
 
         DB::transaction(function () use ($verification) {

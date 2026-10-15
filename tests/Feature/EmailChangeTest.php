@@ -38,7 +38,8 @@ class EmailChangeTest extends TestCase
 
         $this->actingAs(User::factory()->create(['role' => Role::Member]), 'sanctum');
         $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => 'new@example.com'])->assertForbidden();
-        $this->postJson('/users/email/verify', [])->assertForbidden();
+        // Verifying is open to every signed in user, but only for their own verifications (see testVerifyingSomeoneElsesAddressIsRefused)
+        $this->postJson('/users/email/verify', [])->assertJsonValidationErrors('hash');
 
         $this->actingAs($user, 'sanctum');
         $this->postJson('/users/987654/email-changes', ['newEmail' => 'new@example.com'])->assertNotFound();
@@ -143,6 +144,21 @@ class EmailChangeTest extends TestCase
         $this->postJson('/users/email/verify', ['hash' => $block->hash, 'action' => 'block'])->assertOk();
         $this->assertTrue(BlockedEmail::isBlocked('spam@example.com'));
         $this->assertSame('verified@example.com', $user->fresh()->email);
+    }
+
+    public function testVerifyingSomeoneElsesAddressIsRefused(): void
+    {
+        $owner = $this->staff();
+        $verification = EmailVerification::create(['user_id' => $owner->id, 'email' => 'theirs@example.com', 'hash' => bin2hex(random_bytes(64))]);
+        $this->actingAs(User::factory()->create(['role' => Role::Member]), 'sanctum');
+
+        $this->postJson('/users/email/verify', ['hash' => $verification->hash, 'action' => 'verify'])->assertForbidden();
+        $this->assertNotSame('theirs@example.com', $owner->fresh()->email);
+        $this->assertSame(1, EmailVerification::count());
+
+        // Blocking an address needs only the hash: its recipient does not have to own the account
+        $this->postJson('/users/email/verify', ['hash' => $verification->hash, 'action' => 'block'])->assertOk();
+        $this->assertTrue(BlockedEmail::isBlocked('theirs@example.com'));
     }
 
     public function testExpiredVerificationsAreRejected(): void
