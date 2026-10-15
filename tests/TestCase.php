@@ -32,6 +32,7 @@ abstract class TestCase extends BaseTestCase
 
         // No test talks to an OpenSearch server: a search finds nothing, as it does when the index is missing
         $search = Mockery::mock(Client::class);
+        $search->shouldReceive('ping')->andReturn(true);
         $search->shouldReceive('search')->andReturn([]);
         Search::use($search);
     }
