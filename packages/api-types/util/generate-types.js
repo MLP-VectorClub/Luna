@@ -30,7 +30,7 @@ function getSuccessResponseBody(op, opId) {
 function generateIndex(schema) {
   const schemaNames = Object.keys(schema.components?.schemas || {});
   const lines = [
-    `// MLP-VectorClub API type definitions - built on ${new Date().toISOString()}`,
+    '// MLP-VectorClub API type definitions',
     "import type { components, operations } from './generated';",
     '',
     '// Strips [] suffix from property keys (used for array query params like "types[]")',

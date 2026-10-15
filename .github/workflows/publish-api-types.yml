@@ -52,11 +52,39 @@ jobs:
       - name: Build types
         run: npm run build
 
+      # The same input must give the same files, so a run that changes nothing publishes nothing (the version is the only thing that may differ)
+      - name: Compare with the published package
+        id: compare
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          if ! published="$(npm view "$name" version 2>/dev/null)" || [ -z "$published" ]; then
+            echo "Nothing is published yet"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          old="$RUNNER_TEMP/published"; new="$RUNNER_TEMP/new"
+          mkdir -p "$old" "$new"
+          npm pack "$name@$published" --silent --pack-destination "$old" > /dev/null
+          npm pack --silent --pack-destination "$new" > /dev/null
+          tar -xzf "$old"/*.tgz -C "$old"
+          tar -xzf "$new"/*.tgz -C "$new"
+          for dir in "$old" "$new"; do
+            node -e "const f=process.argv[1]+'/package/package.json';const p=require(f);delete p.version;require('fs').writeFileSync(f,JSON.stringify(p,null,2))" "$dir"
+          done
+          if diff -r "$old/package" "$new/package"; then
+            echo "Identical to $published, not publishing"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set version
+        if: steps.compare.outputs.changed == 'true'
         run: |
           base="$(node -p "require('./package.json').version.split('.').slice(0, 2).join('.')")"
           npm version "$base.$GITHUB_RUN_NUMBER" --no-git-tag-version
           echo "Publishing $(node -p "require('./package.json').version")"
 
       - name: Publish
+        if: steps.compare.outputs.changed == 'true'
         run: npm publish --access public
