@@ -41,6 +41,12 @@ class Search
         return self::$client = $builder->build();
     }
 
+    /** Replaces the client, for tests that must not talk to a server */
+    public static function use(?Client $client): void
+    {
+        self::$client = $client;
+    }
+
     /** Forgets the client, for tests that change the configuration */
     public static function reset(): void
     {
