@@ -17,6 +17,12 @@ return [
 
     'default' => env('DB_CONNECTION', 'mysql'),
 
+    // The role web requests read with while the site is read-only (see AppServiceProvider), read here because env() is empty once the config is cached
+    'read_only_credentials' => [
+        'username' => env('DB_READ_USERNAME'),
+        'password' => env('DB_READ_PASSWORD', ''),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

@@ -29,10 +29,10 @@ class AppServiceProvider extends ServiceProvider
     {
         // A read-only site reads with a database role that cannot write. Set here and not in config/database.php so `artisan migrate` during a
         // deploy, which runs with the cached config, keeps using the full role
-        if (config('app.read_only') && !$this->app->runningInConsole() && env('DB_READ_USERNAME')) {
+        if (config('app.read_only') && !$this->app->runningInConsole() && config('database.read_only_credentials.username')) {
             config([
-                'database.connections.pgsql.username' => env('DB_READ_USERNAME'),
-                'database.connections.pgsql.password' => env('DB_READ_PASSWORD', ''),
+                'database.connections.pgsql.username' => config('database.read_only_credentials.username'),
+                'database.connections.pgsql.password' => config('database.read_only_credentials.password'),
             ]);
         }
 
