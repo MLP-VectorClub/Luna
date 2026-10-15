@@ -10,15 +10,15 @@ Make sure TypeScript is configured in your project, then simply install the type
 
 ```shell
 # Via NPM
-$ npm install @mlp-vectorclub/api-types
+$ npm install @went.tf/mlp-vectorclub-api-types
 # Via YARN
-$ yarn add @mlp-vectorclub/api-types
+$ yarn add @went.tf/mlp-vectorclub-api-types
 ```
 
 In your TypeScript code, simply import the necessary types from the package:
 
 ```ts
-import { Appearance } from '@mlp-vectorclub/api-types';
+import { Appearance } from '@went.tf/mlp-vectorclub-api-types';
 
 const value: Appearance = {/* … */};
 ```

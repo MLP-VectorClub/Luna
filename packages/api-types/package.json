@@ -1,5 +1,5 @@
 {
-  "name": "@mlp-vectorclub/api-types",
+  "name": "@went.tf/mlp-vectorclub-api-types",
   "version": "0.3.0",
   "description": "TypeScript types of the MLP Vector Club API, generated from Luna's OpenAPI document",
   "types": "./dist/index.d.ts",
