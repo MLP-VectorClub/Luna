@@ -26,9 +26,10 @@ class TwoFactorController extends Controller
      *   tags={"account"},
      *   @OA\Response(response="200", description="Status", @OA\JsonContent(
      *     type="object",
-     *     required={"enabled", "recoveryCodesRemaining"},
+     *     required={"enabled", "recoveryCodesRemaining", "passwordSet"},
      *     additionalProperties=false,
      *     @OA\Property(property="enabled", type="boolean"),
+     *     @OA\Property(property="passwordSet", type="boolean", description="Whether changes are confirmed with the password (else with a code of the app, or not at all)"),
      *     @OA\Property(property="recoveryCodesRemaining", type="integer", minimum=0)
      *   )),
      *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
@@ -42,6 +43,7 @@ class TwoFactorController extends Controller
         return response()->json([
             'enabled' => $user->hasTwoFactor(),
             'recoveryCodesRemaining' => TwoFactorAuth::remainingRecoveryCodes($user),
+            'passwordSet' => $user->password !== null,
         ]);
     }
 

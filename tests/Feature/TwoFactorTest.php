@@ -211,7 +211,7 @@ class TwoFactorTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user, 'sanctum')->getJson('/users/me/two-factor')
-            ->assertOk()->assertExactJson(['enabled' => false, 'recoveryCodesRemaining' => 0]);
+            ->assertOk()->assertExactJson(['enabled' => false, 'recoveryCodesRemaining' => 0, 'passwordSet' => true]);
 
         $start = $this->actingAs($user, 'sanctum')->postJson('/users/me/two-factor', ['currentPassword' => self::PASSWORD])
             ->assertOk()->assertJsonStructure(['secret', 'uri']);

@@ -9707,10 +9707,15 @@
                                 "schema": {
                                     "required": [
                                         "enabled",
-                                        "recoveryCodesRemaining"
+                                        "recoveryCodesRemaining",
+                                        "passwordSet"
                                     ],
                                     "properties": {
                                         "enabled": {
+                                            "type": "boolean"
+                                        },
+                                        "passwordSet": {
+                                            "description": "Whether changes are confirmed with the password (else with a code of the app, or not at all)",
                                             "type": "boolean"
                                         },
                                         "recoveryCodesRemaining": {
