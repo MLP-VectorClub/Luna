@@ -57,13 +57,13 @@ class HoneypotTest extends TestCase
         $this->get('/internal/session-status')->assertForbidden();
     }
 
-    public function testSignedInStaffAreRefusedButNotFlagged(): void
+    public function testSignedInStaffAreFlaggedLikeEverybodyElse(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
-        $this->actingAs($staff);
+        // Nobody is above the traps: a staff member who asks for one is refused from then on, and signs out of the session by clearing its cookie
+        $this->actingAs(User::factory()->create(['role' => Role::Staff]));
 
         $this->get('/honeypot/env')->assertForbidden();
-        $this->get('/internal/session-status')->assertNoContent();
+        $this->get('/internal/session-status')->assertForbidden();
     }
 
     public function testOtherSignedInUsersAreFlagged(): void
