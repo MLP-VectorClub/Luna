@@ -31,6 +31,7 @@ use App\Http\Controllers\UserPrefsController;
 use App\Http\Controllers\UserEmailController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsocketController;
+use App\Utils\RoutePatterns;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\App;
 
@@ -92,35 +93,35 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
 
         Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
-        Route::get('{id}/profile', [UserProfileController::class, 'profile'])->whereNumber('id');
-        Route::get('{id}/contributions/{type}', [UserProfileController::class, 'contributions'])->whereNumber('id');
-        Route::delete('{id}/contributions/cache', [UserProfileController::class, 'purgeContributionsCache'])->whereNumber('id')->middleware(['auth:sanctum', 'role:staff']);
-        Route::get('{id}/personal-guide/appearances', [PersonalGuideController::class, 'appearances'])->whereNumber('id');
+        Route::get('{id}/profile', [UserProfileController::class, 'profile'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/contributions/{type}', [UserProfileController::class, 'contributions'])->where('id', RoutePatterns::ID);
+        Route::delete('{id}/contributions/cache', [UserProfileController::class, 'purgeContributionsCache'])->where('id', RoutePatterns::ID)->middleware(['auth:sanctum', 'role:staff']);
+        Route::get('{id}/personal-guide/appearances', [PersonalGuideController::class, 'appearances'])->where('id', RoutePatterns::ID);
 
         Route::middleware('auth:sanctum')->group(function () {
-            Route::get('{id}/personal-guide/point-history', [PersonalGuideController::class, 'pointHistory'])->whereNumber('id');
-            Route::get('{id}/personal-guide/slots', [PersonalGuideController::class, 'slots'])->whereNumber('id');
-            Route::post('{id}/personal-guide/point-history/recalculation', [PersonalGuideController::class, 'recalculate'])->whereNumber('id')->middleware('role:developer');
-            Route::get('{id}/personal-guide/points', [PersonalGuideController::class, 'points'])->whereNumber('id')->middleware('role:staff');
-            Route::post('{id}/personal-guide/points', [PersonalGuideController::class, 'givePoints'])->whereNumber('id')->middleware('role:staff');
-            Route::post('{user_id}/discord', [DiscordController::class, 'link'])->whereNumber('user_id');
-            Route::post('{user_id}/discord/sync', [DiscordController::class, 'sync'])->whereNumber('user_id');
-            Route::delete('{user_id}/discord', [DiscordController::class, 'unlink'])->whereNumber('user_id');
+            Route::get('{id}/personal-guide/point-history', [PersonalGuideController::class, 'pointHistory'])->where('id', RoutePatterns::ID);
+            Route::get('{id}/personal-guide/slots', [PersonalGuideController::class, 'slots'])->where('id', RoutePatterns::ID);
+            Route::post('{id}/personal-guide/point-history/recalculation', [PersonalGuideController::class, 'recalculate'])->where('id', RoutePatterns::ID)->middleware('role:developer');
+            Route::get('{id}/personal-guide/points', [PersonalGuideController::class, 'points'])->where('id', RoutePatterns::ID)->middleware('role:staff');
+            Route::post('{id}/personal-guide/points', [PersonalGuideController::class, 'givePoints'])->where('id', RoutePatterns::ID)->middleware('role:staff');
+            Route::post('{user_id}/discord', [DiscordController::class, 'link'])->where('user_id', RoutePatterns::ID);
+            Route::post('{user_id}/discord/sync', [DiscordController::class, 'sync'])->where('user_id', RoutePatterns::ID);
+            Route::delete('{user_id}/discord', [DiscordController::class, 'unlink'])->where('user_id', RoutePatterns::ID);
             Route::get('da-uuid/{uuid}', [UsersController::class, 'getByDaUuid'])->middleware('role:developer');
-            Route::put('{id}/role', [UsersController::class, 'setRole'])->whereNumber('id')->middleware('role:staff');
-            Route::get('{id}/preferences', [UserPrefsController::class, 'index'])->whereNumber('id');
-            Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->whereNumber('id');
-            Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->whereNumber('id');
+            Route::put('{id}/role', [UsersController::class, 'setRole'])->where('id', RoutePatterns::ID)->middleware('role:staff');
+            Route::get('{id}/preferences', [UserPrefsController::class, 'index'])->where('id', RoutePatterns::ID);
+            Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->where('id', RoutePatterns::ID);
+            Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->where('id', RoutePatterns::ID);
             Route::get('me', [UsersController::class, 'me']);
-            Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->whereNumber('id')->middleware('role:staff');
+            Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->where('id', RoutePatterns::ID)->middleware('role:staff');
             Route::post('email/verify', [UserEmailController::class, 'verify']);
             Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
             Route::post('me/socket-token', [WebsocketController::class, 'token']);
             Route::post('signout', [UsersController::class, 'signout']);
             Route::get('sessions', [UsersController::class, 'sessions']);
-            Route::get('{id}/sessions', [UsersController::class, 'sessionsOf'])->whereNumber('id');
-            Route::delete('{id}/sessions/{sessionId}', [UsersController::class, 'deleteSessionOf'])->whereNumber('id')->where('sessionId', '[0-9a-f]{64}');
-            Route::delete('{id}/sessions', [UsersController::class, 'deleteSessionsOf'])->whereNumber('id');
+            Route::get('{id}/sessions', [UsersController::class, 'sessionsOf'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}/sessions/{sessionId}', [UsersController::class, 'deleteSessionOf'])->where('id', RoutePatterns::ID)->where('sessionId', '[0-9a-f]{64}');
+            Route::delete('{id}/sessions', [UsersController::class, 'deleteSessionsOf'])->where('id', RoutePatterns::ID);
             Route::delete('sessions/{id}', [UsersController::class, 'deleteSession'])->where('id', '[0-9a-f]{64}');
             Route::get('tokens', [UsersController::class, 'tokens']);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);
@@ -137,48 +138,48 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('full', [AppearancesController::class, 'queryFullPublic'])->name('appearances_full')->middleware('cacheResponse:300');
         Route::get('pinned', [AppearancesController::class, 'pinned'])->name('pinned_appearance')->middleware('cacheResponse:60');
         Route::get('autocomplete', [AppearancesController::class, 'autocomplete'])->name('appearances_autocomplete')->middleware('cacheResponse:180');
-        Route::get('{appearance}', [AppearancesController::class, 'get']);
-        Route::get('{appearance}/locate', [AppearancesController::class, 'locate']);
-        Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite'])->name('appearance_sprite');
-        Route::get('{appearance}/color-groups', [AppearancesController::class, 'colorGroups']);
+        Route::get('{appearance}', [AppearancesController::class, 'get'])->where('appearance', RoutePatterns::ID);
+        Route::get('{appearance}/locate', [AppearancesController::class, 'locate'])->where('appearance', RoutePatterns::ID);
+        Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite'])->name('appearance_sprite')->where('appearance', RoutePatterns::ID);
+        Route::get('{appearance}/color-groups', [AppearancesController::class, 'colorGroups'])->where('appearance', RoutePatterns::ID);
     });
 
     Route::middleware('optional.auth')->get('cutie-marks/{cutieMarkId}/{disposition}', [AppearanceExportsController::class, 'cutieMarkById'])
-        ->whereNumber('cutieMarkId')->whereIn('disposition', ['image', 'download']);
+        ->where('cutieMarkId', RoutePatterns::ID)->whereIn('disposition', ['image', 'download']);
 
     Route::middleware('optional.auth')->prefix('appearances')->group(function () {
-        Route::get('{id}/palette', [AppearanceExportsController::class, 'palette'])->whereNumber('id');
-        Route::get('{id}/image', [AppearanceExportsController::class, 'image'])->whereNumber('id');
-        Route::get('{id}/cutie-marks/{cutieMarkId}/download', [AppearanceExportsController::class, 'cutieMark'])->whereNumber(['id', 'cutieMarkId']);
+        Route::get('{id}/palette', [AppearanceExportsController::class, 'palette'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/image', [AppearanceExportsController::class, 'image'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/cutie-marks/{cutieMarkId}/download', [AppearanceExportsController::class, 'cutieMark'])->where(['id' => RoutePatterns::ID, 'cutieMarkId' => RoutePatterns::ID]);
     });
 
     Route::middleware('auth:sanctum')->prefix('appearances')->group(function () {
         $manage = AppearanceManagementController::class;
         Route::post('/', [$manage, 'create']);
         Route::put('order', [$manage, 'order'])->middleware('role:staff');
-        Route::get('{id}/metadata', [$manage, 'metadata'])->whereNumber('id');
-        Route::put('{id}', [$manage, 'update'])->whereNumber('id');
-        Route::delete('{id}', [$manage, 'destroy'])->whereNumber('id');
-        Route::post('{id}/sprite', [$manage, 'uploadSprite'])->whereNumber('id');
-        Route::delete('{id}/sprite', [$manage, 'deleteSprite'])->whereNumber('id');
-        Route::post('{id}/template', [$manage, 'template'])->whereNumber('id');
-        Route::delete('{id}/contents', [$manage, 'clear'])->whereNumber('id');
-        Route::get('{id}/color-groups/order', [$manage, 'colorGroupOrder'])->whereNumber('id');
-        Route::put('{id}/color-groups/order', [$manage, 'setColorGroupOrder'])->whereNumber('id');
-        Route::get('{id}/relations', [$manage, 'relations'])->whereNumber('id');
-        Route::put('{id}/relations', [$manage, 'setRelations'])->whereNumber('id');
-        Route::get('{id}/tags', [$manage, 'tags'])->whereNumber('id');
-        Route::put('{id}/tags', [$manage, 'setTags'])->whereNumber('id');
-        Route::get('{id}/cutie-marks', [CutieMarksController::class, 'index'])->whereNumber('id');
-        Route::put('{id}/cutie-marks', [CutieMarksController::class, 'replace'])->whereNumber('id');
-        Route::post('{id}/sanitize-svg', [CutieMarksController::class, 'sanitize'])->whereNumber('id');
+        Route::get('{id}/metadata', [$manage, 'metadata'])->where('id', RoutePatterns::ID);
+        Route::put('{id}', [$manage, 'update'])->where('id', RoutePatterns::ID);
+        Route::delete('{id}', [$manage, 'destroy'])->where('id', RoutePatterns::ID);
+        Route::post('{id}/sprite', [$manage, 'uploadSprite'])->where('id', RoutePatterns::ID);
+        Route::delete('{id}/sprite', [$manage, 'deleteSprite'])->where('id', RoutePatterns::ID);
+        Route::post('{id}/template', [$manage, 'template'])->where('id', RoutePatterns::ID);
+        Route::delete('{id}/contents', [$manage, 'clear'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/color-groups/order', [$manage, 'colorGroupOrder'])->where('id', RoutePatterns::ID);
+        Route::put('{id}/color-groups/order', [$manage, 'setColorGroupOrder'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/relations', [$manage, 'relations'])->where('id', RoutePatterns::ID);
+        Route::put('{id}/relations', [$manage, 'setRelations'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/tags', [$manage, 'tags'])->where('id', RoutePatterns::ID);
+        Route::put('{id}/tags', [$manage, 'setTags'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/cutie-marks', [CutieMarksController::class, 'index'])->where('id', RoutePatterns::ID);
+        Route::put('{id}/cutie-marks', [CutieMarksController::class, 'replace'])->where('id', RoutePatterns::ID);
+        Route::post('{id}/sanitize-svg', [CutieMarksController::class, 'sanitize'])->where('id', RoutePatterns::ID);
 
         Route::middleware('role:staff')->group(function () use ($manage) {
-            Route::get('{id}/tag-changes', [$manage, 'tagChanges'])->whereNumber('id');
-            Route::get('{id}/shows', [$manage, 'shows'])->whereNumber('id');
-            Route::put('{id}/shows', [$manage, 'setShows'])->whereNumber('id');
-            Route::post('{id}/pin', [$manage, 'pin'])->whereNumber('id');
-            Route::delete('{id}/pin', [$manage, 'pin'])->whereNumber('id');
+            Route::get('{id}/tag-changes', [$manage, 'tagChanges'])->where('id', RoutePatterns::ID);
+            Route::get('{id}/shows', [$manage, 'shows'])->where('id', RoutePatterns::ID);
+            Route::put('{id}/shows', [$manage, 'setShows'])->where('id', RoutePatterns::ID);
+            Route::post('{id}/pin', [$manage, 'pin'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}/pin', [$manage, 'pin'])->where('id', RoutePatterns::ID);
         });
     });
 
@@ -194,24 +195,24 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::get('/', [UsefulLinksController::class, 'index']);
             Route::post('/', [UsefulLinksController::class, 'create']);
             Route::put('order', [UsefulLinksController::class, 'order']);
-            Route::get('{id}', [UsefulLinksController::class, 'show'])->whereNumber('id');
-            Route::put('{id}', [UsefulLinksController::class, 'update'])->whereNumber('id');
-            Route::delete('{id}', [UsefulLinksController::class, 'destroy'])->whereNumber('id');
+            Route::get('{id}', [UsefulLinksController::class, 'show'])->where('id', RoutePatterns::ID);
+            Route::put('{id}', [UsefulLinksController::class, 'update'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}', [UsefulLinksController::class, 'destroy'])->where('id', RoutePatterns::ID);
         });
     });
 
     Route::middleware('auth:sanctum')->prefix('color-groups')->group(function () {
         Route::post('/', [ColorGroupsController::class, 'create']);
-        Route::get('{id}', [ColorGroupsController::class, 'show'])->whereNumber('id');
-        Route::put('{id}', [ColorGroupsController::class, 'update'])->whereNumber('id');
-        Route::delete('{id}', [ColorGroupsController::class, 'destroy'])->whereNumber('id');
+        Route::get('{id}', [ColorGroupsController::class, 'show'])->where('id', RoutePatterns::ID);
+        Route::put('{id}', [ColorGroupsController::class, 'update'])->where('id', RoutePatterns::ID);
+        Route::delete('{id}', [ColorGroupsController::class, 'destroy'])->where('id', RoutePatterns::ID);
     });
 
     Route::middleware(['auth:sanctum', 'role:staff'])->prefix('admin')->group(function () {
         Route::get('pcg-appearances', [AdminController::class, 'pcgAppearances']);
         Route::get('logs', [AdminController::class, 'logs']);
         Route::get('posts/recent', [AdminController::class, 'recentPosts']);
-        Route::get('logs/{id}', [AdminController::class, 'logDetail'])->whereNumber('id');
+        Route::get('logs/{id}', [AdminController::class, 'logDetail'])->where('id', RoutePatterns::ID);
     });
 
     Route::get('admin/search-status', [AdminController::class, 'searchStatus'])->middleware(['auth:sanctum', 'role:developer']);
@@ -222,7 +223,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
     // The old site published this as a static file that other tools read, so it is public (and kept for an hour, building it takes a while)
     Route::get('color-guide/export', [AdminController::class, 'export'])->middleware('cacheResponse:3600');
     Route::middleware('auth:sanctum')->get('notifications', [AdminController::class, 'notifications']);
-    Route::middleware('auth:sanctum')->post('notifications/{id}/read', [AdminController::class, 'readNotification'])->whereNumber('id');
+    Route::middleware('auth:sanctum')->post('notifications/{id}/read', [AdminController::class, 'readNotification'])->where('id', RoutePatterns::ID);
 
     Route::prefix('tags')->group(function () {
         Route::get('/', [TagsController::class, 'index']);
@@ -231,68 +232,68 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::get('autocomplete', [TagsController::class, 'autocomplete']);
             Route::post('/', [TagsController::class, 'create']);
             Route::post('recount-uses', [TagsController::class, 'recountUses']);
-            Route::get('{id}', [TagsController::class, 'show'])->whereNumber('id');
-            Route::put('{id}', [TagsController::class, 'update'])->whereNumber('id');
-            Route::delete('{id}', [TagsController::class, 'destroy'])->whereNumber('id');
-            Route::put('{id}/synonym', [TagsController::class, 'makeSynonym'])->whereNumber('id');
-            Route::delete('{id}/synonym', [TagsController::class, 'removeSynonym'])->whereNumber('id');
+            Route::get('{id}', [TagsController::class, 'show'])->where('id', RoutePatterns::ID);
+            Route::put('{id}', [TagsController::class, 'update'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}', [TagsController::class, 'destroy'])->where('id', RoutePatterns::ID);
+            Route::put('{id}/synonym', [TagsController::class, 'makeSynonym'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}/synonym', [TagsController::class, 'removeSynonym'])->where('id', RoutePatterns::ID);
         });
     });
 
     Route::prefix('posts')->group(function () {
         $manage = PostManagementController::class;
         Route::get('/', [PostsController::class, 'index']);
-        Route::get('legacy/{kind}/{oldId}', [$manage, 'legacyId'])->whereIn('kind', ['request', 'reservation'])->whereNumber('oldId');
-        Route::get('{id}/location', [$manage, 'location'])->whereNumber('id');
-        Route::get('{id}/reload', [$manage, 'reload'])->whereNumber('id');
-        Route::get('{id}/deviation', [PostsController::class, 'deviation'])->whereNumber('id');
+        Route::get('legacy/{kind}/{oldId}', [$manage, 'legacyId'])->whereIn('kind', ['request', 'reservation'])->where('oldId', RoutePatterns::ID);
+        Route::get('{id}/location', [$manage, 'location'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/reload', [$manage, 'reload'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/deviation', [PostsController::class, 'deviation'])->where('id', RoutePatterns::ID);
 
         Route::middleware('auth:sanctum')->group(function () use ($manage) {
             Route::get('requests/suggestion', [PostsController::class, 'suggestion']);
             Route::post('/', [$manage, 'create']);
             Route::post('check-image', [$manage, 'checkImageEndpoint']);
-            Route::get('{id}', [$manage, 'show'])->whereNumber('id');
-            Route::put('{id}', [$manage, 'update'])->whereNumber('id');
-            Route::put('{id}/image', [$manage, 'setImage'])->whereNumber('id');
-            Route::delete('requests/{id}', [$manage, 'destroyRequest'])->whereNumber('id');
+            Route::get('{id}', [$manage, 'show'])->where('id', RoutePatterns::ID);
+            Route::put('{id}', [$manage, 'update'])->where('id', RoutePatterns::ID);
+            Route::put('{id}/image', [$manage, 'setImage'])->where('id', RoutePatterns::ID);
+            Route::delete('requests/{id}', [$manage, 'destroyRequest'])->where('id', RoutePatterns::ID);
 
             Route::middleware('role:member')->group(function () use ($manage) {
-                Route::post('{id}/reservation', [$manage, 'reserve'])->whereNumber('id');
-                Route::delete('{id}/reservation', [$manage, 'unreserve'])->whereNumber('id');
-                Route::post('{id}/approval', [$manage, 'approve'])->whereNumber('id');
-                Route::delete('{id}/approval', [$manage, 'unapprove'])->whereNumber('id');
-                Route::put('{id}/finish', [$manage, 'finish'])->whereNumber('id');
-                Route::delete('{id}/finish', [$manage, 'unfinish'])->whereNumber('id');
+                Route::post('{id}/reservation', [$manage, 'reserve'])->where('id', RoutePatterns::ID);
+                Route::delete('{id}/reservation', [$manage, 'unreserve'])->where('id', RoutePatterns::ID);
+                Route::post('{id}/approval', [$manage, 'approve'])->where('id', RoutePatterns::ID);
+                Route::delete('{id}/approval', [$manage, 'unapprove'])->where('id', RoutePatterns::ID);
+                Route::put('{id}/finish', [$manage, 'finish'])->where('id', RoutePatterns::ID);
+                Route::delete('{id}/finish', [$manage, 'unfinish'])->where('id', RoutePatterns::ID);
             });
 
             Route::middleware('role:staff')->group(function () use ($manage) {
                 Route::post('reservations', [$manage, 'addReservation']);
-                Route::post('{id}/unbreak', [$manage, 'unbreak'])->whereNumber('id');
+                Route::post('{id}/unbreak', [$manage, 'unbreak'])->where('id', RoutePatterns::ID);
             });
         });
     });
 
     Route::prefix('events')->group(function () {
         Route::get('/', [EventsController::class, 'index']);
-        Route::get('{id}', [EventsController::class, 'show'])->whereNumber('id');
-        Route::get('{id}/finished-image', [EventsController::class, 'finishedImage'])->whereNumber('id');
+        Route::get('{id}', [EventsController::class, 'show'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/finished-image', [EventsController::class, 'finishedImage'])->where('id', RoutePatterns::ID);
 
         // Managing events and receiving entries is switched off in Winterchilla, so these only answer 501 after the permission checks
         Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
             Route::post('/', [EventsController::class, 'disabled']);
-            Route::put('{id}', [EventsController::class, 'disabled'])->whereNumber('id');
-            Route::delete('{id}', [EventsController::class, 'disabled'])->whereNumber('id');
-            Route::post('{id}/finalize', [EventsController::class, 'disabled'])->whereNumber('id');
+            Route::put('{id}', [EventsController::class, 'disabled'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}', [EventsController::class, 'disabled'])->where('id', RoutePatterns::ID);
+            Route::post('{id}/finalize', [EventsController::class, 'disabled'])->where('id', RoutePatterns::ID);
         });
-        Route::post('{id}/entries/check', [EventsController::class, 'disabled'])->whereNumber('id')->middleware('auth:sanctum');
+        Route::post('{id}/entries/check', [EventsController::class, 'disabled'])->where('id', RoutePatterns::ID)->middleware('auth:sanctum');
         // Winterchilla routes these to the entry controller without an entry id, so they only ever answer 404 to signed in users
-        Route::match(['get', 'put', 'delete'], '{id}/entries', [EventEntriesController::class, 'placeholder'])->whereNumber('id')->middleware('auth:sanctum');
+        Route::match(['get', 'put', 'delete'], '{id}/entries', [EventEntriesController::class, 'placeholder'])->where('id', RoutePatterns::ID)->middleware('auth:sanctum');
     });
 
     Route::middleware('auth:sanctum')->prefix('event-entries')->group(function () {
-        Route::get('{entryid}', [EventEntriesController::class, 'show'])->whereNumber('entryid');
-        Route::put('{entryid}', [EventEntriesController::class, 'update'])->whereNumber('entryid');
-        Route::delete('{entryid}', [EventEntriesController::class, 'destroy'])->whereNumber('entryid');
+        Route::get('{entryid}', [EventEntriesController::class, 'show'])->where('entryid', RoutePatterns::ID);
+        Route::put('{entryid}', [EventEntriesController::class, 'update'])->where('entryid', RoutePatterns::ID);
+        Route::delete('{entryid}', [EventEntriesController::class, 'destroy'])->where('entryid', RoutePatterns::ID);
     });
 
     Route::prefix('notices')->group(function () {
@@ -301,9 +302,9 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::middleware(['auth:sanctum', 'role:staff'])->group(function () {
             Route::get('/', [NoticesController::class, 'index']);
             Route::post('/', [NoticesController::class, 'create']);
-            Route::get('{id}', [NoticesController::class, 'show'])->whereNumber('id');
-            Route::put('{id}', [NoticesController::class, 'update'])->whereNumber('id');
-            Route::delete('{id}', [NoticesController::class, 'destroy'])->whereNumber('id');
+            Route::get('{id}', [NoticesController::class, 'show'])->where('id', RoutePatterns::ID);
+            Route::put('{id}', [NoticesController::class, 'update'])->where('id', RoutePatterns::ID);
+            Route::delete('{id}', [NoticesController::class, 'destroy'])->where('id', RoutePatterns::ID);
         });
     });
 
@@ -323,20 +324,20 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::get('next', [$manage, 'next']);
         Route::get('reservation-info', [$manage, 'reservationInfo']);
         Route::get('upcoming', [ShowController::class, 'upcoming']);
-        Route::get('{id}', [$manage, 'show'])->whereNumber('id');
-        Route::get('{id}/adjacent', [$manage, 'adjacent'])->whereNumber('id');
-        Route::get('{id}/vote', [$manage, 'votes'])->whereNumber('id');
+        Route::get('{id}', [$manage, 'show'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/adjacent', [$manage, 'adjacent'])->where('id', RoutePatterns::ID);
+        Route::get('{id}/vote', [$manage, 'votes'])->where('id', RoutePatterns::ID);
 
         Route::middleware('auth:sanctum')->group(function () use ($manage) {
-            Route::post('{id}/vote', [$manage, 'vote'])->whereNumber('id');
+            Route::post('{id}/vote', [$manage, 'vote'])->where('id', RoutePatterns::ID);
 
             Route::middleware('role:staff')->group(function () use ($manage) {
                 Route::get('prefill', [$manage, 'prefill']);
                 Route::post('/', [$manage, 'create']);
-                Route::put('{id}', [$manage, 'update'])->whereNumber('id');
-                Route::delete('{id}', [$manage, 'destroy'])->whereNumber('id');
-                Route::get('{id}/appearances', [$manage, 'appearances'])->whereNumber('id');
-                Route::put('{id}/appearances', [$manage, 'setAppearances'])->whereNumber('id');
+                Route::put('{id}', [$manage, 'update'])->where('id', RoutePatterns::ID);
+                Route::delete('{id}', [$manage, 'destroy'])->where('id', RoutePatterns::ID);
+                Route::get('{id}/appearances', [$manage, 'appearances'])->where('id', RoutePatterns::ID);
+                Route::put('{id}/appearances', [$manage, 'setAppearances'])->where('id', RoutePatterns::ID);
             });
         });
     });

@@ -6,6 +6,7 @@ use App\Http\Controllers\ConflictException;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -40,7 +41,21 @@ class Handler extends ExceptionHandler
      */
     public function report(\Throwable $e)
     {
+        // A number the database cannot hold in a path is a visitor's typo, not an error of ours
+        if ($e instanceof QueryException && self::isMalformedValue($e) && request()->isMethodSafe()) {
+            return;
+        }
+
         parent::report($e);
+    }
+
+    /**
+     * The database refused a value it was handed: text where it wanted a number (SQLSTATE 22P02), a number it cannot hold (22003). For a read the value can
+     * only come out of the address, so the thing it names does not exist
+     */
+    private static function isMalformedValue(QueryException $e): bool
+    {
+        return in_array((string) ($e->errorInfo[0] ?? $e->getCode()), ['22P02', '22003'], true);
     }
 
     /**
@@ -58,6 +73,10 @@ class Handler extends ExceptionHandler
             $reason = $exception instanceof NotFoundHttpException && !str_starts_with($exception->getMessage(), 'The route ') ? $exception->getMessage() : '';
 
             return response()->json(['message' => $reason !== '' ? $reason : 'Not found'], 404);
+        }
+
+        if ($exception instanceof QueryException && self::isMalformedValue($exception) && $request->isMethodSafe()) {
+            return response()->json(['message' => 'Not found'], 404);
         }
 
         if ($exception instanceof ConflictException) {
