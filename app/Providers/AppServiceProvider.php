@@ -56,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // The front end reads this one itself and cannot decrypt anything (see RejectFlaggedSession)
+        \Illuminate\Cookie\Middleware\EncryptCookies::except(\App\Http\Middleware\RejectFlaggedSession::COOKIE);
+
         // Reading with a token must not store when it was used
         \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
 

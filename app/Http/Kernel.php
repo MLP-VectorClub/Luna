@@ -32,6 +32,7 @@ class Kernel extends HttpKernel
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
+            \App\Http\Middleware\RejectFlaggedSession::class,
             \Illuminate\Session\Middleware\AuthenticateSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
@@ -42,6 +43,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\ReadOnlyMode::class,
             \App\Http\Middleware\TransformApiHeaders::class,
             EnsureFrontendRequestsAreStateful::class,
+            \App\Http\Middleware\RejectFlaggedSession::class,
             'bindings',
         ],
     ];

@@ -19,6 +19,7 @@ class VerifyCsrfToken extends Middleware
      * @var array
      */
     protected $except = [
-        //
+        // Scanners post to whatever they find, the answer is a refusal either way
+        'honeypot/*',
     ];
 }
