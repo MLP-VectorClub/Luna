@@ -10,8 +10,8 @@ Celestia's built-in "work-in-progress" banner is gone, it is notice A below now.
 | | Site | Type | Shown from | Hidden after | Message |
 |---|---|---|---|---|---|
 | A | `celestia` | warn | now | the cutover | `This website is a work-in-progress, for our current live site please visit <a href="https://mlpvector.club{path}">https://mlpvector.club{path}</a>` |
-| B | `celestia` | info | the cutover | far away | `You are on the current version of the site. The previous version is still available in read-only mode at <a href="https://old.mlpvector.club{path}">old.mlpvector.club</a>. If you run into any issues, please contact us using the Contact Us link in the footer.` |
-| C | `winterchilla` | warn | the cutover | far away | `This site is now in read-only mode. To make changes, please visit the new site: <a href="https://mlpvector.club{path}">mlpvector.club</a>.` |
+| B | `celestia` | info | the cutover | far away | `You are on the current version of the site. The previous version is still available in read-only mode at <a href="https://old.mlpvector.club{path}">old.mlpvector.club{path}</a>. If you run into any issues, please contact us using the Contact Us link in the footer.` |
+| C | `winterchilla` | warn | the cutover | far away | `This site is now in read-only mode. To make changes, please visit the new site: <a href="https://mlpvector.club{path}">mlpvector.club{path}</a>.` |
 
 Ending A when B starts means nothing has to be done at the moment of the cutover. B and C stay hidden until then.
 
@@ -24,7 +24,7 @@ Ending A when B starts means nothing has to be done at the moment of the cutover
 
 ```sql
 INSERT INTO notices (message_html, type, posted_by, show_after, hide_after, site)
-VALUES ('This site is now in read-only mode. To make changes, please visit the new site: <a href="https://mlpvector.club{path}">mlpvector.club</a>.',
+VALUES ('This site is now in read-only mode. To make changes, please visit the new site: <a href="https://mlpvector.club{path}">mlpvector.club{path}</a>.',
         'warn', <staff user id>, '<cutover time>', '2099-01-01', 'winterchilla');
 ```
 
