@@ -6,6 +6,7 @@ use App\Http\Controllers\ConflictException;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Psr\Container\NotFoundExceptionInterface;
@@ -46,7 +47,20 @@ class Handler extends ExceptionHandler
             return;
         }
 
+        if (self::isMissingSwaggerAsset($e, request())) {
+            return;
+        }
+
         parent::report($e);
+    }
+
+    /**
+     * The swagger-api/swagger-ui package installed from GitHub has no source maps, but l5-swagger allows requests for them (browsers' dev tools ask), and it
+     * lets the missing file escape as an exception. That is a missing file, not an error of ours
+     */
+    private static function isMissingSwaggerAsset(\Throwable $e, \Illuminate\Http\Request $request): bool
+    {
+        return $e instanceof FileNotFoundException && $request->routeIs('l5-swagger.*.asset');
     }
 
     /**
@@ -73,6 +87,10 @@ class Handler extends ExceptionHandler
             $reason = $exception instanceof NotFoundHttpException && !str_starts_with($exception->getMessage(), 'The route ') ? $exception->getMessage() : '';
 
             return response()->json(['message' => $reason !== '' ? $reason : 'Not found'], 404);
+        }
+
+        if (self::isMissingSwaggerAsset($exception, $request)) {
+            return response()->json(['message' => 'Not found'], 404);
         }
 
         if ($exception instanceof QueryException && self::isMalformedValue($exception) && $request->isMethodSafe()) {
