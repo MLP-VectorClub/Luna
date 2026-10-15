@@ -85,4 +85,4 @@ jobs:
 
       - name: Show the deprecation messages
         if: always()
-        run: grep -E -A6 '^[0-9]+ (PHPUnit )?deprecations?:' phpunit.log | head -60 || true
+        run: grep -i -m3 -B1 -A5 'triggered .*deprecation\|PHPUnit deprecation' phpunit.log | head -60 || true
