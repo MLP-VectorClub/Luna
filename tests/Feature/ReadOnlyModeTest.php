@@ -25,7 +25,8 @@ class ReadOnlyModeTest extends TestCase
         config(['app.read_only' => true]);
 
         $this->postJson('/users/signin', ['email' => 'a@example.com', 'password' => 'whatever'])->assertStatus(503)
-            ->assertJsonPath('message', 'The site is read-only right now, nothing can be changed');
+            ->assertJsonPath('message', 'The site is read-only right now, nothing can be changed')
+            ->assertJsonPath('readOnly', true);
         $this->putJson('/appearances/1', [])->assertStatus(503);
         $this->deleteJson('/appearances/1')->assertStatus(503);
     }

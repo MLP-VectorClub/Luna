@@ -17,7 +17,8 @@ class ReadOnlyMode
     public function handle(Request $request, Closure $next)
     {
         if (config('app.read_only') && !$request->isMethodSafe() && !in_array($request->path(), self::ALLOWED, true)) {
-            return response()->json(['message' => 'The site is read-only right now, nothing can be changed'], 503);
+            // `readOnly` tells this refusal apart from the other 503s (deploying, maintenance), the front end words them differently
+            return response()->json(['message' => 'The site is read-only right now, nothing can be changed', 'readOnly' => true], 503);
         }
 
         return $next($request);
