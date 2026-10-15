@@ -71,6 +71,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      - name: Create the environment file
+        run: cp .env.example .env
+
       - name: Create the database extensions
         run: psql -h 127.0.0.1 -U luna -d luna_test -f setup/create_extensions.pg.sql
 

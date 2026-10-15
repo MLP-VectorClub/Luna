@@ -2,11 +2,21 @@
 
 namespace Tests;
 
+use App\Utils\Search;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Mockery;
+use OpenSearch\Client;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function tearDown(): void
+    {
+        Search::use(null);
+
+        parent::tearDown();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -19,5 +29,10 @@ abstract class TestCase extends BaseTestCase
 
         // The cached responses would leak between tests
         config(['responsecache.enabled' => false]);
+
+        // No test talks to an OpenSearch server: a search finds nothing, as it does when the index is missing
+        $search = Mockery::mock(Client::class);
+        $search->shouldReceive('search')->andReturn([]);
+        Search::use($search);
     }
 }

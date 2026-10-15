@@ -33,6 +33,23 @@ class PaletteImageTest extends TestCase
 
         $expected = file_get_contents("$dir/$id.png");
         $this->assertSame(getimagesizefromstring($expected)[0].'x'.getimagesizefromstring($expected)[1], getimagesizefromstring($png)[0].'x'.getimagesizefromstring($png)[1], 'Dimensions differ');
-        $this->assertSame(md5($expected), md5($png), 'The PNG differs from the one Winterchilla rendered');
+        // The pixels have to be the same, the bytes depend on the zlib and libpng the PNG encoder was built with
+        $this->assertSame(self::pixels($expected), self::pixels($png), 'The image differs from the one Winterchilla rendered');
+    }
+
+    /** @return string[] one hash per row of pixels */
+    private static function pixels(string $png): array
+    {
+        $image = imagecreatefromstring($png);
+        $rows = [];
+        for ($y = 0; $y < imagesy($image); $y++) {
+            $row = '';
+            for ($x = 0; $x < imagesx($image); $x++) {
+                $row .= pack('N', imagecolorat($image, $x, $y));
+            }
+            $rows[] = md5($row);
+        }
+
+        return $rows;
     }
 }
