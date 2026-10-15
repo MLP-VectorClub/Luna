@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -50,6 +52,23 @@ class HoneypotTest extends TestCase
     public function testTheFrontEndCanAskWhetherASessionIsFlagged(): void
     {
         $this->get('/internal/session-status')->assertNoContent();
+
+        $this->get('/honeypot/env')->assertForbidden();
+        $this->get('/internal/session-status')->assertForbidden();
+    }
+
+    public function testSignedInStaffAreRefusedButNotFlagged(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+        $this->actingAs($staff);
+
+        $this->get('/honeypot/env')->assertForbidden();
+        $this->get('/internal/session-status')->assertNoContent();
+    }
+
+    public function testOtherSignedInUsersAreFlagged(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => Role::Member]));
 
         $this->get('/honeypot/env')->assertForbidden();
         $this->get('/internal/session-status')->assertForbidden();
