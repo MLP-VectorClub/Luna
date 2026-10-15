@@ -27,6 +27,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('cloudflare:reload')->daily();
         // Fills the throughput and wait time graphs of the Horizon dashboard
         $schedule->command('horizon:snapshot')->everyFiveMinutes();
+        // Everything below writes to the database, which a read-only site must not do (the GDPR retention periods resume with the writes)
+        if (config('app.read_only')) {
+            return;
+        }
         $schedule->command('deviantart:warm-deviations')->everyTenMinutes()->withoutOverlapping();
         // Keeps the DeviantArt tokens of members alive (does nothing unless DEVIANTART_TOKEN_SYNC is on)
         $schedule->command('deviantart:refresh-tokens')->daily();

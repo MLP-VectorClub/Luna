@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+     * Read-only mode: the API only shows what the database holds. Anything that changes something answers 503 (see ReadOnlyMode), the
+     * database connection uses DB_READ_USERNAME / DB_READ_PASSWORD when they are set and nothing is written while a request is read
+     */
+    'read_only' => filter_var(env('READ_ONLY', false), FILTER_VALIDATE_BOOLEAN),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

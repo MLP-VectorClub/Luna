@@ -55,7 +55,7 @@ class ConfigController extends Controller
      *     description="OK",
      *     @OA\JsonContent(
      *       type="object",
-     *       required={"tagTypes", "roles", "showTypes", "vectorApps", "maxUploadSize", "patterns", "wsServerHost", "discordInviteLink"},
+     *       required={"tagTypes", "roles", "showTypes", "vectorApps", "maxUploadSize", "patterns", "wsServerHost", "discordInviteLink", "readOnly"},
      *       additionalProperties=false,
      *       @OA\Property(property="tagTypes", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Tag type key to label"),
      *       @OA\Property(property="roles", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Role key to label"),
@@ -73,7 +73,8 @@ class ConfigController extends Controller
      *         @OA\Property(property="episodeTitle", ref="#/components/schemas/RegexPattern")
      *       ),
      *       @OA\Property(property="wsServerHost", type="string", nullable=true, description="Address of the websocket server that pushes notifications, null when there is none"),
-     *       @OA\Property(property="discordInviteLink", type="string")
+     *       @OA\Property(property="discordInviteLink", type="string"),
+     *       @OA\Property(property="readOnly", type="boolean", description="Whether the site only shows what it holds and refuses changes, the front end tells visitors so")
      *     )
      *   )
      * )
@@ -94,6 +95,7 @@ class ConfigController extends Controller
             ],
             'ws_server_host' => config('services.websocket.host'),
             'discord_invite_link' => 'https://discord.mlpvector.club',
+            'read_only' => (bool) config('app.read_only'),
         ])->header('Cache-Control', 'public, max-age=300');
     }
 

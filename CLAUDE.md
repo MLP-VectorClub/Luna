@@ -129,3 +129,6 @@ two minutes in the cache, spent once); Muffins checks it with `POST /internal/we
 `POST /notifications/{id}/read` tell Muffins (`POST {WS_SERVER_URL}/notify`, 2 second timeout, a down server is only logged) to push the user's count, so open tabs fetch the list again.
 Tests: `WebsocketServerTest`.
 
+## Read-only mode
+
+`READ_ONLY=true` in `.env` turns the API into a viewer (`config('app.read_only')`): `ReadOnlyMode` (first in the `api` group) answers 503 `{message}` to everything that is not GET/HEAD/OPTIONS, signing in included, except `internal/websocket/validate`, which only reads. Sessions switch to the `array` driver (`config/session.php`), `App\Models\PersonalAccessToken` skips the `last_used_at` write, the scheduler only keeps `cloudflare:reload` and `horizon:snapshot`, and `GET /config` reports `readOnly` so Celestia shows its notice. With `DB_READ_USERNAME` / `DB_READ_PASSWORD` set, web requests (not artisan, so `migrate` on deploy keeps working) connect with that role, which should only have `SELECT`: a write that slips through then fails instead of changing data. Run `php artisan config:clear` (then `config:cache`) after changing any of these. Test: `tests/Feature/ReadOnlyModeTest.php`.

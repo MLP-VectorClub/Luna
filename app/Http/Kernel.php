@@ -39,6 +39,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            \App\Http\Middleware\ReadOnlyMode::class,
             \App\Http\Middleware\TransformApiHeaders::class,
             EnsureFrontendRequestsAreStateful::class,
             'bindings',

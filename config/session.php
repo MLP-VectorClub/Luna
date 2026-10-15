@@ -18,7 +18,8 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'file'),
+    // Sessions live in memory while the site is read-only, so reading never writes
+    'driver' => filter_var(env('READ_ONLY', false), FILTER_VALIDATE_BOOLEAN) ? 'array' : env('SESSION_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------

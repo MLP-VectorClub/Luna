@@ -3715,7 +3715,8 @@
                                         "maxUploadSize",
                                         "patterns",
                                         "wsServerHost",
-                                        "discordInviteLink"
+                                        "discordInviteLink",
+                                        "readOnly"
                                     ],
                                     "properties": {
                                         "tagTypes": {
@@ -3781,6 +3782,10 @@
                                         },
                                         "discordInviteLink": {
                                             "type": "string"
+                                        },
+                                        "readOnly": {
+                                            "description": "Whether the site only shows what it holds and refuses changes, the front end tells visitors so",
+                                            "type": "boolean"
                                         }
                                     },
                                     "type": "object",

@@ -27,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // A read-only site reads with a database role that cannot write. Set here and not in config/database.php so `artisan migrate` during a
+        // deploy, which runs with the cached config, keeps using the full role
+        if (config('app.read_only') && !$this->app->runningInConsole() && env('DB_READ_USERNAME')) {
+            config([
+                'database.connections.pgsql.username' => env('DB_READ_USERNAME'),
+                'database.connections.pgsql.password' => env('DB_READ_PASSWORD', ''),
+            ]);
+        }
+
         // Custom column types, resolved by the schema grammar as `type<Name>` methods
         Grammar::macro('typeCitext', fn() => CitextType::CITEXT);
 
@@ -47,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Reading with a token must not store when it was used
+        \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
+
         // Regenerating the OpenAPI document by hand also updates the copy in source control (not on the server, where the working tree stays clean)
         Event::listen(CommandFinished::class, function (CommandFinished $event) {
             if ($event->command === 'l5-swagger:generate' && $event->exitCode === 0 && !$this->app->environment('production') && !$this->app->runningUnitTests()) {
