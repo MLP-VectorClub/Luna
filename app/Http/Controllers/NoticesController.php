@@ -17,12 +17,14 @@ class NoticesController extends Controller
      *   schema="Notice",
      *   description="A site-wide notice shown until it is hidden",
      *   type="object",
-     *   required={"id", "type", "messageHtml", "hideAfter", "postedBy", "createdAt"},
+     *   required={"id", "type", "messageHtml", "showAfter", "hideAfter", "site", "postedBy", "createdAt"},
      *   additionalProperties=false,
      *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
      *   @OA\Property(property="type", type="string", enum={"info", "success", "fail", "warn", "caution"}),
-     *   @OA\Property(property="messageHtml", type="string", description="Sanitized HTML of the message"),
+     *   @OA\Property(property="messageHtml", type="string", description="Sanitized HTML of the message, `{path}` stands for the address of the page being viewed (without the host)"),
+     *   @OA\Property(property="showAfter", type="string", format="date-time", nullable=true, description="The notice is not shown before this time, null shows it at once"),
      *   @OA\Property(property="hideAfter", type="string", format="date-time"),
+     *   @OA\Property(property="site", type="string", enum={"all", "celestia", "winterchilla"}, description="The site that shows the notice"),
      *   @OA\Property(property="postedBy", type="integer", nullable=true),
      *   @OA\Property(property="createdAt", type="string", format="date-time")
      * )
@@ -40,14 +42,16 @@ class NoticesController extends Controller
      *   schema="NoticeInput",
      *   type="object",
      *   required={"messageHtml", "hideAfter", "type"},
-     *   @OA\Property(property="messageHtml", type="string", maxLength=500, description="Printable ASCII only; unsafe HTML is stripped"),
+     *   @OA\Property(property="messageHtml", type="string", maxLength=500, description="Printable ASCII only; unsafe HTML is stripped, links are kept. `{path}` is replaced with the address of the page being viewed"),
+     *   @OA\Property(property="showAfter", type="string", format="date-time", nullable=true, description="Not shown before this time (null: at once), must be before hideAfter"),
      *   @OA\Property(property="hideAfter", type="string", format="date-time", description="Must be in the future"),
+     *   @OA\Property(property="site", type="string", enum={"all", "celestia", "winterchilla"}, default="all"),
      *   @OA\Property(property="type", type="string", enum={"info", "success", "fail", "warn", "caution"})
      * )
      * @OA\Get(
      *   path="/notices/current",
      *   operationId="GetNoticesCurrent",
-     *   description="Notices that have not been hidden yet, newest first",
+     *   description="Notices this site shows right now (started, not hidden yet), newest first",
      *   tags={"notices"},
      *   security={},
      *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Notice")))
@@ -56,7 +60,7 @@ class NoticesController extends Controller
     public function current(): JsonResponse
     {
         return response()->json(
-            Notice::where('hide_after', '>', now())->orderByDesc('created_at')->orderByDesc('id')->get()
+            Notice::visible()->orderByDesc('created_at')->orderByDesc('id')->get()
                 ->map(fn(Notice $notice) => $notice->toContract())
         );
     }
@@ -186,12 +190,19 @@ class NoticesController extends Controller
     {
         $valid = Validator::make($request->all(), [
             'messageHtml' => ['required', 'string', 'max:500', 'regex:/^[ -~\n]+$/'],
+            'showAfter' => ['nullable', 'date', 'before:hideAfter'],
             'hideAfter' => ['required', 'date', 'after:now'],
+            'site' => ['sometimes', 'in:'.implode(',', Notice::SITES)],
             'type' => ['required', 'in:'.implode(',', Notice::TYPES)],
         ])->validate();
 
-        $notice->message_html = HtmlSanitizer::sanitize($valid['messageHtml']);
+        // Links stay. The purifier drops an address with braces in it, so the placeholder is swapped for something it accepts while it works
+        $token = 'zzpathplaceholderzz';
+        $message = str_replace('{path}', $token, $valid['messageHtml']);
+        $notice->message_html = str_replace($token, '{path}', HtmlSanitizer::sanitize($message, ['a'], ['a.href']));
+        $notice->show_after = $valid['showAfter'] ?? null;
         $notice->hide_after = $valid['hideAfter'];
+        $notice->site = $valid['site'] ?? 'all';
         $notice->type = $valid['type'];
         $notice->save();
     }

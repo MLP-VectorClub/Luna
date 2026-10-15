@@ -71,6 +71,44 @@ class SiteAdminTest extends TestCase
         $this->getJson('/notices/current')->assertOk()->assertExactJson([]);
     }
 
+    public function testNoticesAreShownOnlyOnceStartedAndOnlyOnTheirOwnSite(): void
+    {
+        $user = User::factory()->create(['role' => Role::Staff]);
+        $make = fn(array $attrs) => Notice::create($attrs + ['message_html' => 'x', 'type' => 'info', 'hide_after' => now()->addDay(), 'posted_by' => $user->id]);
+        $now = $make(['message_html' => 'Now']);
+        $make(['message_html' => 'Later', 'show_after' => now()->addHour()]);
+        $started = $make(['message_html' => 'Started', 'show_after' => now()->subHour()]);
+        $make(['message_html' => 'Other site', 'site' => 'winterchilla']);
+        $mine = $make(['message_html' => 'This site', 'site' => 'celestia']);
+
+        $this->getJson('/notices/current')->assertOk()
+            ->assertJsonCount(3)
+            ->assertJsonFragment(['id' => $now->id])
+            ->assertJsonFragment(['id' => $started->id])
+            ->assertJsonFragment(['id' => $mine->id, 'site' => 'celestia']);
+
+        // The list for staff has all of them, with their schedule
+        $this->as(Role::Staff)->getJson('/notices?size=100')->assertOk()->assertJsonPath('pagination.totalItems', 5);
+    }
+
+    public function testNoticeScheduleSiteAndLinks(): void
+    {
+        $this->as(Role::Staff);
+        $later = now()->addDay();
+        $created = $this->postJson('/notices', $this->notice([
+            'messageHtml' => 'Moved: <a href="https://mlpvector.club{path}" onclick="x()">here</a>',
+            'showAfter' => $later->toIso8601String(),
+            'hideAfter' => now()->addDays(30)->toIso8601String(),
+            'site' => 'winterchilla',
+        ]))->assertCreated()->assertJsonPath('site', 'winterchilla')->assertJsonPath('messageHtml', 'Moved: <a href="https://mlpvector.club{path}">here</a>');
+        $this->assertSame($later->timestamp, strtotime($created->json('showAfter')));
+        $this->getJson('/notices/current')->assertExactJson([]);
+
+        $this->postJson('/notices', $this->notice())->assertCreated()->assertJsonPath('showAfter', null)->assertJsonPath('site', 'all');
+        $this->postJson('/notices', $this->notice(['site' => 'elsewhere']))->assertJsonValidationErrors('site');
+        $this->postJson('/notices', $this->notice(['showAfter' => now()->addDays(5)->toIso8601String()]))->assertJsonValidationErrors('showAfter');
+    }
+
     public function testNoticeValidation(): void
     {
         $this->as(Role::Staff);

@@ -5098,7 +5098,7 @@
                 "tags": [
                     "notices"
                 ],
-                "description": "Notices that have not been hidden yet, newest first",
+                "description": "Notices this site shows right now (started, not hidden yet), newest first",
                 "operationId": "GetNoticesCurrent",
                 "responses": {
                     "200": {
@@ -11566,7 +11566,9 @@
                     "id",
                     "type",
                     "messageHtml",
+                    "showAfter",
                     "hideAfter",
+                    "site",
                     "postedBy",
                     "createdAt"
                 ],
@@ -11585,12 +11587,27 @@
                         ]
                     },
                     "messageHtml": {
-                        "description": "Sanitized HTML of the message",
+                        "description": "Sanitized HTML of the message, `{path}` stands for the address of the page being viewed (without the host)",
                         "type": "string"
+                    },
+                    "showAfter": {
+                        "description": "The notice is not shown before this time, null shows it at once",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "hideAfter": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "site": {
+                        "description": "The site that shows the notice",
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "celestia",
+                            "winterchilla"
+                        ]
                     },
                     "postedBy": {
                         "type": "integer",
@@ -11640,14 +11657,29 @@
                 ],
                 "properties": {
                     "messageHtml": {
-                        "description": "Printable ASCII only; unsafe HTML is stripped",
+                        "description": "Printable ASCII only; unsafe HTML is stripped, links are kept. `{path}` is replaced with the address of the page being viewed",
                         "type": "string",
                         "maxLength": 500
+                    },
+                    "showAfter": {
+                        "description": "Not shown before this time (null: at once), must be before hideAfter",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "hideAfter": {
                         "description": "Must be in the future",
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "site": {
+                        "type": "string",
+                        "default": "all",
+                        "enum": [
+                            "all",
+                            "celestia",
+                            "winterchilla"
+                        ]
                     },
                     "type": {
                         "type": "string",
