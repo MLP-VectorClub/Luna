@@ -1,0 +1,81 @@
+# Runs the PHPUnit suite on every push to main and on pull requests.
+#
+# The tests need PostgreSQL with the citext extension (the service container ships contrib) and a database whose name ends in
+# _test (tests/TestCase.php refuses anything else). Search, mail and the OAuth providers are faked, so nothing else is needed.
+name: Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  phpunit:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: luna
+          POSTGRES_PASSWORD: luna
+          POSTGRES_DB: luna_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U luna"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: luna_test
+      DB_USERNAME: luna
+      DB_PASSWORD: luna
+      PGPASSWORD: luna
+    steps:
+      - name: Check out code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: gd, exif, pdo_pgsql, intl, mbstring, bcmath, zip
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Create the database extensions
+        run: psql -h 127.0.0.1 -U luna -d luna_test -f setup/create_extensions.pg.sql
+
+      - name: Run migrations
+        run: php artisan migrate --force --no-interaction
+
+      - name: Run tests
+        run: vendor/bin/phpunit
