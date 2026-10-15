@@ -11,7 +11,6 @@ use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\PasskeySigninController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\TwoFactorSigninController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\ColorGuideController;
@@ -69,8 +68,6 @@ Route::middleware($throttle(12))->group(function () {
         Route::post('signin/passkey', [PasskeySigninController::class, 'verify']);
         Route::post('password/forgot', [PasswordResetController::class, 'forgot']);
         Route::post('password/reset', [PasswordResetController::class, 'reset']);
-        Route::post('/', [SignupController::class, 'viaPassword'])->name('signup_password');
-        Route::post('/oauth/signup/{provider}', [SignupController::class, 'viaSocialite']);
         Route::post('/oauth/signin/{provider}', [SigninController::class, 'viaSocialite']);
     });
 });
@@ -100,7 +97,6 @@ Route::prefix('about')->group(function () {
 
 Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle:api', 'optional.auth'])->group(function () {
     Route::prefix('users')->group(function () {
-        // Route::get('oauth/signup/{provider}', [SignupController::class, 'socialiteRedirect']);
         Route::get('oauth/signin/{provider}', [SigninController::class, 'socialiteRedirect']);
 
         Route::post('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');

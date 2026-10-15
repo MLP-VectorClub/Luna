@@ -94,6 +94,6 @@ class PasskeySigninController extends Controller
             return $blocked;
         }
 
-        return AccountHelper::authResponse($request, $user, false, (bool)($input['remember'] ?? false));
+        return AccountHelper::authResponse($request, $user, (bool)($input['remember'] ?? false));
     }
 }

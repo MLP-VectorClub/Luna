@@ -92,7 +92,7 @@ class DiscordController extends Controller
             throw new HttpException(409, 'A Discord account is already linked, unlink it first');
         }
 
-        $data = AccountHelper::socialUser($request, 'discord', false);
+        $data = AccountHelper::socialUser($request, 'discord');
         DB::transaction(function () use ($data, $user) {
             $member = DiscordMember::find($data->getId()) ?? (new DiscordMember())->forceFill(['id' => $data->getId()]);
             if ($member->user_id !== null && (int) $member->user_id !== $user->id) {

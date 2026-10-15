@@ -29,17 +29,17 @@ class DiscordSigninTest extends TestCase
         (new DiscordMember(['username' => 'crazy', 'discriminator' => 0]))->forceFill(['id' => '72062699806130176', 'user_id' => null])->save();
 
         $this->expectException(NotFoundHttpException::class);
-        AccountHelper::socialDiscord($this->discordUser(), false);
+        AccountHelper::socialDiscord($this->discordUser());
     }
 
-    public function testAServerMemberGetsAnAccountWhenRegistering(): void
+    public function testDiscordDoesNotMakeAccounts(): void
     {
-        (new DiscordMember(['username' => 'crazy', 'discriminator' => 0]))->forceFill(['id' => '72062699806130176', 'user_id' => null])->save();
-
-        $user = AccountHelper::socialDiscord($this->discordUser(), true);
-
-        $this->assertSame('Crazy', $user->name);
-        $this->assertSame($user->id, DiscordMember::find('72062699806130176')->user_id);
+        $this->expectException(NotFoundHttpException::class);
+        try {
+            AccountHelper::socialDiscord($this->discordUser());
+        } finally {
+            $this->assertSame(0, User::count());
+        }
     }
 
     public function testABoundMemberSignsIn(): void
@@ -47,6 +47,6 @@ class DiscordSigninTest extends TestCase
         $bound = User::factory()->create(['role' => Role::Member]);
         (new DiscordMember(['username' => 'crazy', 'discriminator' => 0]))->forceFill(['id' => '72062699806130176', 'user_id' => $bound->id])->save();
 
-        $this->assertSame($bound->id, AccountHelper::socialDiscord($this->discordUser(), false)->id);
+        $this->assertSame($bound->id, AccountHelper::socialDiscord($this->discordUser())->id);
     }
 }

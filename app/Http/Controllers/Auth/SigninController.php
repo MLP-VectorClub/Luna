@@ -123,7 +123,7 @@ class SigninController extends Controller
             return TwoFactorSigninController::challengeResponse($user, $data['remember'] ?? false);
         }
 
-        return AccountHelper::authResponse($request, $user, false, $data['remember'] ?? false);
+        return AccountHelper::authResponse($request, $user, $data['remember'] ?? false);
     }
 
     /**
@@ -181,7 +181,7 @@ class SigninController extends Controller
      */
     public function socialiteRedirect(SocialAuthRequest $request)
     {
-        return AccountHelper::socialRedirect($request, false);
+        return AccountHelper::socialRedirect($request);
     }
 
     /**
@@ -200,7 +200,7 @@ class SigninController extends Controller
      * )
      * @OA\Post(
      *   path="/users/oauth/signin/{provider}",
-     *   description="Process an OAuth authorization response",
+     *   description="Process an OAuth authorization response. A DeviantArt user without an account gets one (the only way to sign up), named after their DeviantArt name",
      *   tags={"authentication"},
      *   security={},
      *   @OA\Parameter(
@@ -239,8 +239,13 @@ class SigninController extends Controller
      *     description="Already logged in via session-based authentication",
      *   ),
      *   @OA\Response(
-     *     response="503",
-     *     description="Registrations are not possible at the moment",
+     *     response="404",
+     *     description="No account is linked to the provider's user (Discord signs in to existing accounts only)",
+     *     @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *   ),
+     *   @OA\Response(
+     *     response="409",
+     *     description="A DeviantArt user signing in for the first time gets an account, and its name is used by another account",
      *     @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
      *   )
      * )
@@ -250,6 +255,6 @@ class SigninController extends Controller
      */
     public function viaSocialite(SocialAuthRequest $request)
     {
-        return AccountHelper::socialAuth($request, false);
+        return AccountHelper::socialAuth($request);
     }
 }

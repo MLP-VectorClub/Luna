@@ -3366,7 +3366,7 @@
                 "tags": [
                     "authentication"
                 ],
-                "description": "Process an OAuth authorization response",
+                "description": "Process an OAuth authorization response. A DeviantArt user without an account gets one (the only way to sign up), named after their DeviantArt name",
                 "operationId": "PostUsersOauthSigninProvider",
                 "parameters": [
                     {
@@ -3422,8 +3422,8 @@
                     "403": {
                         "description": "Already logged in via session-based authentication"
                     },
-                    "503": {
-                        "description": "Registrations are not possible at the moment",
+                    "404": {
+                        "description": "No account is linked to the provider's user (Discord signs in to existing accounts only)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -3431,96 +3431,9 @@
                                 }
                             }
                         }
-                    }
-                },
-                "security": []
-            }
-        },
-        "/users": {
-            "get": {
-                "tags": [
-                    "users"
-                ],
-                "description": "Get a full list of users, i.e. those that have the 'user' role (requires staff permissions)",
-                "operationId": "GetUsers",
-                "responses": {
-                    "200": {
-                        "description": "Query successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/BarePublicUser"
-                                    }
-                                }
-                            }
-                        }
                     },
-                    "401": {
-                        "description": "Unathorized"
-                    }
-                },
-                "security": [
-                    {
-                        "BearerAuth": []
-                    },
-                    {
-                        "CookieAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "authentication"
-                ],
-                "description": "Register an account on the site",
-                "operationId": "PostUsers",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RegistrationRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Registration successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "token": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "type": "object",
-                                    "additionalProperties": false
-                                }
-                            }
-                        }
-                    },
-                    "204": {
-                        "description": "Registration successful (authentication via cookies, no token is sent)"
-                    },
-                    "400": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Already logged in via session-based authentication"
-                    },
-                    "503": {
-                        "description": "Registrations are not possible at the moment",
+                    "409": {
+                        "description": "A DeviantArt user signing in for the first time gets an account, and its name is used by another account",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11321,6 +11234,41 @@
                 "security": []
             }
         },
+        "/users": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "description": "Get a full list of users, i.e. those that have the 'user' role (requires staff permissions)",
+                "operationId": "GetUsers",
+                "responses": {
+                    "200": {
+                        "description": "Query successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BarePublicUser"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unathorized"
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
         "/users/me/password": {
             "post": {
                 "tags": [
@@ -12289,33 +12237,6 @@
                     "code": {
                         "description": "The authorization code received from the provider",
                         "type": "string"
-                    }
-                },
-                "type": "object",
-                "additionalProperties": false
-            },
-            "RegistrationRequest": {
-                "required": [
-                    "name",
-                    "email",
-                    "password"
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 20,
-                        "minLength": 5
-                    },
-                    "email": {
-                        "type": "string",
-                        "maxLength": 128,
-                        "minLength": 3
-                    },
-                    "password": {
-                        "type": "string",
-                        "format": "password",
-                        "maxLength": 300,
-                        "minLength": 8
                     }
                 },
                 "type": "object",

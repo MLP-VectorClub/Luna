@@ -37,7 +37,7 @@ class DeviantArtSigninTest extends TestCase
     {
         $user = $this->existingUser('OldName', 'OldName');
 
-        $signed_in = AccountHelper::socialDeviantart($this->daUser('NewName'), false);
+        $signed_in = AccountHelper::socialDeviantart($this->daUser('NewName'));
 
         $this->assertSame($user->id, $signed_in->id);
         $this->assertSame('NewName', $user->fresh()->name);
@@ -49,8 +49,8 @@ class DeviantArtSigninTest extends TestCase
     {
         $user = $this->existingUser('SameName', 'SameName');
 
-        AccountHelper::socialDeviantart($this->daUser('SameName'), false);
-        AccountHelper::socialDeviantart($this->daUser('samename'), false);
+        AccountHelper::socialDeviantart($this->daUser('SameName'));
+        AccountHelper::socialDeviantart($this->daUser('samename'));
 
         $this->assertSame('SameName', $user->fresh()->name);
         $this->assertSame(0, PreviousUsername::count());
@@ -60,7 +60,7 @@ class DeviantArtSigninTest extends TestCase
     {
         $user = $this->existingUser('SiteName', 'DaName');
 
-        AccountHelper::socialDeviantart($this->daUser('Renamed'), false);
+        AccountHelper::socialDeviantart($this->daUser('Renamed'));
 
         $this->assertSame('Renamed', $user->fresh()->name);
         $this->assertEqualsCanonicalizing(['SiteName', 'DaName'], PreviousUsername::pluck('username')->all());
@@ -71,27 +71,51 @@ class DeviantArtSigninTest extends TestCase
         $user = $this->existingUser('Mine', 'Mine');
         User::factory()->create(['name' => 'Taken']);
 
-        AccountHelper::socialDeviantart($this->daUser('Taken'), false);
+        AccountHelper::socialDeviantart($this->daUser('Taken'));
 
         $this->assertSame('Mine', $user->fresh()->name);
         $this->assertSame('Taken', DeviantartUser::find(self::DA_ID)->name);
         $this->assertSame(['Mine'], PreviousUsername::pluck('username')->all());
     }
 
-    public function testRegisteringCreatesNoHistory(): void
+    public function testSigningInForTheFirstTimeMakesTheAccount(): void
     {
-        $created = AccountHelper::socialDeviantart($this->daUser('Fresh'), true);
+        User::factory()->create(['role' => Role::Member]);
+
+        $created = AccountHelper::socialDeviantart($this->daUser('Fresh'));
 
         $this->assertSame('Fresh', $created->name);
+        $this->assertSame(Role::User, $created->fresh()->role);
+        // Nothing but the DeviantArt name: no password to sign in with, no address to mail
+        $this->assertNull($created->fresh()->password);
+        $this->assertNull($created->fresh()->email);
+        $this->assertSame($created->id, DeviantartUser::find(self::DA_ID)->user_id);
         $this->assertSame(0, PreviousUsername::count());
+
+        // The next time it is the same account
+        $this->assertSame($created->id, AccountHelper::socialDeviantart($this->daUser('Fresh'))->id);
+        $this->assertSame(2, User::count());
     }
 
-    public function testASignInWithoutALocalAccountAnswersWithAReason(): void
+    public function testAFreshAccountIsRefusedWhenAnotherAccountHoldsTheName(): void
     {
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
-        $this->expectExceptionMessage('Could not find local account for user');
+        User::factory()->create(['name' => 'Taken']);
 
-        AccountHelper::socialDeviantart($this->daUser('Nobody'), false);
+        try {
+            AccountHelper::socialDeviantart($this->daUser('Taken'));
+            $this->fail('The account should not have been made');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            $this->assertSame(409, $e->getStatusCode());
+        }
+        $this->assertNull(DeviantartUser::find(self::DA_ID));
+        $this->assertSame(1, User::count());
+    }
+
+    public function testThereIsNoPasswordSignup(): void
+    {
+        $this->postJson('/users', ['name' => 'Someone', 'email' => 'a@example.com', 'password' => 'correct-horse-battery'])->assertStatus(405);
+        $this->postJson('/users/oauth/signup/deviantart', [])->assertNotFound();
+        $this->assertSame(0, User::count());
     }
 
     public function testTheReasonOfANotFoundErrorIsKept(): void

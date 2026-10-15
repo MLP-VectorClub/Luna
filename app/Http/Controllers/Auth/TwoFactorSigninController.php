@@ -127,7 +127,7 @@ class TwoFactorSigninController extends Controller
             return self::expired();
         }
 
-        return AccountHelper::authResponse($request, $user, false, (bool)($challenge['data']['remember'] ?? false));
+        return AccountHelper::authResponse($request, $user, (bool)($challenge['data']['remember'] ?? false));
     }
 
     /**
@@ -204,6 +204,6 @@ class TwoFactorSigninController extends Controller
             return self::expired();
         }
 
-        return AccountHelper::authResponse($request, $user, false, (bool)($login['data']['remember'] ?? false));
+        return AccountHelper::authResponse($request, $user, (bool)($login['data']['remember'] ?? false));
     }
 }

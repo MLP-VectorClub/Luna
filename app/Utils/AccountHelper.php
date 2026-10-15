@@ -17,7 +17,6 @@ use App\Models\User;
 use App\Rules\StrictEmail;
 use App\Rules\UniqueEmail;
 use App\Rules\Username;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,36 +33,6 @@ use Valorin\Pwned\Pwned;
 
 class AccountHelper
 {
-    public static function validator(array $data)
-    {
-        return Validator::make($data, [
-            'name' => [
-                'required',
-                'string',
-                'min:5',
-                'max:20',
-                'unique:users',
-                new Username(),
-            ],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'min:3',
-                'max:255',
-                new UniqueEmail(),
-                new StrictEmail(),
-            ],
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'max:300',
-                new Pwned,
-            ],
-        ]);
-    }
-
     /**
      * @param  array  $data  = [
      *     'id' => int,
@@ -76,14 +45,13 @@ class AccountHelper
      */
     public static function create($data): User
     {
-        $have_users = User::any();
-        // TODO remove when registration for the public is open
-        if ($have_users) {
-            abort(503, 'New registrations are currently not accepted, thank you for your understanding.');
+        // Names are unique, and the one of a DeviantArt account may be held by somebody else already
+        if (isset($data['name']) && User::where('name', $data['name'])->exists()) {
+            abort(409, 'That name is already used by another account on this site, please contact the staff to sort it out.');
         }
 
-        // First user will receive developer role
-        if (!$have_users) {
+        // The first user of a fresh installation is the developer
+        if (!User::any()) {
             $data['role'] = Role::Developer;
         }
 
@@ -100,12 +68,8 @@ class AccountHelper
         return $request->attributes->get('sanctum') === true;
     }
 
-    public static function authResponse(Request $request, User $user, bool $register, bool $remember = true)
+    public static function authResponse(Request $request, User $user, bool $remember = true)
     {
-        if ($register) {
-            event(new Registered($user));
-        }
-
         if (self::isSanctum($request)) {
             Auth::login($user, true);
             return response()->noContent();
@@ -145,19 +109,15 @@ class AccountHelper
 
     /**
      * @param  \Laravel\Socialite\Contracts\User  $data
-     * @param  bool  $register
      * @return User
      * @throws \Exception
      * @see https://socialiteproviders.com/Deviantart/#installation-basic-usage
      */
-    public static function socialDeviantart(\Laravel\Socialite\Contracts\User $data, bool $register): User
+    public static function socialDeviantart(\Laravel\Socialite\Contracts\User $data): User
     {
         $record = DeviantartUser::find($data->getId());
         if ($record === null) {
-            if (!$register) {
-                Log::notice('OAuth sign-in: no local account for the DeviantArt user', ['id' => $data->getId(), 'nickname' => $data->getNickname()]);
-                abort(404, 'Could not find local account for user');
-            }
+            // A DeviantArt account that signs in for the first time gets an account here: that is the only way to sign up
             $app_user = self::create([
                 'name' => $data->getNickname(),
                 'role' => Role::User,
@@ -200,45 +160,18 @@ class AccountHelper
 
     /**
      * @param  \Laravel\Socialite\Contracts\User  $data
-     * @param  bool  $register
      * @return User
      * @throws \Exception
      * @see https://socialiteproviders.com/Deviantart/#installation-basic-usage
      */
-    public static function socialDiscord(\Laravel\Socialite\Contracts\User $data, bool $register): User
+    public static function socialDiscord(\Laravel\Socialite\Contracts\User $data): User
     {
+        // Discord only signs in to accounts that exist (linked in the account settings, or bound by Winterchilla): accounts are made through DeviantArt
         $record = DiscordMember::find($data->getId());
-        if ($record === null) {
-            if (!$register) {
-                Log::notice('OAuth sign-in: no local account for the Discord user', ['id' => $data->getId(), 'name' => $data->getName()]);
-                abort(404, 'Could not find local account for user');
-            }
-            $app_user = self::create([
-                'name' => $data->getName(),
-                'email' => $data->getEmail(),
-                'role' => Role::User,
-            ]);
-            UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider, AvatarProvider::Discord);
-
-            $record = new DiscordMember();
-            $record->id = $data->getId();
-            $record->user_id = $app_user->id;
-        } else {
-            $app_user = $record->user()->first();
-            // A server member that is not bound to an account on the site (most of the members, bound ones come from Winterchilla's linking)
-            if ($app_user === null) {
-                if (!$register) {
-                    Log::notice('OAuth sign-in: the Discord user is a server member without an account on the site', ['id' => $data->getId(), 'name' => $data->getName()]);
-                    abort(404, 'Could not find local account for user');
-                }
-                $app_user = self::create([
-                    'name' => $data->getName(),
-                    'email' => $data->getEmail(),
-                    'role' => Role::User,
-                ]);
-                UserPrefHelper::set($app_user, UserPrefKey::Personal_AvatarProvider, AvatarProvider::Discord);
-                $record->user_id = $app_user->id;
-            }
+        $app_user = $record?->user()->first();
+        if ($app_user === null) {
+            Log::notice('OAuth sign-in: no local account for the Discord user', ['id' => $data->getId(), 'name' => $data->getName()]);
+            abort(404, 'Could not find local account for user');
         }
 
         /**
@@ -261,10 +194,8 @@ class AccountHelper
         return $app_user;
     }
 
-    private static function createRedirectUrl(string $provider, bool $register): string {
-        // TODO Handle on frontend
-        $register_param = $register ? '?register=true' : '';
-        return sprintf("%s/oauth/%s", config('app.frontend_url'), $provider) . $register_param;
+    private static function createRedirectUrl(string $provider): string {
+        return sprintf("%s/oauth/%s", config('app.frontend_url'), $provider);
     }
 
     /** Name of the cookie that carries the PKCE code verifier from the redirect to the code exchange */
@@ -277,10 +208,10 @@ class AccountHelper
      *
      * @throws ValidationException when the provider refuses the code
      */
-    public static function socialUser(Request $request, string $provider, bool $register): \Laravel\Socialite\Contracts\User
+    public static function socialUser(Request $request, string $provider): \Laravel\Socialite\Contracts\User
     {
         $driver = Socialite::driver($provider)->stateless();
-        $driver->redirectUrl(self::createRedirectUrl($provider, $register));
+        $driver->redirectUrl(self::createRedirectUrl($provider));
         self::pkceSession(self::readPkceCookie($request));
         try {
             return $driver->user();
@@ -323,7 +254,7 @@ class AccountHelper
         }
     }
 
-    public static function socialRedirect(SocialAuthRequest $request, bool $register)
+    public static function socialRedirect(SocialAuthRequest $request)
     {
         $validated = $request->validated();
         $driver = Socialite::driver($validated['provider'])->stateless();
@@ -335,7 +266,7 @@ class AccountHelper
                 $driver->setScopes(['identify', 'email']);
                 break;
         }
-        $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
+        $driver->redirectUrl(self::createRedirectUrl($validated['provider']));
         $session = self::pkceSession();
         $response = $driver->redirect();
         $verifier = $session->get('code_verifier');
@@ -356,24 +287,24 @@ class AccountHelper
         return $response;
     }
 
-    public static function socialAuth(SocialAuthRequest $request, bool $register)
+    public static function socialAuth(SocialAuthRequest $request)
     {
         $validated = $request->validated();
-        $data = self::socialUser($request, $validated['provider'], $register);
+        $data = self::socialUser($request, $validated['provider']);
 
-        DB::transaction(function () use ($validated, $data, $register, &$user) {
+        DB::transaction(function () use ($validated, $data, &$user) {
             switch ($validated['provider']) {
                 case SocialProvider::DeviantArt->value:
-                    $user = self::socialDeviantart($data, $register);
+                    $user = self::socialDeviantart($data);
                     break;
                 case SocialProvider::Discord->value:
-                    $user = self::socialDiscord($data, $register);
+                    $user = self::socialDiscord($data);
                     break;
                 default:
                     throw new RuntimeException("Unhandled provider {$validated['provider']}");
             }
         });
 
-        return self::authResponse($request, $user, $register);
+        return self::authResponse($request, $user);
     }
 }
