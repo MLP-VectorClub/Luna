@@ -57,7 +57,11 @@ class FakeAuthenticator
     {
         $details = openssl_pkey_get_details($this->key)['ec'];
 
-        return self::cbor([1 => 2, 3 => -7, -1 => 1, -2 => ['__bytes' => $details['x']], -3 => ['__bytes' => $details['y']]]);
+        // OpenSSL drops leading zero bytes of the coordinates (about one key in 128), a P-256 coordinate is always 32 bytes
+        $x = str_pad($details['x'], 32, "\0", STR_PAD_LEFT);
+        $y = str_pad($details['y'], 32, "\0", STR_PAD_LEFT);
+
+        return self::cbor([1 => 2, 3 => -7, -1 => 1, -2 => ['__bytes' => $x], -3 => ['__bytes' => $y]]);
     }
 
     private function clientData(string $type, string $challenge): string
