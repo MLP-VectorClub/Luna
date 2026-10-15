@@ -13,7 +13,7 @@ class HoneypotTest extends TestCase
     #[DataProvider('traps')]
     public function testATrapFlagsTheSessionAndRefusesIt(string $trap): void
     {
-        $this->get("/honeypot/$trap")->assertForbidden()->assertCookie('blocked', '1', false);
+        $this->get("/honeypot/$trap")->assertForbidden();
 
         // The same session is refused everywhere from then on, the web group and the API both
         $this->get('/about/server-info')->assertForbidden();
@@ -45,5 +45,13 @@ class HoneypotTest extends TestCase
     {
         $this->get('/honeypot/'.str_repeat('a', 41))->assertNotFound();
         $this->get('/honeypot/wp-login.php')->assertForbidden();
+    }
+
+    public function testTheFrontEndCanAskWhetherASessionIsFlagged(): void
+    {
+        $this->get('/internal/session-status')->assertNoContent();
+
+        $this->get('/honeypot/env')->assertForbidden();
+        $this->get('/internal/session-status')->assertForbidden();
     }
 }

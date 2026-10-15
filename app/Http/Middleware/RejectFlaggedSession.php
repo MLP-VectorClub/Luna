@@ -5,17 +5,14 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cookie;
 
 /**
- * A session that touched a honeypot (`HoneypotController`) is refused for good. The flag lives in the session; because the front end cannot read
- * the session, a plain `blocked` cookie (not encrypted, see `EncryptCookies`) tells it the same thing so it can refuse its own pages too
+ * A session that touched a honeypot (`HoneypotController`) is refused for good. The flag lives in the session row of the database, nothing the
+ * browser holds can undo it: the front end's server asks `GET /internal/session-status` with the visitor's session cookie before it serves a page
  */
 class RejectFlaggedSession
 {
     public const SESSION_KEY = 'blocked_at';
-
-    public const COOKIE = 'blocked';
 
     public static function flag(Request $request): void
     {
@@ -24,7 +21,7 @@ class RejectFlaggedSession
 
     public static function refusal(): Response
     {
-        return response('Forbidden', 403)->withCookie(Cookie::make(self::COOKIE, '1', 60 * 24 * 365, '/', null, true, true, false, 'lax'));
+        return response('Forbidden', 403);
     }
 
     public function handle(Request $request, Closure $next)
