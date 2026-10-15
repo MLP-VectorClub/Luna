@@ -15,11 +15,16 @@ class HoneypotTest extends TestCase
     #[DataProvider('traps')]
     public function testATrapFlagsTheSessionAndRefusesIt(string $trap): void
     {
-        $this->get("/honeypot/$trap")->assertForbidden();
+        $response = $this->get("/honeypot/$trap")->assertForbidden();
+        $cookie = $response->getCookie(config('session.cookie'), false);
+        $this->assertNotNull($cookie);
 
-        // The same session is refused everywhere from then on, the web group and the API both
+        // The same session is refused everywhere from then on, the web group and the API both (the API starts no session for a guest without a cookie,
+        // the browser of the flagged session has one)
         $this->get('/about/server-info')->assertForbidden();
-        $this->withHeaders(['Origin' => config('app.frontend_url'), 'Referer' => config('app.frontend_url').'/'])->getJson('/config')->assertForbidden();
+        $this->withHeaders(['Origin' => config('app.frontend_url'), 'Referer' => config('app.frontend_url').'/'])
+            ->withUnencryptedCookie(config('session.cookie'), $cookie->getValue())->withCredentials()
+            ->getJson('/config')->assertForbidden();
     }
 
     public static function traps(): array

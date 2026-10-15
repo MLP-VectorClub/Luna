@@ -36,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
             ]);
         }
 
+        // Guests who only read get no session (see the middleware), Sanctum's pipeline of stateful requests asks the container for the original by name
+        $this->app->bind(\Illuminate\Session\Middleware\StartSession::class, \App\Http\Middleware\StartSession::class);
+
         // Custom column types, resolved by the schema grammar as `type<Name>` methods
         Grammar::macro('typeCitext', fn() => CitextType::CITEXT);
 

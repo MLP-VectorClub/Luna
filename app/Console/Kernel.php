@@ -37,6 +37,8 @@ class Kernel extends ConsoleKernel
         // GDPR retention, these were Winterchilla's cron scripts
         $schedule->command('gdpr:anonymize-logged-ips')->daily();
         $schedule->command('gdpr:prune-email-verifications')->hourly();
+        // Guests keep a session for a day, not for the 30 days of SESSION_LIFETIME
+        $schedule->command('sessions:prune-guests')->hourly();
     }
 
     /**

@@ -30,4 +30,17 @@ return [
 
     'expiration' => null,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sanctum Middleware
+    |--------------------------------------------------------------------------
+    |
+    | The CSRF check of the stateful requests of the front end is ours: it leaves the guests that have no session alone (see App\Http\Middleware\StartSession)
+    |
+    */
+
+    'middleware' => [
+        'verify_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,
+    ],
+
 ];
