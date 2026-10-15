@@ -3038,6 +3038,103 @@
                 "security": []
             }
         },
+        "/users/signin/passkey/options": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Options for signing in with a passkey (`navigator.credentials.get`), good for ten minutes: browsers keep a conditional (autofill) request open while the visitor types",
+                "operationId": "PostUsersSigninPasskeyOptions",
+                "responses": {
+                    "200": {
+                        "description": "Options for the browser",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/users/signin/passkey": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Signs in with the credential the browser made for the options",
+                "operationId": "PostUsersSigninPasskey",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge",
+                                    "credential"
+                                ],
+                                "properties": {
+                                    "challenge": {
+                                        "type": "string"
+                                    },
+                                    "credential": {
+                                        "description": "What `navigator.credentials.get` returned, as JSON",
+                                        "type": "object",
+                                        "additionalProperties": true
+                                    },
+                                    "remember": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "token"
+                                    ],
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Session-based authentication successful (cookies, no token is sent)"
+                    },
+                    "401": {
+                        "description": "The passkey did not check out, or the options have expired or were used (`expired: true`)"
+                    },
+                    "403": {
+                        "description": "Could not sign in, check the error message for details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/users/signin": {
             "post": {
                 "tags": [
@@ -3074,6 +3171,16 @@
                     },
                     "204": {
                         "description": "Session-based authentication successful (authentication via cookies, no token is sent)"
+                    },
+                    "202": {
+                        "description": "The password is right but the account has two-factor authentication: nobody is signed in yet, answer the challenge at `POST /users/signin/two-factor`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TwoFactorChallengeResponse"
+                                }
+                            }
+                        }
                     },
                     "403": {
                         "description": "Could not sign in, check the error message for details"
@@ -3293,6 +3400,195 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/users/signin/two-factor": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Answers the challenge of `POST /users/signin` with a code of the authenticator app or a recovery code, and signs in",
+                "operationId": "PostUsersSigninTwoFactor",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge"
+                                ],
+                                "properties": {
+                                    "challenge": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "description": "Six digits of the authenticator app",
+                                        "type": "string"
+                                    },
+                                    "recoveryCode": {
+                                        "description": "One of the recovery codes, each works once",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "token"
+                                    ],
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Session-based authentication successful (cookies, no token is sent)"
+                    },
+                    "401": {
+                        "description": "The code is wrong (more tries left), or the challenge has expired or was used up (`expired: true`)"
+                    },
+                    "422": {
+                        "description": "Neither `code` nor `recoveryCode` was sent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many wrong codes for this account"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/users/signin/two-factor/passkey/options": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Options for answering the challenge of `POST /users/signin` with one of the account's passkeys (`navigator.credentials.get`)",
+                "operationId": "PostUsersSigninTwoFactorPasskeyOptions",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge"
+                                ],
+                                "properties": {
+                                    "challenge": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Options for the browser",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "The challenge has expired (`expired: true`)"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/users/signin/two-factor/passkey": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Answers the challenge of `POST /users/signin` with the credential the browser made for the options, and signs in",
+                "operationId": "PostUsersSigninTwoFactorPasskey",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge",
+                                    "passkeyChallenge",
+                                    "credential"
+                                ],
+                                "properties": {
+                                    "challenge": {
+                                        "description": "The one of the password step",
+                                        "type": "string"
+                                    },
+                                    "passkeyChallenge": {
+                                        "description": "The one of the options response",
+                                        "type": "string"
+                                    },
+                                    "credential": {
+                                        "description": "What `navigator.credentials.get` returned, as JSON",
+                                        "type": "object",
+                                        "additionalProperties": true
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "token"
+                                    ],
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Session-based authentication successful (cookies, no token is sent)"
+                    },
+                    "401": {
+                        "description": "The passkey did not check out, or a challenge has expired"
                     }
                 },
                 "security": []
@@ -5455,6 +5751,293 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/passkeys": {
+            "get": {
+                "tags": [
+                    "account"
+                ],
+                "description": "The passkeys of the account",
+                "operationId": "GetUsersMePasskeys",
+                "responses": {
+                    "200": {
+                        "description": "Passkeys, oldest first",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Passkey"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Adds the passkey the browser made for the options",
+                "operationId": "PostUsersMePasskeys",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge",
+                                    "credential"
+                                ],
+                                "properties": {
+                                    "challenge": {
+                                        "type": "string"
+                                    },
+                                    "credential": {
+                                        "description": "What `navigator.credentials.create` returned, as JSON",
+                                        "type": "object",
+                                        "additionalProperties": true
+                                    },
+                                    "name": {
+                                        "description": "What the passkey is called in the list, `Passkey` when left out",
+                                        "type": "string",
+                                        "maxLength": 64
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Added",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Passkey"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The options expired or the browser's answer did not check out",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/passkeys/options": {
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Options for adding a passkey (`navigator.credentials.create`), good for five minutes",
+                "operationId": "PostUsersMePasskeysOptions",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Options for the browser",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The account has as many passkeys as it may",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The password (or code) is missing or wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/passkeys/{id}": {
+            "delete": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Removes a passkey. Every other session and token of the account ends",
+                "operationId": "DeleteUsersMePasskeysId",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Removed"
+                    },
+                    "404": {
+                        "description": "Not a passkey of the account",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The password (or code) is missing or wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Renames a passkey",
+                "operationId": "PatchUsersMePasskeysId",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 64
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Renamed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Passkey"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not a passkey of the account",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid name",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
                                 }
                             }
                         }
@@ -9109,6 +9692,309 @@
                 }
             }
         },
+        "/users/me/two-factor": {
+            "get": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Whether the account has two-factor authentication",
+                "operationId": "GetUsersMeTwoFactor",
+                "responses": {
+                    "200": {
+                        "description": "Status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "enabled",
+                                        "recoveryCodesRemaining"
+                                    ],
+                                    "properties": {
+                                        "enabled": {
+                                            "type": "boolean"
+                                        },
+                                        "recoveryCodesRemaining": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Starts setting up an authenticator app: a new secret (replacing an earlier setup that was never confirmed) to scan or type in. Nothing is asked at sign-in until `POST /users/me/two-factor/confirm`",
+                "operationId": "PostUsersMeTwoFactor",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The secret",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "secret",
+                                        "uri"
+                                    ],
+                                    "properties": {
+                                        "secret": {
+                                            "description": "Base32, for typing into the app",
+                                            "type": "string"
+                                        },
+                                        "uri": {
+                                            "description": "`otpauth://` address for a QR code",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Already set up, disable it first",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The password (or code) is missing or wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Turns two-factor authentication off. Every other session and token of the account ends",
+                "operationId": "DeleteUsersMeTwoFactor",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Turned off"
+                    },
+                    "422": {
+                        "description": "The password (or code) is missing or wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/two-factor/confirm": {
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Finishes the setup with a code of the app and turns two-factor authentication on. The recovery codes are shown only here",
+                "operationId": "PostUsersMeTwoFactorConfirm",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Turned on",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "recoveryCodes"
+                                    ],
+                                    "properties": {
+                                        "recoveryCodes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "No setup was started, or it is confirmed already",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The code is wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/two-factor/recovery-codes": {
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Replaces the recovery codes with new ones (the old ones stop working), shown only here",
+                "operationId": "PostUsersMeTwoFactorRecoveryCodes",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The new codes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "recoveryCodes"
+                                    ],
+                                    "properties": {
+                                        "recoveryCodes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Two-factor authentication is not on",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The password (or code) is missing or wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/useful-links/sidebar": {
             "get": {
                 "tags": [
@@ -11215,6 +12101,33 @@
                 "type": "string",
                 "format": "URL"
             },
+            "PasskeyOptionsResponse": {
+                "required": [
+                    "options",
+                    "challenge"
+                ],
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/ZeroBasedId"
+                    },
+                    {
+                        "properties": {
+                            "options": {
+                                "description": "The `publicKey` options for `navigator.credentials.get` or `.create`, as JSON (binary values are base64url)",
+                                "type": "object",
+                                "additionalProperties": true
+                            },
+                            "challenge": {
+                                "description": "Send this back with the credential",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ],
+                "additionalProperties": false
+            },
             "SigninRequest": {
                 "required": [
                     "email",
@@ -11273,6 +12186,49 @@
                     }
                 },
                 "type": "object",
+                "additionalProperties": false
+            },
+            "TwoFactorChallengeResponse": {
+                "required": [
+                    "twoFactor"
+                ],
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/ZeroBasedId"
+                    },
+                    {
+                        "properties": {
+                            "twoFactor": {
+                                "required": [
+                                    "challenge",
+                                    "methods"
+                                ],
+                                "properties": {
+                                    "challenge": {
+                                        "description": "Send this back with the answer",
+                                        "type": "string"
+                                    },
+                                    "methods": {
+                                        "description": "What the account can answer with",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "totp",
+                                                "recovery",
+                                                "passkey"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        },
+                        "type": "object"
+                    }
+                ],
                 "additionalProperties": false
             },
             "ColorGroupInput": {
@@ -11698,6 +12654,34 @@
                     }
                 },
                 "type": "object"
+            },
+            "Passkey": {
+                "required": [
+                    "id",
+                    "name",
+                    "createdAt",
+                    "lastUsedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "lastUsedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
             },
             "PostInput": {
                 "required": [
@@ -14066,6 +15050,10 @@
         {
             "name": "notices",
             "description": "notices"
+        },
+        {
+            "name": "account",
+            "description": "account"
         },
         {
             "name": "personal guide",

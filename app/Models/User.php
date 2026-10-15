@@ -90,6 +90,27 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(DeviantartUser::class);
     }
 
+    public function twoFactor()
+    {
+        return $this->hasOne(TwoFactor::class);
+    }
+
+    public function recoveryCodes()
+    {
+        return $this->hasMany(RecoveryCode::class);
+    }
+
+    public function passkeys()
+    {
+        return $this->hasMany(Passkey::class);
+    }
+
+    /** Whether signing in with the password also asks for a second factor (an authenticator app that was confirmed) */
+    public function hasTwoFactor(): bool
+    {
+        return TwoFactor::where('user_id', $this->id)->whereNotNull('confirmed_at')->exists();
+    }
+
     public function discordMember()
     {
         return $this->hasOne(DiscordMember::class);

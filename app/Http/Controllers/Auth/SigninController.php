@@ -70,6 +70,11 @@ class SigninController extends Controller
      *     description="Session-based authentication successful (authentication via cookies, no token is sent)"
      *   ),
      *   @OA\Response(
+     *     response="202",
+     *     description="The password is right but the account has two-factor authentication: nobody is signed in yet, answer the challenge at `POST /users/signin/two-factor`",
+     *     @OA\JsonContent(ref="#/components/schemas/TwoFactorChallengeResponse")
+     *   ),
+     *   @OA\Response(
      *     response="403",
      *     description="Could not sign in, check the error message for details",
      *     @OA\Schema(ref="#/components/schemas/ErrorResponse")
@@ -109,19 +114,38 @@ class SigninController extends Controller
             abort(401);
         }
 
-        // Members signed in with DeviantArt first, so their DeviantArt tokens have to keep working
-        $da_user = DeviantArtTokens::enabled() ? $user->daUser : null;
-        if ($da_user !== null) {
-            $status = DeviantArtTokens::check($da_user);
-            if ($status === DeviantArtTokens::REVOKED) {
-                return response()->json(['message' => trans('errors.auth.deviantart_required'), 'deviantArtRequired' => true], 403);
-            }
-            if ($status === DeviantArtTokens::UNAVAILABLE) {
-                return response()->json(['message' => trans('errors.auth.deviantart_unavailable')], 503);
-            }
+        if ($blocked = self::deviantArtBlock($user)) {
+            return $blocked;
+        }
+
+        // The password alone is not enough for an account with an authenticator app: nothing is signed in yet, the client gets a challenge to answer
+        if ($user->hasTwoFactor()) {
+            return TwoFactorSigninController::challengeResponse($user, $data['remember'] ?? false);
         }
 
         return AccountHelper::authResponse($request, $user, false, $data['remember'] ?? false);
+    }
+
+    /**
+     * Members signed in with DeviantArt first, so their DeviantArt tokens have to keep working: the response that stops the sign-in when they do not
+     * (every way of signing in as the member, except DeviantArt itself, asks)
+     */
+    public static function deviantArtBlock(User $user): ?JsonResponse
+    {
+        $da_user = DeviantArtTokens::enabled() ? $user->daUser : null;
+        if ($da_user === null) {
+            return null;
+        }
+
+        $status = DeviantArtTokens::check($da_user);
+        if ($status === DeviantArtTokens::REVOKED) {
+            return response()->json(['message' => trans('errors.auth.deviantart_required'), 'deviantArtRequired' => true], 403);
+        }
+        if ($status === DeviantArtTokens::UNAVAILABLE) {
+            return response()->json(['message' => trans('errors.auth.deviantart_unavailable')], 503);
+        }
+
+        return null;
     }
 
     /**
