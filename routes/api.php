@@ -242,6 +242,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
     Route::prefix('posts')->group(function () {
         $manage = PostManagementController::class;
         Route::get('/', [PostsController::class, 'index']);
+        Route::get('legacy/{kind}/{oldId}', [$manage, 'legacyId'])->whereIn('kind', ['request', 'reservation'])->whereNumber('oldId');
         Route::get('{id}/location', [$manage, 'location'])->whereNumber('id');
         Route::get('{id}/reload', [$manage, 'reload'])->whereNumber('id');
         Route::get('{id}/deviation', [PostsController::class, 'deviation'])->whereNumber('id');

@@ -6813,6 +6813,69 @@
                 }
             }
         },
+        "/posts/legacy/{kind}/{oldId}": {
+            "get": {
+                "tags": [
+                    "posts"
+                ],
+                "description": "The current ID of a post that was linked by the number it had before the 2020 migration (`/s/req/123`, `/s/res/45`)",
+                "operationId": "GetPostsLegacyKindOldId",
+                "parameters": [
+                    {
+                        "name": "kind",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "request",
+                                "reservation"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "oldId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/OneBasedId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "id"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "There was no such post",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/posts/{id}/location": {
             "get": {
                 "tags": [

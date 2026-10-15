@@ -497,6 +497,29 @@ class PostManagementController extends Controller
 
     /**
      * @OA\Get(
+     *   path="/posts/legacy/{kind}/{oldId}",
+     *   operationId="GetPostsLegacyKindOldId",
+     *   description="The current ID of a post that was linked by the number it had before the 2020 migration (`/s/req/123`, `/s/res/45`)",
+     *   tags={"posts"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="kind", required=true, @OA\Schema(type="string", enum={"request", "reservation"})),
+     *   @OA\Parameter(in="path", name="oldId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, required={"id"}, @OA\Property(property="id", type="integer"))),
+     *   @OA\Response(response="404", description="There was no such post", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function legacyId(string $kind, int $oldId): JsonResponse
+    {
+        $id = DB::table('legacy_post_mappings')->where('type', $kind)->where('old_id', $oldId)->value('post_id');
+        if ($id === null) {
+            throw new HttpException(404, "The post you were linked to has either been deleted or didn't exist in the first place. Sorry. :'(");
+        }
+
+        return response()->json(['id' => (int) $id]);
+    }
+
+    /**
+     * @OA\Get(
      *   path="/posts/{id}/location",
      *   operationId="GetPostsIdLocation",
      *   description="Where a post can be found, for links that point to a post",

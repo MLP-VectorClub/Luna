@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Utils\UserPrefHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -377,6 +378,16 @@ class PostManagementTest extends TestCase
         $this->assertTrue($post->lock);
         $this->assertDatabaseHas('locked_posts', ['post_id' => $id]);
         $this->postJson('/posts/reservations', ['showId' => 987654, 'deviation' => 'http://fav.me/dfin007'])->assertStatus(409);
+    }
+
+    public function testLegacyId(): void
+    {
+        $post = $this->request(User::factory()->create(['role' => Role::User]));
+        DB::table('legacy_post_mappings')->insert(['post_id' => $post->id, 'old_id' => 321, 'type' => 'request']);
+
+        $this->getJson('/posts/legacy/request/321')->assertOk()->assertExactJson(['id' => $post->id]);
+        $this->getJson('/posts/legacy/reservation/321')->assertNotFound();
+        $this->getJson('/posts/legacy/other/321')->assertNotFound();
     }
 
     public function testLocation(): void
