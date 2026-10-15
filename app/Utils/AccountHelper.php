@@ -15,6 +15,7 @@ use App\Models\DiscordMember;
 use App\Models\PreviousUsername;
 use App\Models\User;
 use App\Rules\StrictEmail;
+use App\Rules\UniqueEmail;
 use App\Rules\Username;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -50,7 +51,7 @@ class AccountHelper
                 'email',
                 'min:3',
                 'max:255',
-                'unique:users',
+                new UniqueEmail(),
                 new StrictEmail(),
             ],
             'password' => [

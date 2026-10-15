@@ -90,7 +90,7 @@ class UserEmailController extends Controller
 
             // The user's own address is not "in use by another user", and staff must not learn that it is theirs by the answer
             $is_current = $user->email !== null && strcasecmp($new_email, $user->email) === 0;
-            if (!$is_current && User::where('email', $new_email)->exists()) {
+            if (!$is_current && User::whereEmail($new_email)->exists()) {
                 $this->fail('newEmail', 'This e-mail address is already in use by another user');
             }
         }

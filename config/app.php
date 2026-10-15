@@ -141,6 +141,12 @@ return [
     'cipher' => 'AES-256-CBC',
 
     /*
+    | The key of the index that finds a user by e-mail address (the addresses themselves are stored encrypted, see App\Utils\EmailVault). Without it the
+    | app key is used; set it on purpose before rotating APP_KEY, otherwise every index has to be rebuilt (`php artisan users:encrypt-emails`)
+    */
+    'email_hash_key' => env('EMAIL_HASH_KEY'),
+
+    /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
     |--------------------------------------------------------------------------

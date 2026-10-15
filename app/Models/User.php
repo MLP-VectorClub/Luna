@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\UserPrefKey;
 use App\Traits\HasEnumCasts;
 use App\Traits\HasProtectedFields;
+use App\Utils\EmailVault;
 use App\Utils\Core;
 use App\Utils\LogWriter;
 use App\Utils\SettingsHelper;
@@ -15,6 +16,8 @@ use Browser;
 use Creativeorange\Gravatar\Facades\Gravatar;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -41,7 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token', 'email_verified_at', 'created_at', 'updated_at'
+        'password', 'remember_token', 'email_verified_at', 'created_at', 'updated_at', 'email_hash'
     ];
 
     protected array $protected_fields = ['email'];
@@ -60,6 +63,27 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar_provider',
         'avatar_url',
     ];
+
+    /**
+     * The e-mail address, plain for everybody who asks: the database holds it encrypted, next to the keyed hash that finds it again (`whereEmail`).
+     * Assigning one sets both, so nothing else has to
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            get: fn(?string $stored) => EmailVault::decrypt($stored),
+            set: fn(?string $email) => ['email' => EmailVault::encrypt($email), 'email_hash' => EmailVault::hash($email)],
+        );
+    }
+
+    /** Users by e-mail address, whatever the case: `User::whereEmail($address)` (the address itself is encrypted, so this looks the hash up) */
+    public function scopeWhereEmail(Builder $query, ?string $email): Builder
+    {
+        $hash = EmailVault::hash($email);
+
+        // No address finds nobody (and never everybody who has none)
+        return $hash === null ? $query->whereRaw('1 = 0') : $query->where('email_hash', $hash);
+    }
 
     public function daUser()
     {
