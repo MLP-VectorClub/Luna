@@ -15,6 +15,8 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middleware = [
+        // `defer()` callbacks run after the response has been sent (applications on the new bootstrap file get this by default)
+        \Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks::class,
         \Monicahq\Cloudflare\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\CheckForMaintenanceMode::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,

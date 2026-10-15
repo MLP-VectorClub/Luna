@@ -10,6 +10,7 @@ use App\Http\Controllers\EventEntriesController;
 use App\Http\Controllers\AppearancesController;
 use App\Http\Controllers\Auth\SigninController;
 use App\Http\Controllers\Auth\PasskeySigninController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\SignupController;
 use App\Http\Controllers\Auth\TwoFactorSigninController;
 use App\Http\Controllers\Auth\VerificationController;
@@ -66,6 +67,8 @@ Route::middleware($throttle(12))->group(function () {
         Route::post('signin/two-factor/passkey', [TwoFactorSigninController::class, 'passkeyVerify']);
         Route::post('signin/passkey/options', [PasskeySigninController::class, 'options']);
         Route::post('signin/passkey', [PasskeySigninController::class, 'verify']);
+        Route::post('password/forgot', [PasswordResetController::class, 'forgot']);
+        Route::post('password/reset', [PasswordResetController::class, 'reset']);
         Route::post('/', [SignupController::class, 'viaPassword'])->name('signup_password');
         Route::post('/oauth/signup/{provider}', [SignupController::class, 'viaSocialite']);
         Route::post('/oauth/signin/{provider}', [SigninController::class, 'viaSocialite']);

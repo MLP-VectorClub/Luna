@@ -3135,6 +3135,134 @@
                 "security": []
             }
         },
+        "/users/password/forgot": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Sends a link for setting a new password to the address of an account. The answer is the same whether or not an account uses the address, so it can't be used to find out who is a member",
+                "operationId": "PostUsersPasswordForgot",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "No address",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/users/password/reset": {
+            "post": {
+                "tags": [
+                    "authentication"
+                ],
+                "description": "Sets a new password with the token of the link that `POST /users/password/forgot` sent. Ends every session and token of the account",
+                "operationId": "PostUsersPasswordReset",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token",
+                                    "newPassword"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "type": "string",
+                                        "maxLength": 64,
+                                        "minLength": 64
+                                    },
+                                    "newPassword": {
+                                        "type": "string",
+                                        "maxLength": 300,
+                                        "minLength": 8
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The link is not valid (any more), or the password is not acceptable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/users/signin": {
             "post": {
                 "tags": [
