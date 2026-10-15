@@ -12,7 +12,7 @@ use OpenApi\Annotations as OA;
  * @OA\OpenApi(
  *   @OA\Info(
  *     title="MLP Vector Club API",
- *     version="0.2",
+ *     version=API_VERSION,
  *     description="A work-in-progress API for the [MLP Vector Club](https://mlpvector.club/)'s website.",
  *     @OA\License(name="MIT"),
  *     @OA\Contact(name="WentTheFox", url="https://went.tf"),

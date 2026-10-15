@@ -266,6 +266,8 @@ return [
          * Uncomment to add constants which can be used in annotations
          */
         'constants' => [
+            // The version of the published API types package (packages/api-types) without its patch number, which is the publish workflow's run number
+            'API_VERSION' => implode('.', array_slice(explode('.', json_decode(file_get_contents(base_path('packages/api-types/package.json')), true)['version']), 0, 2)),
             'DATABASE_ROLES' => $database_roles,
             'CLIENT_ROLES' => $client_roles,
             'GUIDE_NAMES' => GuideName::values(),
