@@ -103,6 +103,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::post('{id}/personal-guide/point-history/recalculation', [PersonalGuideController::class, 'recalculate'])->whereNumber('id')->middleware('role:developer');
             Route::get('{id}/personal-guide/points', [PersonalGuideController::class, 'points'])->whereNumber('id')->middleware('role:staff');
             Route::post('{id}/personal-guide/points', [PersonalGuideController::class, 'givePoints'])->whereNumber('id')->middleware('role:staff');
+            Route::post('{user_id}/discord', [DiscordController::class, 'link'])->whereNumber('user_id');
             Route::post('{user_id}/discord/sync', [DiscordController::class, 'sync'])->whereNumber('user_id');
             Route::delete('{user_id}/discord', [DiscordController::class, 'unlink'])->whereNumber('user_id');
             Route::get('da-uuid/{uuid}', [UsersController::class, 'getByDaUuid'])->middleware('role:developer');

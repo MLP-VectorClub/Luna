@@ -7,6 +7,8 @@ use App\Models\DiscordMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
 use Tests\TestCase;
 
 class DiscordTest extends TestCase
@@ -33,6 +35,69 @@ class DiscordTest extends TestCase
         $this->postJson('/users/987654/discord/sync')->assertNotFound();
         $this->deleteJson("/users/{$user->id}/discord/sync")->assertStatus(405);
         $this->getJson("/users/{$user->id}/discord")->assertStatus(405);
+    }
+
+    private function discordCode(string $id = '777000111222333444'): void
+    {
+        $discord = new SocialiteUser();
+        $discord->map(['id' => $id, 'name' => 'Crazy', 'nickname' => 'crazy']);
+        $discord->setRaw(['username' => 'crazy', 'global_name' => 'Crazy One', 'discriminator' => '0', 'avatar' => 'abc']);
+        $discord->accessTokenResponseBody = ['access_token' => 'new-access', 'refresh_token' => 'new-refresh', 'expires_in' => 3600, 'scope' => 'identify email'];
+        $driver = \Mockery::mock();
+        $driver->shouldReceive('stateless')->andReturnSelf();
+        $driver->shouldReceive('redirectUrl')->andReturnSelf();
+        $driver->shouldReceive('user')->andReturn($discord);
+        Socialite::shouldReceive('driver')->with('discord')->andReturn($driver);
+        config(['services.discord.guild_id' => '42']);
+        Http::fake(['discord.com/api/v10/guilds/42/members/*' => Http::response(['nick' => 'Nicky', 'joined_at' => '2020-01-01T00:00:00+00:00'])]);
+    }
+
+    public function testLinkingAnAccount(): void
+    {
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->postJson("/users/{$user->id}/discord", ['code' => 'abc'])->assertUnauthorized();
+        $this->actingAs($user, 'sanctum');
+        $this->postJson("/users/{$user->id}/discord", [])->assertUnprocessable()->assertJsonValidationErrors('code');
+        $other = User::factory()->create(['role' => Role::User]);
+        $this->postJson("/users/{$other->id}/discord", ['code' => 'abc'])->assertForbidden();
+
+        $this->discordCode();
+        $this->postJson("/users/{$user->id}/discord", ['code' => 'abc'])->assertNoContent();
+        $member = DiscordMember::find('777000111222333444');
+        $this->assertSame($user->id, (int) $member->user_id);
+        $this->assertSame('new-access', $member->access);
+        $this->assertSame('Crazy One', $member->display_name);
+        $this->assertSame('Nicky', $member->nick);
+        $this->assertNotNull($member->last_synced);
+
+        $this->getJson("/users/{$user->id}/profile")->assertOk()->assertJsonPath('discord.linked', true)->assertJsonPath('discord.serverMember', true);
+        $this->postJson("/users/{$user->id}/discord", ['code' => 'abc'])->assertStatus(409);
+    }
+
+    public function testLinkingTakesOverAnUnboundServerMemberAndReplacesAnotherBoundRecord(): void
+    {
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->member($user, ['access' => null, 'refresh' => null]);
+        (new DiscordMember(['username' => 'unbound', 'discriminator' => 0]))->forceFill(['id' => '777000111222333444', 'user_id' => null])->save();
+        $this->actingAs($user, 'sanctum');
+        $this->discordCode();
+
+        $this->postJson("/users/{$user->id}/discord", ['code' => 'abc'])->assertNoContent();
+        $this->assertSame(1, DiscordMember::count());
+        $this->assertSame($user->id, (int) DiscordMember::first()->user_id);
+        $this->assertSame('777000111222333444', (string) DiscordMember::first()->id);
+    }
+
+    public function testAnAccountOfAnotherUserCannotBeTaken(): void
+    {
+        $owner = User::factory()->create(['role' => Role::User]);
+        $this->member($owner)->forceFill(['id' => '777000111222333444'])->save();
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->actingAs($user, 'sanctum');
+        $this->discordCode();
+
+        $this->postJson("/users/{$user->id}/discord", ['code' => 'abc'])->assertStatus(409);
+        $this->assertSame($owner->id, (int) DiscordMember::first()->user_id);
     }
 
     public function testUnboundAndUnlinkedAccounts(): void

@@ -272,6 +272,28 @@ class AccountHelper
     private const PKCE_LIFETIME_MINUTES = 10;
 
     /**
+     * Exchanges the code the provider sent back for the provider's user, with the redirect URL and PKCE verifier of the redirect that started it
+     *
+     * @throws ValidationException when the provider refuses the code
+     */
+    public static function socialUser(Request $request, string $provider, bool $register): \Laravel\Socialite\Contracts\User
+    {
+        $driver = Socialite::driver($provider)->stateless();
+        $driver->redirectUrl(self::createRedirectUrl($provider, $register));
+        self::pkceSession(self::readPkceCookie($request));
+        try {
+            return $driver->user();
+        } catch (ClientException $e) {
+            // The provider refused the code: it was already used (a reload of the callback page sends it again), expired, or the redirect URL differs
+            Log::warning("OAuth sign-in with {$provider} was refused by the provider", [
+                'status' => $e->getResponse()->getStatusCode(),
+                'body' => substr((string) $e->getResponse()->getBody(), 0, 300),
+            ]);
+            throw ValidationException::withMessages(['code' => 'The sign-in code was rejected, it may have expired or already been used. Please try signing in again.']);
+        }
+    }
+
+    /**
      * Socialite keeps the PKCE verifier in the request's session, which stateless requests (a popup opened by the front end, an
      * API client) do not have. Gives the current request a throwaway in-memory session so Socialite can work, the verifier
      * travels in an encrypted cookie instead (see `socialRedirect` and `socialAuth`).
@@ -336,19 +358,7 @@ class AccountHelper
     public static function socialAuth(SocialAuthRequest $request, bool $register)
     {
         $validated = $request->validated();
-        $driver = Socialite::driver($validated['provider'])->stateless();
-        $driver->redirectUrl(self::createRedirectUrl($validated['provider'], $register));
-        self::pkceSession(self::readPkceCookie($request));
-        try {
-            $data = $driver->user();
-        } catch (ClientException $e) {
-            // The provider refused the code: it was already used (a reload of the callback page sends it again), expired, or the redirect URL differs
-            Log::warning("OAuth sign-in with {$validated['provider']} was refused by the provider", [
-                'status' => $e->getResponse()->getStatusCode(),
-                'body' => substr((string) $e->getResponse()->getBody(), 0, 300),
-            ]);
-            throw ValidationException::withMessages(['code' => 'The sign-in code was rejected, it may have expired or already been used. Please try signing in again.']);
-        }
+        $data = self::socialUser($request, $validated['provider'], $register);
 
         DB::transaction(function () use ($validated, $data, $register, &$user) {
             switch ($validated['provider']) {

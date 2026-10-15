@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\DiscordMember;
+use App\Utils\AccountHelper;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use OpenApi\Annotations as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -58,6 +60,60 @@ class DiscordController extends Controller
         $member->last_synced = now();
         $this->checkServerMembership($member);
         $member->save();
+
+        return response()->noContent();
+    }
+
+    /**
+     * @OA\Post(
+     *   path="/users/{user_id}/discord",
+     *   operationId="PostUsersUserIdDiscord",
+     *   description="Link a Discord account to the signed in user with the authorization code Discord sent back (the redirect that started it is `GET /users/oauth/signin/discord`, the same one sign-in uses). Only for the user themselves. A Discord account that another user has linked cannot be taken over, and a previously linked other account is replaced.",
+     *   tags={"discord"},
+     *   @OA\Parameter(in="path", name="user_id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/OauthCode")),
+     *   @OA\Response(response="204", description="Linked"),
+     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="403", description="Not the user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="409", description="The Discord account belongs to another user, or the user has linked one already", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="422", description="No code, or Discord refused it", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")),
+     *   @OA\Response(response="502", description="Discord could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function link(Request $request, int $user_id): Response
+    {
+        $user = $request->user();
+        if ($user->id !== $user_id) {
+            throw new AuthorizationException();
+        }
+        $request->validate(['code' => ['required', 'string']]);
+        $current = $user->discordMember()->first();
+        if ($current !== null && $current->access !== null) {
+            throw new HttpException(409, 'A Discord account is already linked, unlink it first');
+        }
+
+        $data = AccountHelper::socialUser($request, 'discord', false);
+        DB::transaction(function () use ($data, $user) {
+            $member = DiscordMember::find($data->getId()) ?? (new DiscordMember())->forceFill(['id' => $data->getId()]);
+            if ($member->user_id !== null && (int) $member->user_id !== $user->id) {
+                throw new HttpException(409, 'This Discord account is linked to another user');
+            }
+            // A bound but unlinked record of this user for another Discord account is replaced by the one just linked
+            DiscordMember::where('user_id', $user->id)->where('id', '!=', $data->getId())->delete();
+
+            $raw = $data->getRaw();
+            $member->user_id = $user->id;
+            $member->username = $raw['username'] ?? $data->getNickname();
+            $member->display_name = $raw['global_name'] ?? null;
+            $member->discriminator = (int) ($raw['discriminator'] ?? 0);
+            $member->avatar_hash = $raw['avatar'] ?? null;
+            $member->last_synced = now();
+            foreach (AccountHelper::tokenResponseToModelData($data) as $k => $v) {
+                $member->setAttribute($k, $v);
+            }
+            $this->checkServerMembership($member);
+            $member->save();
+        });
 
         return response()->noContent();
     }
