@@ -11,7 +11,7 @@ Celestia's built-in "work-in-progress" banner is gone, it is notice A below now.
 |---|---|---|---|---|---|
 | A | `celestia` | warn | now | the cutover | `This website is a work-in-progress, for our current live site please visit <a href="https://mlpvector.club{path}">https://mlpvector.club{path}</a>` |
 | B | `celestia` | info | the cutover | far away | `You are on the current version of the site. The previous version is still available in read-only mode at <a href="https://old.mlpvector.club{path}">old.mlpvector.club{path}</a>. If you run into any issues, please contact us using the Contact Us link in the footer.` |
-| C | `winterchilla` | warn | the cutover | far away | `This site is now in read-only mode. To make changes, please visit the new site: <a href="https://mlpvector.club{path}">mlpvector.club{path}</a>.` |
+| C | – | – | – | Not a notice any more: Winterchilla's own read-only banner and refusal page link to the same page of the new site from `READ_ONLY_URL` (`https://mlpvector.club`) plus the viewed path. |
 
 Ending A when B starts means nothing has to be done at the moment of the cutover. B and C stay hidden until then.
 
