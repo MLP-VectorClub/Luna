@@ -26,7 +26,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use OpenSearch\Common\Exceptions\OpenSearchException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use function is_array;
@@ -183,44 +183,39 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="GuideFullListGroupItem",
-     *   type="object",
-     *   required={
-     *     "name",
-     *     "appearanceIds"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="name",
-     *     type="string",
-     *     example="Main Cast"
-     *   ),
-     *   @OA\Property(
-     *     property="appearanceIds",
-     *     type="array",
-     *     @OA\Items(ref="#/components/schemas/OneBasedId")
-     *   ),
-     * )
-     * @OA\Schema(
-     *   schema="GuideFullListGroups",
-     *   type="object",
-     *   required={
-     *     "groups",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="groups",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(ref="#/components/schemas/GuideFullListGroupItem")
-     *   )
-     * )
      * @param  GuideName  $guide
      * @param  FullGuideSortField  $sort_field
      * @param  Collection|Appearance[]  $appearances
      * @return array
      */
+    #[OA\Schema(
+        schema: 'GuideFullListGroupItem',
+        type: 'object',
+        required: ['name', 'appearanceIds'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'name', type: 'string', example: 'Main Cast'),
+            new OA\Property(
+                property: 'appearanceIds',
+                type: 'array',
+                items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'GuideFullListGroups',
+        type: 'object',
+        required: ['groups'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'groups',
+                type: 'array',
+                minItems: 0,
+                items: new OA\Items(ref: '#/components/schemas/GuideFullListGroupItem'),
+            ),
+        ],
+    )]
     public static function createGroupsForFullList(
         GuideName $guide,
         FullGuideSortField $sort_field,
@@ -273,18 +268,18 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="AppearancePreviewData",
-     *   type="array",
-     *   minItems=1,
-     *   maxItems=4,
-     *   format="Array of HEX color values, minimum 1, maximum 4, or null for no preview",
-     *   example={"#FF0000","#00FF00","#0000FF"},
-     *   @OA\Items(type="string")
-     * )
      * @param  Appearance  $a
      * @return array
      */
+    #[OA\Schema(
+        schema: 'AppearancePreviewData',
+        type: 'array',
+        minItems: 1,
+        maxItems: 4,
+        format: 'Array of HEX color values, minimum 1, maximum 4, or null for no preview',
+        example: ['#FF0000', '#00FF00', '#0000FF'],
+        items: new OA\Items(type: 'string'),
+    )]
     public static function mapPreviewAppearance(Appearance $a): array
     {
         return [
@@ -298,32 +293,30 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="AutocompleteAppearance",
-     *   type="object",
-     *   description="The barest of properties for an appearance intended for use in autocompletion results",
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
-     *     @OA\Schema(
-     *       required={
-     *         "sprite",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="sprite",
-     *         nullable=true,
-     *         description="The sprite that belongs to this appearance, or null if there is none",
-     *         allOf={
-     *           @OA\Schema(ref="#/components/schemas/Sprite")
-     *         }
-     *       )
-     *     )
-     *   }
-     * )
      * @param  Appearance  $a
      * @param  bool  $double_size_sprite
      * @return array
      */
+    #[OA\Schema(
+        schema: 'AutocompleteAppearance',
+        type: 'object',
+        description: 'The barest of properties for an appearance intended for use in autocompletion results',
+        allOf: [
+            new OA\Schema(ref: '#/components/schemas/PreviewAppearance'),
+            new OA\Schema(
+                required: ['sprite'],
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(
+                        property: 'sprite',
+                        nullable: true,
+                        description: 'The sprite that belongs to this appearance, or null if there is none',
+                        allOf: [new OA\Schema(ref: '#/components/schemas/Sprite')],
+                    ),
+                ],
+            ),
+        ],
+    )]
     public static function mapAutocompleteAppearance(Appearance $a, bool $double_size_sprite = false): array
     {
         return array_merge(self::mapPreviewAppearance($a), [
@@ -372,83 +365,71 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="CommonAppearance",
-     *   type="object",
-     *   description="Common properties of the two main Appearance schemas",
-     *   additionalProperties=false,
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/AutocompleteAppearance"),
-     *     @OA\Schema(
-     *       type="object",
-     *       required={
-     *         "order",
-     *         "hasCutieMarks"
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="order",
-     *         ref="#/components/schemas/Order"
-     *       ),
-     *       @OA\Property(
-     *         property="hasCutieMarks",
-     *         type="boolean",
-     *         description="Indicates whether there are any cutie marks tied to this appearance"
-     *       )
-     *     )
-     *   }
-     * )
-     * @OA\Schema(
-     *   schema="SlimAppearanceOnly",
-     *   type="object",
-     *   description="Represents properties that belong to the slim appearance object only",
-     *   required={
-     *     "characterTagNames",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="characterTagNames",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(
-     *       type="string"
-     *     )
-     *   )
-     * )
-     * @OA\Schema(
-     *   schema="AppearanceOnly",
-     *   type="object",
-     *   description="Represents properties that belong to the full appearance object only",
-     *   required={
-     *     "created_at",
-     *     "tags",
-     *     "notes",
-     *     "colorGroups",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="created_at",
-     *     ref="#/components/schemas/IsoStandardDate",
-     *   ),
-     *   @OA\Property(
-     *     property="notes",
-     *     type="string",
-     *     format="html",
-     *     nullable=true,
-     *     example="Far legs use darker colors. Based on <strong>S2E21</strong>."
-     *   ),
-     *   @OA\Property(
-     *     property="tags",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(ref="#/components/schemas/SlimGuideTag")
-     *   )
-     * )
      * @param  Appearance  $a
      * @param  bool  $compact
      *
      * @return array
      */
+    #[OA\Schema(
+        schema: 'CommonAppearance',
+        type: 'object',
+        description: 'Common properties of the two main Appearance schemas',
+        additionalProperties: false,
+        allOf: [
+            new OA\Schema(ref: '#/components/schemas/AutocompleteAppearance'),
+            new OA\Schema(
+                type: 'object',
+                required: ['order', 'hasCutieMarks'],
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(property: 'order', ref: '#/components/schemas/Order'),
+                    new OA\Property(
+                        property: 'hasCutieMarks',
+                        type: 'boolean',
+                        description: 'Indicates whether there are any cutie marks tied to this appearance',
+                    ),
+                ],
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'SlimAppearanceOnly',
+        type: 'object',
+        description: 'Represents properties that belong to the slim appearance object only',
+        required: ['characterTagNames'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'characterTagNames',
+                type: 'array',
+                minItems: 0,
+                items: new OA\Items(type: 'string'),
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'AppearanceOnly',
+        type: 'object',
+        description: 'Represents properties that belong to the full appearance object only',
+        required: ['created_at', 'tags', 'notes', 'colorGroups'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'created_at', ref: '#/components/schemas/IsoStandardDate'),
+            new OA\Property(
+                property: 'notes',
+                type: 'string',
+                format: 'html',
+                nullable: true,
+                example: 'Far legs use darker colors. Based on <strong>S2E21</strong>.',
+            ),
+            new OA\Property(
+                property: 'tags',
+                type: 'array',
+                minItems: 0,
+                items: new OA\Items(ref: '#/components/schemas/SlimGuideTag'),
+            ),
+        ],
+    )]
     public static function mapAppearance(Appearance $a, bool $compact = false, bool $double_size_sprite = false, ?Collection $character_synonyms = null): array
     {
         $is_staff = Permission::sufficient(Role::Staff);
@@ -541,26 +522,25 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="FavMe",
-     *   type="string",
-     *   description="DeviantArt's shorthand URL format, which typically takes the form of `http://fav.me/d######`, where `#` is the base-36 encoded version of the deviation's numerical ID, found at the end of the deviation URL. This value includes the leading `d`.",
-     *   minLength=7,
-     *   maxLength=7
-     * )
-     * @OA\Schema(
-     *   schema="CutieMarkRotation",
-     *   type="number",
-     *   description="The number of degrees to rotate the cutie mark image on the UI to better reflect its potion in the preview. Purely for cosmetic use.",
-     *   minimum=-45,
-     *   maximum=45,
-     *   default=0
-     * )
-     *
      * @param  CutieMark  $cm
      *
      * @return array
      */
+    #[OA\Schema(
+        schema: 'FavMe',
+        type: 'string',
+        description: 'DeviantArt\'s shorthand URL format, which typically takes the form of `http://fav.me/d######`, where `#` is the base-36 encoded version of the deviation\'s numerical ID, found at the end of the deviation URL. This value includes the leading `d`.',
+        minLength: 7,
+        maxLength: 7,
+    )]
+    #[OA\Schema(
+        schema: 'CutieMarkRotation',
+        type: 'number',
+        description: 'The number of degrees to rotate the cutie mark image on the UI to better reflect its potion in the preview. Purely for cosmetic use.',
+        minimum: -45,
+        maximum: 45,
+        default: 0,
+    )]
     public static function mapCutieMark(CutieMark $cm)
     {
         $cutie_mark = [
@@ -602,43 +582,34 @@ class ColorGuideHelper
     }
 
     /**
-     * @OA\Schema(
-     *   schema="ColorGroup",
-     *   type="object",
-     *   description="Groups a list of colors",
-     *   required={
-     *     "id",
-     *     "label",
-     *     "order",
-     *     "colors"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     ref="#/components/schemas/OneBasedId"
-     *   ),
-     *   @OA\Property(
-     *     property="label",
-     *     type="string",
-     *     description="The name of the color group",
-     *     example="Coat"
-     *   ),
-     *   @OA\Property(
-     *     property="order",
-     *     ref="#/components/schemas/Order"
-     *   ),
-     *   @OA\Property(
-     *     property="colors",
-     *     type="array",
-     *     minItems=1,
-     *     @OA\Items(ref="#/components/schemas/Color"),
-     *     description="The list of colors inside this group"
-     *   )
-     * )
      * @param  ColorGroup  $cg
      *
      * @return array
      */
+    #[OA\Schema(
+        schema: 'ColorGroup',
+        type: 'object',
+        description: 'Groups a list of colors',
+        required: ['id', 'label', 'order', 'colors'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+            new OA\Property(
+                property: 'label',
+                type: 'string',
+                description: 'The name of the color group',
+                example: 'Coat',
+            ),
+            new OA\Property(property: 'order', ref: '#/components/schemas/Order'),
+            new OA\Property(
+                property: 'colors',
+                type: 'array',
+                minItems: 1,
+                description: 'The list of colors inside this group',
+                items: new OA\Items(ref: '#/components/schemas/Color'),
+            ),
+        ],
+    )]
     public static function mapColorGroup(ColorGroup $cg)
     {
         $colors = $cg->colors ?: $cg->colors()->get();

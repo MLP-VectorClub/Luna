@@ -2,16 +2,14 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="UserPrefKeys",
- *     type="string",
- *     description="List of available user preferences",
- *     example="cg_itemsperpage"
- * )
- */
+#[OA\Schema(
+    schema: 'UserPrefKeys',
+    type: 'string',
+    description: 'List of available user preferences',
+    example: 'cg_itemsperpage',
+)]
 enum UserPrefKey: string
 {
     use ValuableEnum;

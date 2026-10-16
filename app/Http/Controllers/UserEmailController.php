@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
@@ -26,28 +26,91 @@ use Throwable;
  */
 class UserEmailController extends Controller
 {
-    /**
-     * @OA\Post(
-     *   path="/users/{id}/email-changes",
-     *   operationId="PostUsersIdEmailChanges",
-     *   description="Requests an e-mail address change (or resend of a pending verification e-mail) for the specified user. Requires staff permission. When changing the address of the requester's own account, the current password must be set and verified first.",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object",
-     *     @OA\Property(property="resend", type="boolean", description="If true, resends the existing pending verification e-mail instead of requesting a new address change"),
-     *     @OA\Property(property="newEmail", type="string", minLength=3, maxLength=128, description="The new e-mail address to verify, required unless 'resend' is true"),
-     *     @OA\Property(property="currentPassword", type="string", description="The user's current password, required when changing their own e-mail address")
-     *   )),
-     *   @OA\Response(response="200", description="A confirmation e-mail has been sent", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission (staff required)", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="User not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="A password must be set before the e-mail address can be changed", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Invalid, unchanged, blocked or already used e-mail address, or a missing or incorrect current password", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")),
-     *   @OA\Response(response="429", description="A confirmation e-mail was sent to this address recently", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="503", description="The confirmation e-mail could not be sent", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/{id}/email-changes',
+        operationId: 'PostUsersIdEmailChanges',
+        description: 'Requests an e-mail address change (or resend of a pending verification e-mail) for the specified user. Requires staff permission. When changing the address of the requester\'s own account, the current password must be set and verified first.',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: 'resend',
+                        type: 'boolean',
+                        description: 'If true, resends the existing pending verification e-mail instead of requesting a new address change',
+                    ),
+                    new OA\Property(
+                        property: 'newEmail',
+                        type: 'string',
+                        minLength: 3,
+                        maxLength: 128,
+                        description: 'The new e-mail address to verify, required unless \'resend\' is true',
+                    ),
+                    new OA\Property(
+                        property: 'currentPassword',
+                        type: 'string',
+                        description: 'The user\'s current password, required when changing their own e-mail address',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'A confirmation e-mail has been sent',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission (staff required)',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'User not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'A password must be set before the e-mail address can be changed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid, unchanged, blocked or already used e-mail address, or a missing or incorrect current password',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+            new OA\Response(
+                response: '429',
+                description: 'A confirmation e-mail was sent to this address recently',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '503',
+                description: 'The confirmation e-mail could not be sent',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function request(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
@@ -119,22 +182,60 @@ class UserEmailController extends Controller
         return response()->json(['message' => 'A confirmation e-mail has been sent to the specified address with a link to verify your address. Click the link to update the address in your account.']);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/email/verify",
-     *   operationId="PostUsersEmailVerify",
-     *   description="Verifies or blocks an e-mail address based on a verification hash sent to that address. Verifying requires the verification to belong to the signed in user, blocking only needs the hash.",
-     *   tags={"users"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"hash", "action"},
-     *     @OA\Property(property="hash", type="string", minLength=128, maxLength=128, description="The verification hash sent to the e-mail address"),
-     *     @OA\Property(property="action", type="string", enum={"verify", "block"}, description="Whether to verify the e-mail address for the account, or add it to the do-not-send list")
-     *   )),
-     *   @OA\Response(response="200", description="The e-mail address was successfully verified or blocked", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="The verification belongs to another user (verify action)", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="The verification hash or action is invalid, or the hash has expired", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/email/verify',
+        operationId: 'PostUsersEmailVerify',
+        description: 'Verifies or blocks an e-mail address based on a verification hash sent to that address. Verifying requires the verification to belong to the signed in user, blocking only needs the hash.',
+        tags: ['users'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['hash', 'action'],
+                properties: [
+                    new OA\Property(
+                        property: 'hash',
+                        type: 'string',
+                        minLength: 128,
+                        maxLength: 128,
+                        description: 'The verification hash sent to the e-mail address',
+                    ),
+                    new OA\Property(
+                        property: 'action',
+                        type: 'string',
+                        enum: ['verify', 'block'],
+                        description: 'Whether to verify the e-mail address for the account, or add it to the do-not-send list',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The e-mail address was successfully verified or blocked',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'The verification belongs to another user (verify action)',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'The verification hash or action is invalid, or the hash has expired',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function verify(Request $request): JsonResponse
     {
         $hash = $request->input('hash');

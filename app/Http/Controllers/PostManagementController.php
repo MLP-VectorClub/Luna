@@ -25,7 +25,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PostManagementController extends Controller
@@ -33,35 +33,104 @@ class PostManagementController extends Controller
     private const RESERVATION_LIMIT = 4;
     private const THANKS = 'Thank you for your contribution! ;)';
 
-    /**
-     * @OA\Schema(
-     *   schema="PostInput",
-     *   type="object",
-     *   required={"kind", "showId", "imageUrl"},
-     *   @OA\Property(property="kind", type="string", enum={"request", "reservation"}),
-     *   @OA\Property(property="showId", type="integer", description="ID of the show entry this post belongs to"),
-     *   @OA\Property(property="imageUrl", type="string", description="URL of the image or deviation to post (see POST /posts/check-image for what is accepted)"),
-     *   @OA\Property(property="label", type="string", minLength=3, maxLength=255, description="What the post is about; required for requests, optional for reservations"),
-     *   @OA\Property(property="type", type="string", enum={"chr", "obj", "bg"}, description="What a request asks for; required for requests, ignored for reservations"),
-     *   @OA\Property(property="postAs", type="string", description="Developer-only: DeviantArt username to post as"),
-     *   @OA\Property(property="allowNonmember", type="boolean", description="Developer-only: post a reservation as a user who is not a club member")
-     * )
-     * @OA\Post(
-     *   path="/posts",
-     *   operationId="PostPosts",
-     *   description="Create a request or reservation from an image link. Needs the `a_postreq` / `a_postres` preference, reservations also need membership and a free reservation slot",
-     *   tags={"posts"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/PostInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", required={"id", "kind"}, additionalProperties=false,
-     *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="kind", type="string", enum={"request", "reservation"})
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not allowed to post this kind", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Conflict, e.g. the image was used already or the reservation limit is reached", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"), @OA\Property(property="canForce", type="boolean"))),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")),
-     *   @OA\Response(response="502", description="The image could not be retrieved", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'PostInput',
+        type: 'object',
+        required: ['kind', 'showId', 'imageUrl'],
+        properties: [
+            new OA\Property(property: 'kind', type: 'string', enum: ['request', 'reservation']),
+            new OA\Property(
+                property: 'showId',
+                type: 'integer',
+                description: 'ID of the show entry this post belongs to',
+            ),
+            new OA\Property(
+                property: 'imageUrl',
+                type: 'string',
+                description: 'URL of the image or deviation to post (see POST /posts/check-image for what is accepted)',
+            ),
+            new OA\Property(
+                property: 'label',
+                type: 'string',
+                minLength: 3,
+                maxLength: 255,
+                description: 'What the post is about; required for requests, optional for reservations',
+            ),
+            new OA\Property(
+                property: 'type',
+                type: 'string',
+                enum: ['chr', 'obj', 'bg'],
+                description: 'What a request asks for; required for requests, ignored for reservations',
+            ),
+            new OA\Property(
+                property: 'postAs',
+                type: 'string',
+                description: 'Developer-only: DeviantArt username to post as',
+            ),
+            new OA\Property(
+                property: 'allowNonmember',
+                type: 'boolean',
+                description: 'Developer-only: post a reservation as a user who is not a club member',
+            ),
+        ],
+    )]
+    #[OA\Post(
+        path: '/posts',
+        operationId: 'PostPosts',
+        description: 'Create a request or reservation from an image link. Needs the `a_postreq` / `a_postres` preference, reservations also need membership and a free reservation slot',
+        tags: ['posts'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/PostInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Created',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id', 'kind'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                        new OA\Property(property: 'kind', type: 'string', enum: ['request', 'reservation']),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not allowed to post this kind',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Conflict, e.g. the image was used already or the reservation limit is reached',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'canForce', type: 'boolean'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+            new OA\Response(
+                response: '502',
+                description: 'The image could not be retrieved',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function create(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -113,18 +182,51 @@ class PostManagementController extends Controller
         return response()->json(['id' => $post->id, 'idString' => "post-{$post->id}", 'kind' => $kind], 201);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/posts/check-image",
-     *   operationId="PostPostsCheckImage",
-     *   description="Check whether an image link can be used for a post and get its preview",
-     *   tags={"posts"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"imageUrl"}, @OA\Property(property="imageUrl", type="string", description="URL of the image/deviation to check"))),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"preview", "title"}, additionalProperties=false, @OA\Property(property="preview", type="string"), @OA\Property(property="title", type="string", nullable=true))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/posts/check-image',
+        operationId: 'PostPostsCheckImage',
+        description: 'Check whether an image link can be used for a post and get its preview',
+        tags: ['posts'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['imageUrl'],
+                properties: [
+                    new OA\Property(
+                        property: 'imageUrl',
+                        type: 'string',
+                        description: 'URL of the image/deviation to check',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['preview', 'title'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'preview', type: 'string'),
+                        new OA\Property(property: 'title', type: 'string', nullable: true),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function checkImageEndpoint(Request $request): JsonResponse
     {
         $image = $this->checkImage($request->input('imageUrl'));
@@ -132,20 +234,47 @@ class PostManagementController extends Controller
         return response()->json(['preview' => $image->preview, 'title' => $image->title]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/posts/{id}",
-     *   operationId="GetPostsId",
-     *   description="The editable fields of a post. Requires being the poster of an unreserved request or the reserver of a reservation, or staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/Post")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The post is approved", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts/{id}',
+        operationId: 'GetPostsId',
+        description: 'The editable fields of a post. Requires being the poster of an unreserved request or the reserver of a reservation, or staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/Post'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The post is approved',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(Request $request, int $id): JsonResponse
     {
         $post = $this->loadPost($id);
@@ -169,26 +298,67 @@ class PostManagementController extends Controller
         return response()->json($result);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/posts/{id}",
-     *   operationId="PutPostsId",
-     *   description="Edit a post's description and type. Only fields that are present and changed are updated",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(@OA\JsonContent(type="object",
-     *     @OA\Property(property="label", type="string", nullable=true, minLength=3, maxLength=255),
-     *     @OA\Property(property="type", type="string", enum={"chr", "obj", "bg"}),
-     *     @OA\Property(property="postedAt", type="string", format="date-time", description="Developer-only"),
-     *     @OA\Property(property="reservedAt", type="string", format="date-time", nullable=true, description="Developer-only"),
-     *     @OA\Property(property="finishedAt", type="string", format="date-time", nullable=true, description="Developer-only")
-     *   )),
-     *   @OA\Response(response="204", description="Saved"),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/posts/{id}',
+        operationId: 'PutPostsId',
+        description: 'Edit a post\'s description and type. Only fields that are present and changed are updated',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'label', type: 'string', nullable: true, minLength: 3, maxLength: 255),
+                    new OA\Property(property: 'type', type: 'string', enum: ['chr', 'obj', 'bg']),
+                    new OA\Property(
+                        property: 'postedAt',
+                        type: 'string',
+                        format: 'date-time',
+                        description: 'Developer-only',
+                    ),
+                    new OA\Property(
+                        property: 'reservedAt',
+                        type: 'string',
+                        format: 'date-time',
+                        nullable: true,
+                        description: 'Developer-only',
+                    ),
+                    new OA\Property(
+                        property: 'finishedAt',
+                        type: 'string',
+                        format: 'date-time',
+                        nullable: true,
+                        description: 'Developer-only',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Saved'),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id): Response
     {
         $post = $this->loadPost($id);
@@ -201,24 +371,67 @@ class PostManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Post(
-     *   path="/posts/{id}/reservation",
-     *   operationId="PostPostsIdReservation",
-     *   description="Reserve a request, or take over one that has been reserved for over 3 weeks. Requires membership. Developers can reserve it for another user with `as`",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=false, @OA\JsonContent(type="object",
-     *     @OA\Property(property="as", type="string", description="Developers only: the DeviantArt name of the user to reserve the request for"),
-     *     @OA\Property(property="screwit", type="boolean", description="Developers only: reserve for a user without the permission to reserve anyway (the 409 with `retry` asks for it)")
-     *   )),
-     *   @OA\Response(response="200", description="Reserved", @OA\JsonContent(type="object", required={"post"}, @OA\Property(property="post", ref="#/components/schemas/PostItem"))),
-     *   @OA\Response(response="403", description="Not allowed to reserve", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Already reserved, broken, over the reservation limit, or not a request", @OA\JsonContent(type="object", required={"message"},
-     *     @OA\Property(property="message", type="string"), @OA\Property(property="post", ref="#/components/schemas/PostItem"), @OA\Property(property="retry", type="boolean")
-     *   ))
-     * )
-     */
+    #[OA\Post(
+        path: '/posts/{id}/reservation',
+        operationId: 'PostPostsIdReservation',
+        description: 'Reserve a request, or take over one that has been reserved for over 3 weeks. Requires membership. Developers can reserve it for another user with `as`',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: 'as',
+                        type: 'string',
+                        description: 'Developers only: the DeviantArt name of the user to reserve the request for',
+                    ),
+                    new OA\Property(
+                        property: 'screwit',
+                        type: 'boolean',
+                        description: 'Developers only: reserve for a user without the permission to reserve anyway (the 409 with `retry` asks for it)',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Reserved',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['post'],
+                    properties: [new OA\Property(property: 'post', ref: '#/components/schemas/PostItem')],
+                ),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not allowed to reserve',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Already reserved, broken, over the reservation limit, or not a request',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'post', ref: '#/components/schemas/PostItem'),
+                        new OA\Property(property: 'retry', type: 'boolean'),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function reserve(Request $request, int $id): JsonResponse
     {
         $post = $this->loadPost($id);
@@ -266,19 +479,41 @@ class PostManagementController extends Controller
         return response()->json(['post' => $post->fresh(['requester', 'reserver'])->toContract($user)]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/posts/{id}/reservation",
-     *   operationId="DeletePostsIdReservation",
-     *   description="Cancel a reservation. Deletes reservations, frees requests. Requires being the reserver, or staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="Cancelled, or the request was not reserved", @OA\JsonContent(type="object", @OA\Property(property="post", ref="#/components/schemas/PostItem"))),
-     *   @OA\Response(response="204", description="The reservation was deleted"),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The post has to be unfinished first", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/posts/{id}/reservation',
+        operationId: 'DeletePostsIdReservation',
+        description: 'Cancel a reservation. Deletes reservations, frees requests. Requires being the reserver, or staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Cancelled, or the request was not reserved',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [new OA\Property(property: 'post', ref: '#/components/schemas/PostItem')],
+                ),
+            ),
+            new OA\Response(response: '204', description: 'The reservation was deleted'),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The post has to be unfinished first',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function unreserve(Request $request, int $id)
     {
         $post = $this->loadPost($id);
@@ -311,18 +546,43 @@ class PostManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Post(
-     *   path="/posts/{id}/approval",
-     *   operationId="PostPostsIdApproval",
-     *   description="Mark a finished post as approved once it appears in the club gallery. Requires membership",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="Approved", @OA\JsonContent(type="object", @OA\Property(property="message", type="string"), @OA\Property(property="post", ref="#/components/schemas/PostItem"))),
-     *   @OA\Response(response="409", description="Not reserved, not finished, or not in the gallery yet", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="502", description="The gallery could not be checked", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/posts/{id}/approval',
+        operationId: 'PostPostsIdApproval',
+        description: 'Mark a finished post as approved once it appears in the club gallery. Requires membership',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Approved',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'post', ref: '#/components/schemas/PostItem'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Not reserved, not finished, or not in the gallery yet',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '502',
+                description: 'The gallery could not be checked',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function approve(Request $request, int $id): JsonResponse
     {
         $post = $this->loadPost($id);
@@ -356,18 +616,33 @@ class PostManagementController extends Controller
         return response()->json(['message' => $message, 'post' => $post->fresh(['requester', 'reserver'])->toContract($user)]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/posts/{id}/approval",
-     *   operationId="DeletePostsIdApproval",
-     *   description="Remove the approval of a post. Posts that are in the club gallery can only be unlocked by developers. Requires staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Unlocked"),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Not approved, or still in the gallery", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/posts/{id}/approval',
+        operationId: 'DeletePostsIdApproval',
+        description: 'Remove the approval of a post. Posts that are in the club gallery can only be unlocked by developers. Requires staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Unlocked'),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Not approved, or still in the gallery',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function unapprove(Request $request, int $id): Response
     {
         // Approved posts are locked, so removing the approval has to be allowed to load them
@@ -393,28 +668,83 @@ class PostManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Put(
-     *   path="/posts/{id}/finish",
-     *   operationId="PutPostsIdFinish",
-     *   description="Mark a reserved post as finished with a deviation. Requires membership and being the reserver, or staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"deviation"},
-     *     @OA\Property(property="deviation", type="string", description="URL of the finished deviation"),
-     *     @OA\Property(property="allowOverwriteReserver", type="boolean", description="Send this when the 409 `retry` response asks for it: makes the deviation's author the new reserver"),
-     *     @OA\Property(property="finishedAt", type="string", format="date-time", description="Developer-only: overrides the finished timestamp")
-     *   )),
-     *   @OA\Response(response="200", description="Finished, with a message about approval and notifications", @OA\JsonContent(type="object", required={"message", "approved", "notified"},
-     *     @OA\Property(property="message", type="string"), @OA\Property(property="approved", type="boolean"), @OA\Property(property="notified", ref="#/components/schemas/PostUser", nullable=true)
-     *   )),
-     *   @OA\Response(response="204", description="Finished"),
-     *   @OA\Response(response="409", description="Not reserved, the deviation is used already, or the author differs from the reserver", @OA\JsonContent(type="object", required={"message"},
-     *     @OA\Property(property="message", type="string"), @OA\Property(property="retry", type="boolean", description="Repeat the request with allowOverwriteReserver set"), @OA\Property(property="existingPost", type="object")
-     *   )),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/posts/{id}/finish',
+        operationId: 'PutPostsIdFinish',
+        description: 'Mark a reserved post as finished with a deviation. Requires membership and being the reserver, or staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['deviation'],
+                properties: [
+                    new OA\Property(
+                        property: 'deviation',
+                        type: 'string',
+                        description: 'URL of the finished deviation',
+                    ),
+                    new OA\Property(
+                        property: 'allowOverwriteReserver',
+                        type: 'boolean',
+                        description: 'Send this when the 409 `retry` response asks for it: makes the deviation\'s author the new reserver',
+                    ),
+                    new OA\Property(
+                        property: 'finishedAt',
+                        type: 'string',
+                        format: 'date-time',
+                        description: 'Developer-only: overrides the finished timestamp',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Finished, with a message about approval and notifications',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message', 'approved', 'notified'],
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'approved', type: 'boolean'),
+                        new OA\Property(property: 'notified', ref: '#/components/schemas/PostUser', nullable: true),
+                    ],
+                ),
+            ),
+            new OA\Response(response: '204', description: 'Finished'),
+            new OA\Response(
+                response: '409',
+                description: 'Not reserved, the deviation is used already, or the author differs from the reserver',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(
+                            property: 'retry',
+                            type: 'boolean',
+                            description: 'Repeat the request with allowOverwriteReserver set',
+                        ),
+                        new OA\Property(property: 'existingPost', type: 'object'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function finish(Request $request, int $id)
     {
         $post = $this->loadPost($id);
@@ -455,20 +785,54 @@ class PostManagementController extends Controller
         return $message !== '' ? response()->json(['message' => $message, 'approved' => $approved, 'notified' => $notified]) : response()->noContent();
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/posts/{id}/finish",
-     *   operationId="DeletePostsIdFinish",
-     *   description="Mark a finished post as unfinished. With `unbind` the reservation is removed as well (reservations are deleted). Requires being the reserver, or staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="unbind", description="Also remove the reserver", @OA\Schema(type="boolean")),
-     *   @OA\Response(response="200", description="The reservation was deleted", @OA\JsonContent(type="object", @OA\Property(property="message", type="string"), @OA\Property(property="remove", type="boolean", description="True if the post was deleted entirely"))),
-     *   @OA\Response(response="204", description="Marked as unfinished"),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Conflict", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/posts/{id}/finish',
+        operationId: 'DeletePostsIdFinish',
+        description: 'Mark a finished post as unfinished. With `unbind` the reservation is removed as well (reservations are deleted). Requires being the reserver, or staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'unbind',
+                description: 'Also remove the reserver',
+                schema: new OA\Schema(type: 'boolean'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The reservation was deleted',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(
+                            property: 'remove',
+                            type: 'boolean',
+                            description: 'True if the post was deleted entirely',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(response: '204', description: 'Marked as unfinished'),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Conflict',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function unfinish(Request $request, int $id)
     {
         $post = $this->loadPost($id);
@@ -495,19 +859,44 @@ class PostManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/posts/legacy/{kind}/{oldId}",
-     *   operationId="GetPostsLegacyKindOldId",
-     *   description="The current ID of a post that was linked by the number it had before the 2020 migration (`/s/req/123`, `/s/res/45`)",
-     *   tags={"posts"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="kind", required=true, @OA\Schema(type="string", enum={"request", "reservation"})),
-     *   @OA\Parameter(in="path", name="oldId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, required={"id"}, @OA\Property(property="id", type="integer"))),
-     *   @OA\Response(response="404", description="There was no such post", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts/legacy/{kind}/{oldId}',
+        operationId: 'GetPostsLegacyKindOldId',
+        description: 'The current ID of a post that was linked by the number it had before the 2020 migration (`/s/req/123`, `/s/res/45`)',
+        tags: ['posts'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'kind',
+                required: true,
+                schema: new OA\Schema(type: 'string', enum: ['request', 'reservation']),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'oldId',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['id'],
+                    properties: [new OA\Property(property: 'id', type: 'integer')],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'There was no such post',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function legacyId(string $kind, int $oldId): JsonResponse
     {
         $id = DB::table('legacy_post_mappings')->where('type', $kind)->where('old_id', $oldId)->value('post_id');
@@ -518,24 +907,65 @@ class PostManagementController extends Controller
         return response()->json(['id' => (int) $id]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/posts/{id}/location",
-     *   operationId="GetPostsIdLocation",
-     *   description="Where a post can be found, for links that point to a post",
-     *   tags={"posts"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="showId", description="The show the visitor is looking at", @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="refresh", type="string", enum={"request", "reservation"}, description="Set if the post belongs to the show given by showId"),
-     *     @OA\Property(property="castle", type="object", description="Set if the post belongs to a different show", additionalProperties=false,
-     *       @OA\Property(property="name", type="string", description="Title of the post's show"), @OA\Property(property="showId", type="integer"), @OA\Property(property="postId", type="integer")
-     *     )
-     *   )),
-     *   @OA\Response(response="404", description="The post was deleted or never existed", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts/{id}/location',
+        operationId: 'GetPostsIdLocation',
+        description: 'Where a post can be found, for links that point to a post',
+        tags: ['posts'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'showId',
+                description: 'The show the visitor is looking at',
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'refresh',
+                            type: 'string',
+                            enum: ['request', 'reservation'],
+                            description: 'Set if the post belongs to the show given by showId',
+                        ),
+                        new OA\Property(
+                            property: 'castle',
+                            type: 'object',
+                            description: 'Set if the post belongs to a different show',
+                            additionalProperties: false,
+                            properties: [
+                                new OA\Property(
+                                    property: 'name',
+                                    type: 'string',
+                                    description: 'Title of the post\'s show',
+                                ),
+                                new OA\Property(property: 'showId', type: 'integer'),
+                                new OA\Property(property: 'postId', type: 'integer'),
+                            ],
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'The post was deleted or never existed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function location(Request $request, int $id): JsonResponse
     {
         $post = Post::with('show')->find($id);
@@ -549,21 +979,44 @@ class PostManagementController extends Controller
         return response()->json(['castle' => ['name' => $post->show->title, 'showId' => $post->show_id, 'postId' => $post->id]]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/posts/{id}/reload",
-     *   operationId="GetPostsIdReload",
-     *   description="Called when an image of a post failed to load in the visitor's browser: checks that the images of a post that has no finished deviation are still there. A Derpibooru image that went missing is looked up again and replaced when it can be (a derpimerge log entry); otherwise the post is marked broken (and a reserver of a request loses the reservation). Staff get the post, everybody else is told the post is gone",
-     *   tags={"posts"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="broken", type="boolean", description="True when the post became unavailable and the visitor may not see it"),
-     *     @OA\Property(property="post", ref="#/components/schemas/PostItem")
-     *   )),
-     *   @OA\Response(response="404", description="The post does not exist", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts/{id}/reload',
+        operationId: 'GetPostsIdReload',
+        description: 'Called when an image of a post failed to load in the visitor\'s browser: checks that the images of a post that has no finished deviation are still there. A Derpibooru image that went missing is looked up again and replaced when it can be (a derpimerge log entry); otherwise the post is marked broken (and a reserver of a request loses the reservation). Staff get the post, everybody else is told the post is gone',
+        tags: ['posts'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'broken',
+                            type: 'boolean',
+                            description: 'True when the post became unavailable and the visitor may not see it',
+                        ),
+                        new OA\Property(property: 'post', ref: '#/components/schemas/PostItem'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'The post does not exist',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function reload(Request $request, int $id): JsonResponse
     {
         $post = Post::with(['requester', 'reserver'])->findOrFail($id);
@@ -626,17 +1079,35 @@ class PostManagementController extends Controller
         return response()->json(['post' => $post->fresh(['requester', 'reserver'])->toContract($viewer)]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/posts/{id}/unbreak",
-     *   operationId="PostPostsIdUnbreak",
-     *   description="Clear the broken status of a post whose images work again. Requires staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", @OA\Property(property="post", ref="#/components/schemas/PostItem"))),
-     *   @OA\Response(response="409", description="An image is still unavailable", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/posts/{id}/unbreak',
+        operationId: 'PostPostsIdUnbreak',
+        description: 'Clear the broken status of a post whose images work again. Requires staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [new OA\Property(property: 'post', ref: '#/components/schemas/PostItem')],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'An image is still unavailable',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function unbreak(Request $request, int $id): JsonResponse
     {
         $post = $this->loadPost($id);
@@ -660,19 +1131,38 @@ class PostManagementController extends Controller
         return response()->json(['post' => $post->fresh(['requester', 'reserver'])->toContract($request->user())]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/posts/requests/{id}",
-     *   operationId="DeletePostsRequestsId",
-     *   description="Delete a request. Its poster can delete it until somebody reserves it, staff always",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Deleted"),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Not a request, or already reserved", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/posts/requests/{id}',
+        operationId: 'DeletePostsRequestsId',
+        description: 'Delete a request. Its poster can delete it until somebody reserves it, staff always',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Deleted'),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Not a request, or already reserved',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function destroyRequest(Request $request, int $id): Response
     {
         $post = $this->loadPost($id);
@@ -705,22 +1195,63 @@ class PostManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Put(
-     *   path="/posts/{id}/image",
-     *   operationId="PutPostsIdImage",
-     *   description="Replace the image of a post, which also clears its broken status. Requires being the poster of an unreserved request, or staff",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"imageUrl"}, @OA\Property(property="imageUrl", type="string", description="New image URL (deviation or a supported provider)"))),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="post", ref="#/components/schemas/PostItem"), @OA\Property(property="preview", type="string", description="New preview image URL")
-     *   )),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The post is locked, reserved, or the image was used already", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/posts/{id}/image',
+        operationId: 'PutPostsIdImage',
+        description: 'Replace the image of a post, which also clears its broken status. Requires being the poster of an unreserved request, or staff',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['imageUrl'],
+                properties: [
+                    new OA\Property(
+                        property: 'imageUrl',
+                        type: 'string',
+                        description: 'New image URL (deviation or a supported provider)',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'post', ref: '#/components/schemas/PostItem'),
+                        new OA\Property(property: 'preview', type: 'string', description: 'New preview image URL'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The post is locked, reserved, or the image was used already',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setImage(Request $request, int $id): JsonResponse
     {
         $post = $this->loadPost($id, check_lock: false);
@@ -760,20 +1291,51 @@ class PostManagementController extends Controller
         return response()->json($result);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/posts/reservations",
-     *   operationId="PostPostsReservations",
-     *   description="Add an already finished reservation directly from a deviation. Requires staff",
-     *   tags={"posts"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"showId", "deviation"},
-     *     @OA\Property(property="showId", type="integer", description="ID of the show entry this reservation belongs to"),
-     *     @OA\Property(property="deviation", type="string", description="URL of the finished deviation")
-     *   )),
-     *   @OA\Response(response="201", description="Added", @OA\JsonContent(type="object", required={"id"}, additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/posts/reservations',
+        operationId: 'PostPostsReservations',
+        description: 'Add an already finished reservation directly from a deviation. Requires staff',
+        tags: ['posts'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['showId', 'deviation'],
+                properties: [
+                    new OA\Property(
+                        property: 'showId',
+                        type: 'integer',
+                        description: 'ID of the show entry this reservation belongs to',
+                    ),
+                    new OA\Property(
+                        property: 'deviation',
+                        type: 'string',
+                        description: 'URL of the finished deviation',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Added',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                        new OA\Property(property: 'message', type: 'string'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function addReservation(Request $request): JsonResponse
     {
         $user = $request->user();

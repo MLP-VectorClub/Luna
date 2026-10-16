@@ -11,35 +11,71 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class EventEntriesController extends Controller
 {
     private const SUBMISSION_PROVIDERS = ['fav.me', 'dA', 'sta.sh'];
 
-    /**
-     * @OA\Schema(
-     *   schema="EventEntry",
-     *   type="object",
-     *   description="A submission made to a community event",
-     *   required={"link", "title", "prevSrc"},
-     *   @OA\Property(property="link", type="string", format="uri", description="URL of the submitted deviation or Sta.sh submission"),
-     *   @OA\Property(property="title", type="string", minLength=2, maxLength=64),
-     *   @OA\Property(property="prevSrc", type="string", format="uri", nullable=true, description="URL of the custom preview image, if one was provided")
-     * )
-     * @OA\Get(
-     *   path="/event-entries/{entryid}",
-     *   operationId="GetEventEntriesEntryid",
-     *   description="Get an entry's details for management purposes. Requires the entry to belong to the current user, or staff permissions.",
-     *   tags={"events"},
-     *   @OA\Parameter(in="path", name="entryid", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/EventEntry")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the owner of the entry, or the event has ended", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Entry not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'EventEntry',
+        type: 'object',
+        description: 'A submission made to a community event',
+        required: ['link', 'title', 'prevSrc'],
+        properties: [
+            new OA\Property(
+                property: 'link',
+                type: 'string',
+                format: 'uri',
+                description: 'URL of the submitted deviation or Sta.sh submission',
+            ),
+            new OA\Property(property: 'title', type: 'string', minLength: 2, maxLength: 64),
+            new OA\Property(
+                property: 'prevSrc',
+                type: 'string',
+                format: 'uri',
+                nullable: true,
+                description: 'URL of the custom preview image, if one was provided',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/event-entries/{entryid}',
+        operationId: 'GetEventEntriesEntryid',
+        description: 'Get an entry\'s details for management purposes. Requires the entry to belong to the current user, or staff permissions.',
+        tags: ['events'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'entryid',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/EventEntry'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the owner of the entry, or the event has ended',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Entry not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(Request $request, int $entryid): JsonResponse
     {
         $entry = $this->manageable($request, $entryid);
@@ -47,25 +83,70 @@ class EventEntriesController extends Controller
         return response()->json($this->present($entry));
     }
 
-    /**
-     * @OA\Put(
-     *   path="/event-entries/{entryid}",
-     *   operationId="PutEventEntriesEntryid",
-     *   description="Update an existing entry. Requires the entry to belong to the current user (or staff permissions), and the event must not have ended (unless staff).",
-     *   tags={"events"},
-     *   @OA\Parameter(in="path", name="entryid", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"link", "title"},
-     *     @OA\Property(property="link", type="string", format="uri", description="URL of a deviation or Sta.sh submission"),
-     *     @OA\Property(property="title", type="string", minLength=2, maxLength=64),
-     *     @OA\Property(property="prevSrc", type="string", format="uri", nullable=true, description="Optional custom preview image URL")
-     *   )),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false)),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the owner of the entry, or the event has ended", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Entry not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/event-entries/{entryid}',
+        operationId: 'PutEventEntriesEntryid',
+        description: 'Update an existing entry. Requires the entry to belong to the current user (or staff permissions), and the event must not have ended (unless staff).',
+        tags: ['events'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'entryid',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['link', 'title'],
+                properties: [
+                    new OA\Property(
+                        property: 'link',
+                        type: 'string',
+                        format: 'uri',
+                        description: 'URL of a deviation or Sta.sh submission',
+                    ),
+                    new OA\Property(property: 'title', type: 'string', minLength: 2, maxLength: 64),
+                    new OA\Property(
+                        property: 'prevSrc',
+                        type: 'string',
+                        format: 'uri',
+                        nullable: true,
+                        description: 'Optional custom preview image URL',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(type: 'object', additionalProperties: false),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the owner of the entry, or the event has ended',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Entry not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $entryid): JsonResponse
     {
         $entry = $this->manageable($request, $entryid);
@@ -110,19 +191,38 @@ class EventEntriesController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/event-entries/{entryid}",
-     *   operationId="DeleteEventEntriesEntryid",
-     *   description="Delete an existing entry. Requires the entry to belong to the current user (or staff permissions), and the event must not have ended (unless staff).",
-     *   tags={"events"},
-     *   @OA\Parameter(in="path", name="entryid", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Deleted"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the owner of the entry, or the event has ended", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Entry not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/event-entries/{entryid}',
+        operationId: 'DeleteEventEntriesEntryid',
+        description: 'Delete an existing entry. Requires the entry to belong to the current user (or staff permissions), and the event must not have ended (unless staff).',
+        tags: ['events'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'entryid',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Deleted'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the owner of the entry, or the event has ended',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Entry not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function destroy(Request $request, int $entryid): Response
     {
         $this->manageable($request, $entryid)->delete();
@@ -130,35 +230,84 @@ class EventEntriesController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/events/{id}/entries",
-     *   operationId="GetEventsIdEntries",
-     *   description="Placeholder, same as in Winterchilla: the route expects an entry id and answers 404 for any signed in user. Use /event-entries/{entryid}",
-     *   tags={"events"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Entry ID is missing or invalid", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     * @OA\Put(
-     *   path="/events/{id}/entries",
-     *   operationId="PutEventsIdEntries",
-     *   description="Placeholder, same as in Winterchilla: answers 404 for any signed in user. Use /event-entries/{entryid}",
-     *   tags={"events"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Entry ID is missing or invalid", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     * @OA\Delete(
-     *   path="/events/{id}/entries",
-     *   operationId="DeleteEventsIdEntries",
-     *   description="Placeholder, same as in Winterchilla: answers 404 for any signed in user. Use /event-entries/{entryid}",
-     *   tags={"events"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Entry ID is missing or invalid", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/events/{id}/entries',
+        operationId: 'GetEventsIdEntries',
+        description: 'Placeholder, same as in Winterchilla: the route expects an entry id and answers 404 for any signed in user. Use /event-entries/{entryid}',
+        tags: ['events'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Entry ID is missing or invalid',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
+    #[OA\Put(
+        path: '/events/{id}/entries',
+        operationId: 'PutEventsIdEntries',
+        description: 'Placeholder, same as in Winterchilla: answers 404 for any signed in user. Use /event-entries/{entryid}',
+        tags: ['events'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Entry ID is missing or invalid',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
+    #[OA\Delete(
+        path: '/events/{id}/entries',
+        operationId: 'DeleteEventsIdEntries',
+        description: 'Placeholder, same as in Winterchilla: answers 404 for any signed in user. Use /event-entries/{entryid}',
+        tags: ['events'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Entry ID is missing or invalid',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function placeholder(): never
     {
         throw new HttpException(404, 'Entry ID is missing or invalid');

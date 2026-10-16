@@ -21,29 +21,65 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 /**
  * Downloads that Winterchilla served as files under the appearance URL: swatch files, rendered images and cutie mark SVGs
  */
 class AppearanceExportsController extends Controller
 {
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/palette",
-     *   operationId="GetAppearancesIdPalette",
-     *   description="Download the appearance's colors as a palette file: `json` is a nested swatch map (appearance, color group, color label to hex; the Illustrator swatch import format) and `gpl` is a GIMP/Inkscape palette. Both are served as attachments. Front ends may also build them from `GET /appearances/{id}/color-groups`.",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="format", required=true, @OA\Schema(type="string", enum={"json", "gpl"})),
-     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
-     *   @OA\Response(response="200", description="The palette file, as an attachment named after the appearance", @OA\MediaType(mediaType="application/octet-stream", @OA\Schema(type="string", format="binary"))),
-     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Invalid format", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/palette',
+        operationId: 'GetAppearancesIdPalette',
+        description: 'Download the appearance\'s colors as a palette file: `json` is a nested swatch map (appearance, color group, color label to hex; the Illustrator swatch import format) and `gpl` is a GIMP/Inkscape palette. Both are served as attachments. Front ends may also build them from `GET /appearances/{id}/color-groups`.',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'format',
+                required: true,
+                schema: new OA\Schema(type: 'string', enum: ['json', 'gpl']),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The palette file, as an attachment named after the appearance',
+                content: new OA\MediaType(
+                    mediaType: 'application/octet-stream',
+                    schema: new OA\Schema(type: 'string', format: 'binary'),
+                ),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'The appearance is private',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid format',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function palette(Request $request, int $id)
     {
         $appearance = $this->visible($request, $id);
@@ -72,55 +108,181 @@ class AppearanceExportsController extends Controller
         return $this->attachment(AppearanceImages::gimpPalette($appearance->label, $colors), "{$appearance->label}.gpl", 'application/octet-stream');
     }
 
-    /**
-     * @OA\Schema(
-     *   schema="SpriteColorCheck",
-     *   required={"palette", "colors", "summary"},
-     *   @OA\Property(property="palette", description="Every color of the appearance and whether the sprite uses it", type="array", @OA\Items(
-     *     required={"group", "label", "hex", "status", "optional", "pixels"},
-     *     @OA\Property(property="group", type="string"),
-     *     @OA\Property(property="label", type="string"),
-     *     @OA\Property(property="hex", type="string", example="#D8D8D8"),
-     *     @OA\Property(property="opacity", description="The opacity the color is listed with, in percent", type="integer", nullable=true),
-     *     @OA\Property(property="blendMode", description="The blend mode the color is listed with, normal when only an opacity is set", nullable=true, allOf={@OA\Schema(ref="#/components/schemas/BlendMode")}),
-     *     @OA\Property(property="status", description="`translucent` means the color only appears semi-transparent", type="string", enum={"present", "translucent", "missing"}),
-     *     @OA\Property(property="optional", description="The color is for another form or use (its name has a qualifier in parentheses), so it is not expected in every sprite", type="boolean"),
-     *     @OA\Property(property="pixels", type="integer")
-     *   )),
-     *   @OA\Property(property="colors", description="Every color in the sprite, most used first", type="array", @OA\Items(
-     *     required={"hex", "pixels", "translucentPixels", "kind", "labels"},
-     *     @OA\Property(property="hex", type="string", example="#D8D8D8"),
-     *     @OA\Property(property="pixels", description="Fully opaque pixels", type="integer"),
-     *     @OA\Property(property="translucentPixels", description="Semi-transparent pixels", type="integer"),
-     *     @OA\Property(property="kind", description="`listed` is a color of the appearance, `blend` is explained as a mix of two listed colors, `near` is almost a listed color (probably a mistake), `unknown` is neither; the `Speck` variants cover fewer than 5 pixels; `translucent` colors are only drawn semi-transparent and are not judged", type="string", enum={"listed", "blend", "near", "unknown", "nearSpeck", "unknownSpeck", "translucent"}),
-     *     @OA\Property(property="labels", description="Names of the appearance colors with this value", type="array", @OA\Items(type="string")),
-     *     @OA\Property(property="nearest", description="The closest listed color, for `near` and `unknown` colors", type="object", nullable=true,
-     *       @OA\Property(property="hex", type="string"), @OA\Property(property="label", type="string"), @OA\Property(property="distance", type="number")),
-     *     @OA\Property(property="blendOf", description="The two listed colors a `blend` color is made from", type="array", nullable=true, @OA\Items(type="string")),
-     *     @OA\Property(property="blendMode", description="How a `blend` color is made from its two colors: `mix` is any mix of the two. Colors listed with an opacity or blend mode are tried first, as that layer over a color of the sprite", type="string", nullable=true, enum={"mix", "normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion"}),
-     *     @OA\Property(property="blendOpacity", description="The opacity in percent of the listed layer in a blend made from a color with an opacity or blend mode (100 when only a blend mode is set), null for other kinds", type="integer", nullable=true)
-     *   )),
-     *   @OA\Property(property="summary", required={"missing", "translucentOnly", "near", "unknown", "specks", "ok"},
-     *     @OA\Property(property="missing", description="Required colors (not optional) that the sprite does not use at all", type="integer"),
-     *     @OA\Property(property="translucentOnly", type="integer"),
-     *     @OA\Property(property="near", type="integer"),
-     *     @OA\Property(property="unknown", type="integer"),
-     *     @OA\Property(property="specks", type="integer"),
-     *     @OA\Property(property="ok", description="Nothing missing, nearly matching or unknown", type="boolean"))
-     * )
-     * @OA\Get(
-     *   path="/appearances/{id}/sprite/colors",
-     *   operationId="GetAppearancesIdSpriteColors",
-     *   description="Checks the colors of the appearance's sprite against the colors listed for the appearance. Soft edges and glows that are blends of listed colors (normal, multiply, screen) are recognised, and colors only drawn semi-transparent are not judged.",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
-     *   @OA\Response(response="200", description="The comparison", @OA\JsonContent(ref="#/components/schemas/SpriteColorCheck")),
-     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found, or it has no sprite", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'SpriteColorCheck',
+        required: ['palette', 'colors', 'summary'],
+        properties: [
+            new OA\Property(
+                property: 'palette',
+                description: 'Every color of the appearance and whether the sprite uses it',
+                type: 'array',
+                items: new OA\Items(
+                    required: ['group', 'label', 'hex', 'status', 'optional', 'pixels'],
+                    properties: [
+                        new OA\Property(property: 'group', type: 'string'),
+                        new OA\Property(property: 'label', type: 'string'),
+                        new OA\Property(property: 'hex', type: 'string', example: '#D8D8D8'),
+                        new OA\Property(
+                            property: 'opacity',
+                            description: 'The opacity the color is listed with, in percent',
+                            type: 'integer',
+                            nullable: true,
+                        ),
+                        new OA\Property(
+                            property: 'blendMode',
+                            description: 'The blend mode the color is listed with, normal when only an opacity is set',
+                            nullable: true,
+                            allOf: [new OA\Schema(ref: '#/components/schemas/BlendMode')],
+                        ),
+                        new OA\Property(
+                            property: 'status',
+                            description: '`translucent` means the color only appears semi-transparent',
+                            type: 'string',
+                            enum: ['present', 'translucent', 'missing'],
+                        ),
+                        new OA\Property(
+                            property: 'optional',
+                            description: 'The color is for another form or use (its name has a qualifier in parentheses), so it is not expected in every sprite',
+                            type: 'boolean',
+                        ),
+                        new OA\Property(property: 'pixels', type: 'integer'),
+                    ],
+                ),
+            ),
+            new OA\Property(
+                property: 'colors',
+                description: 'Every color in the sprite, most used first',
+                type: 'array',
+                items: new OA\Items(
+                    required: ['hex', 'pixels', 'translucentPixels', 'kind', 'labels'],
+                    properties: [
+                        new OA\Property(property: 'hex', type: 'string', example: '#D8D8D8'),
+                        new OA\Property(property: 'pixels', description: 'Fully opaque pixels', type: 'integer'),
+                        new OA\Property(
+                            property: 'translucentPixels',
+                            description: 'Semi-transparent pixels',
+                            type: 'integer',
+                        ),
+                        new OA\Property(
+                            property: 'kind',
+                            description: '`listed` is a color of the appearance, `blend` is explained as a mix of two listed colors, `near` is almost a listed color (probably a mistake), `unknown` is neither; the `Speck` variants cover fewer than 5 pixels; `translucent` colors are only drawn semi-transparent and are not judged',
+                            type: 'string',
+                            enum: ['listed', 'blend', 'near', 'unknown', 'nearSpeck', 'unknownSpeck', 'translucent'],
+                        ),
+                        new OA\Property(
+                            property: 'labels',
+                            description: 'Names of the appearance colors with this value',
+                            type: 'array',
+                            items: new OA\Items(type: 'string'),
+                        ),
+                        new OA\Property(
+                            property: 'nearest',
+                            description: 'The closest listed color, for `near` and `unknown` colors',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'hex', type: 'string'),
+                                new OA\Property(property: 'label', type: 'string'),
+                                new OA\Property(property: 'distance', type: 'number'),
+                            ],
+                        ),
+                        new OA\Property(
+                            property: 'blendOf',
+                            description: 'The two listed colors a `blend` color is made from',
+                            type: 'array',
+                            nullable: true,
+                            items: new OA\Items(type: 'string'),
+                        ),
+                        new OA\Property(
+                            property: 'blendMode',
+                            description: 'How a `blend` color is made from its two colors: `mix` is any mix of the two. Colors listed with an opacity or blend mode are tried first, as that layer over a color of the sprite',
+                            type: 'string',
+                            nullable: true,
+                            enum: [
+                                'mix',
+                                'normal',
+                                'multiply',
+                                'screen',
+                                'overlay',
+                                'darken',
+                                'lighten',
+                                'color-dodge',
+                                'color-burn',
+                                'hard-light',
+                                'soft-light',
+                                'difference',
+                                'exclusion',
+                            ],
+                        ),
+                        new OA\Property(
+                            property: 'blendOpacity',
+                            description: 'The opacity in percent of the listed layer in a blend made from a color with an opacity or blend mode (100 when only a blend mode is set), null for other kinds',
+                            type: 'integer',
+                            nullable: true,
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Property(
+                property: 'summary',
+                required: ['missing', 'translucentOnly', 'near', 'unknown', 'specks', 'ok'],
+                properties: [
+                    new OA\Property(
+                        property: 'missing',
+                        description: 'Required colors (not optional) that the sprite does not use at all',
+                        type: 'integer',
+                    ),
+                    new OA\Property(property: 'translucentOnly', type: 'integer'),
+                    new OA\Property(property: 'near', type: 'integer'),
+                    new OA\Property(property: 'unknown', type: 'integer'),
+                    new OA\Property(property: 'specks', type: 'integer'),
+                    new OA\Property(
+                        property: 'ok',
+                        description: 'Nothing missing, nearly matching or unknown',
+                        type: 'boolean',
+                    ),
+                ],
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/appearances/{id}/sprite/colors',
+        operationId: 'GetAppearancesIdSpriteColors',
+        description: 'Checks the colors of the appearance\'s sprite against the colors listed for the appearance. Soft edges and glows that are blends of listed colors (normal, multiply, screen) are recognised, and colors only drawn semi-transparent are not judged.',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The comparison',
+                content: new OA\JsonContent(ref: '#/components/schemas/SpriteColorCheck'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'The appearance is private',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found, or it has no sprite',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function spriteColors(Request $request, int $id)
     {
         $appearance = $this->visible($request, $id);
@@ -150,24 +312,70 @@ class AppearanceExportsController extends Controller
         return response()->camelJson($result, 200, $appearance->private ? ['Cache-Control' => 'private, no-cache'] : ['Cache-Control' => 'public, max-age=60']);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/image",
-     *   operationId="GetAppearancesIdImage",
-     *   description="A rendered image of the appearance. Combinations: `palette` as `png` (the colors listed next to the sprite), `sprite` as `png` (the uploaded sprite) or `svg` (traced from it), `preview` as `svg` (the four-color preview) and `facing` as `svg` (the body-orientation graphic, colored with the appearance's colors; pick the side with `facing`). Everything else is a 422, a missing sprite a 404. The server may answer with a redirect to a cache-busted URL of the same image.",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="type", required=true, @OA\Schema(type="string", enum={"palette", "sprite", "preview", "facing"})),
-     *   @OA\Parameter(in="query", name="format", required=true, @OA\Schema(type="string", enum={"png", "svg"})),
-     *   @OA\Parameter(in="query", name="facing", required=false, @OA\Schema(type="string", default="left", enum={"left", "right"})),
-     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
-     *   @OA\Response(response="200", description="The image", @OA\MediaType(mediaType="image/png", @OA\Schema(type="string", format="binary")), @OA\MediaType(mediaType="image/svg+xml", @OA\Schema(type="string"))),
-     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found, or it has no sprite", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Unsupported type and format combination", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/image',
+        operationId: 'GetAppearancesIdImage',
+        description: 'A rendered image of the appearance. Combinations: `palette` as `png` (the colors listed next to the sprite), `sprite` as `png` (the uploaded sprite) or `svg` (traced from it), `preview` as `svg` (the four-color preview) and `facing` as `svg` (the body-orientation graphic, colored with the appearance\'s colors; pick the side with `facing`). Everything else is a 422, a missing sprite a 404. The server may answer with a redirect to a cache-busted URL of the same image.',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'type',
+                required: true,
+                schema: new OA\Schema(type: 'string', enum: ['palette', 'sprite', 'preview', 'facing']),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'format',
+                required: true,
+                schema: new OA\Schema(type: 'string', enum: ['png', 'svg']),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'facing',
+                required: false,
+                schema: new OA\Schema(type: 'string', default: 'left', enum: ['left', 'right']),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The image',
+                content: [
+                    new OA\MediaType(mediaType: 'image/png', schema: new OA\Schema(type: 'string', format: 'binary')),
+                    new OA\MediaType(mediaType: 'image/svg+xml', schema: new OA\Schema(type: 'string')),
+                ],
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'The appearance is private',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found, or it has no sprite',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Unsupported type and format combination',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function image(Request $request, int $id)
     {
         $appearance = $this->visible($request, $id);
@@ -236,23 +444,64 @@ class AppearanceExportsController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/cutie-marks/{cutieMarkId}/download",
-     *   operationId="GetAppearancesIdCutieMarksCutieMarkIdDownload",
-     *   description="Download a cutie mark as an SVG attachment: the sanitized, rendered file by default, or the original upload with `source` (staff only).",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="path", name="cutieMarkId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="source", required=false, @OA\Schema(type="boolean", default=false)),
-     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
-     *   @OA\Response(response="200", description="The cutie mark file", @OA\MediaType(mediaType="application/octet-stream", @OA\Schema(type="string", format="binary"))),
-     *   @OA\Response(response="401", description="`source` was requested but nobody is signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="`source` was requested without the staff role, or the appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance or cutie mark not found, or the cutie mark belongs to another appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/cutie-marks/{cutieMarkId}/download',
+        operationId: 'GetAppearancesIdCutieMarksCutieMarkIdDownload',
+        description: 'Download a cutie mark as an SVG attachment: the sanitized, rendered file by default, or the original upload with `source` (staff only).',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'cutieMarkId',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'source',
+                required: false,
+                schema: new OA\Schema(type: 'boolean', default: false),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The cutie mark file',
+                content: new OA\MediaType(
+                    mediaType: 'application/octet-stream',
+                    schema: new OA\Schema(type: 'string', format: 'binary'),
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: '`source` was requested but nobody is signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: '`source` was requested without the staff role, or the appearance is private',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance or cutie mark not found, or the cutie mark belongs to another appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function cutieMark(Request $request, int $id, int $cutieMarkId)
     {
         $appearance = Appearance::findOrFail($id);
@@ -277,21 +526,53 @@ class AppearanceExportsController extends Controller
         return $this->attachment(file_get_contents($file->getPath()), "{$appearance->label} - cutie mark {$cutie_mark->id}.svg", 'image/svg+xml');
     }
 
-    /**
-     * @OA\Get(
-     *   path="/cutie-marks/{cutieMarkId}/{disposition}",
-     *   operationId="GetCutieMarksCutieMarkIdDisposition",
-     *   description="A cutie mark file by its own ID, for the URLs of the previous site: `image` serves the SVG inline, `download` as an attachment.",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="cutieMarkId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="path", name="disposition", required=true, @OA\Schema(type="string", enum={"image", "download"})),
-     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
-     *   @OA\Response(response="200", description="The cutie mark file", @OA\MediaType(mediaType="image/svg+xml", @OA\Schema(type="string", format="binary"))),
-     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Cutie mark not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/cutie-marks/{cutieMarkId}/{disposition}',
+        operationId: 'GetCutieMarksCutieMarkIdDisposition',
+        description: 'A cutie mark file by its own ID, for the URLs of the previous site: `image` serves the SVG inline, `download` as an attachment.',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'cutieMarkId',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'disposition',
+                required: true,
+                schema: new OA\Schema(type: 'string', enum: ['image', 'download']),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The cutie mark file',
+                content: new OA\MediaType(
+                    mediaType: 'image/svg+xml',
+                    schema: new OA\Schema(type: 'string', format: 'binary'),
+                ),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'The appearance is private',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Cutie mark not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function cutieMarkById(Request $request, int $cutieMarkId, string $disposition)
     {
         $cutie_mark = CutieMark::findOrFail($cutieMarkId);

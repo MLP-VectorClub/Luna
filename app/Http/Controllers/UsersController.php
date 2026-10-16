@@ -23,102 +23,97 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\TransientToken;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class UsersController extends Controller
 {
     /**
-     * @OA\Schema(
-     *   schema="BarePublicUser",
-     *   type="object",
-     *   description="Represents the absolute minimum info necessary to get a user profile URL",
-     *   required={
-     *     "id",
-     *     "name",
-     *     "role",
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     type="integer",
-     *     minimum=1,
-     *     example=1,
-     *   ),
-     *   @OA\Property(
-     *     property="name",
-     *     type="string",
-     *     example="example",
-     *   ),
-     *   @OA\Property(
-     *     property="role",
-     *     description="The publicly visible role for the user",
-     *     ref="#/components/schemas/AccountRole",
-     *   ),
-     * )
-     * @OA\Schema(
-     *   schema="PublicUser",
-     *   allOf={
-     *     @OA\Schema(ref="#/components/schemas/BarePublicUser"),
-     *     @OA\Schema(
-     *       type="object",
-     *       description="Represents a publicly accessible representation of a user",
-     *       required={
-     *         "avatarUrl",
-     *         "avatarProvider",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="avatarUrl",
-     *         type="string",
-     *         format="uri",
-     *         example="https://a.deviantart.net/avatars/e/x/example.png",
-     *         nullable=true,
-     *       ),
-     *       @OA\Property(
-     *         property="avatarProvider",
-     *         ref="#/components/schemas/AvatarProvider"
-     *       ),
-     *     )
-     *   }
-     * )
-     * @OA\Schema(
-     *   schema="CurrentUser",
-     *   type="object",
-     *   description="The signed in user as returned by `GET /users/me`, never includes the e-mail address",
-     *   required={"id", "name", "role", "avatarUrl", "avatarProvider"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="name", type="string", example="example"),
-     *   @OA\Property(property="role", ref="#/components/schemas/DatabaseRole"),
-     *   @OA\Property(property="avatarUrl", type="string", format="uri", nullable=true),
-     *   @OA\Property(property="avatarProvider", ref="#/components/schemas/AvatarProvider"),
-     *   @OA\Property(property="discordServerMember", type="boolean", description="Whether the user has a linked Discord account that is a member of the club's server, so the front end can leave out its invitation"),
-     * )
-     * @OA\Get(
-     *   path="/users/me",
-     *   description="Get information about the currently logged in user",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Response(
-     *     response="200",
-     *     description="Query successful",
-     *     @OA\JsonContent(
-     *       type="object",
-     *       required={"user", "sessionUpdating"},
-     *       additionalProperties=false,
-     *       @OA\Property(property="user", ref="#/components/schemas/CurrentUser"),
-     *       @OA\Property(property="sessionUpdating", type="boolean", description="Always false in Luna")
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @return JsonResponse
      */
+    #[OA\Schema(
+        schema: 'BarePublicUser',
+        type: 'object',
+        description: 'Represents the absolute minimum info necessary to get a user profile URL',
+        required: ['id', 'name', 'role'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', type: 'integer', minimum: 1, example: 1),
+            new OA\Property(property: 'name', type: 'string', example: 'example'),
+            new OA\Property(
+                property: 'role',
+                description: 'The publicly visible role for the user',
+                ref: '#/components/schemas/AccountRole',
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'PublicUser',
+        allOf: [
+            new OA\Schema(ref: '#/components/schemas/BarePublicUser'),
+            new OA\Schema(
+                type: 'object',
+                description: 'Represents a publicly accessible representation of a user',
+                required: ['avatarUrl', 'avatarProvider'],
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(
+                        property: 'avatarUrl',
+                        type: 'string',
+                        format: 'uri',
+                        example: 'https://a.deviantart.net/avatars/e/x/example.png',
+                        nullable: true,
+                    ),
+                    new OA\Property(property: 'avatarProvider', ref: '#/components/schemas/AvatarProvider'),
+                ],
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'CurrentUser',
+        type: 'object',
+        description: 'The signed in user as returned by `GET /users/me`, never includes the e-mail address',
+        required: ['id', 'name', 'role', 'avatarUrl', 'avatarProvider'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+            new OA\Property(property: 'name', type: 'string', example: 'example'),
+            new OA\Property(property: 'role', ref: '#/components/schemas/DatabaseRole'),
+            new OA\Property(property: 'avatarUrl', type: 'string', format: 'uri', nullable: true),
+            new OA\Property(property: 'avatarProvider', ref: '#/components/schemas/AvatarProvider'),
+            new OA\Property(
+                property: 'discordServerMember',
+                type: 'boolean',
+                description: 'Whether the user has a linked Discord account that is a member of the club\'s server, so the front end can leave out its invitation',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/users/me',
+        description: 'Get information about the currently logged in user',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Query successful',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['user', 'sessionUpdating'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'user', ref: '#/components/schemas/CurrentUser'),
+                        new OA\Property(
+                            property: 'sessionUpdating',
+                            type: 'boolean',
+                            description: 'Always false in Luna',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function me(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -146,39 +141,34 @@ class UsersController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/users/da/{username}",
-     *   description="Get on-site user information via a DeviantArt username",
-     *   tags={"users"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="username",
-     *     required=true,
-     *     @OA\Schema(
-     *       type="string"
-     *     ),
-     *     description="The DeviantArt username to look for"
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="Query successful",
-     *     @OA\JsonContent(ref="#/components/schemas/PublicUser")
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="No user found by this name"
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @param  string   $username
      * @return JsonResponse
      */
+    #[OA\Get(
+        path: '/users/da/{username}',
+        description: 'Get on-site user information via a DeviantArt username',
+        tags: ['users'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'username',
+                required: true,
+                description: 'The DeviantArt username to look for',
+                schema: new OA\Schema(type: 'string'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Query successful',
+                content: new OA\JsonContent(ref: '#/components/schemas/PublicUser'),
+            ),
+            new OA\Response(response: '404', description: 'No user found by this name'),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function getByName(Request $request, string $username): JsonResponse
     {
         /** @var DeviantartUser $da_user */
@@ -188,19 +178,42 @@ class UsersController extends Controller
         return $this->getById($request, $user);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/da-uuid/{uuid}",
-     *   operationId="GetUsersDaUuidUuid",
-     *   description="Get the public information of a user by their DeviantArt account UUID. Developer role only.",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="uuid", required=true, @OA\Schema(type="string", format="uuid")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/User")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="User not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/da-uuid/{uuid}',
+        operationId: 'GetUsersDaUuidUuid',
+        description: 'Get the public information of a user by their DeviantArt account UUID. Developer role only.',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'uuid',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/User'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'User not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function getByDaUuid(Request $request, string $uuid): JsonResponse
     {
         /** @var DeviantartUser $da_user */
@@ -212,65 +225,60 @@ class UsersController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/users/{id}",
-     *   description="Get information about the specified user",
-     *   tags={"users"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/OneBasedId")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="Query successful",
-     *     @OA\JsonContent(ref="#/components/schemas/PublicUser")
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="No user found by this ID"
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @param  User  $user
      * @return JsonResponse
      */
+    #[OA\Get(
+        path: '/users/{id}',
+        description: 'Get information about the specified user',
+        tags: ['users'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Query successful',
+                content: new OA\JsonContent(ref: '#/components/schemas/PublicUser'),
+            ),
+            new OA\Response(response: '404', description: 'No user found by this ID'),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function getById(Request $request, User $user): JsonResponse
     {
         return response()->camelJson($user->publicResponse());
     }
 
     /**
-     * @OA\Get(
-     *   path="/users",
-     *   description="Get a full list of users, i.e. those that have the 'user' role (requires staff permissions)",
-     *   tags={"users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Response(
-     *     response="200",
-     *     description="Query successful",
-     *     @OA\JsonContent(
-     *       type="array",
-     *       @OA\Items(ref="#/components/schemas/BarePublicUser")
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @param  User  $user
      * @return JsonResponse
      */
+    #[OA\Get(
+        path: '/users',
+        description: 'Get a full list of users, i.e. those that have the \'user\' role (requires staff permissions)',
+        tags: ['users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Query successful',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/BarePublicUser'),
+                ),
+            ),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function list(Request $request, User $user): JsonResponse
     {
         if (!perm(Role::Staff)) {
@@ -292,22 +300,59 @@ class UsersController extends Controller
         ]));
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/me/password",
-     *   operationId="PostUsersMePassword",
-     *   description="Sets a new password for the currently signed in user. Requires staff permission. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.",
-     *   tags={"users"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"newPassword"},
-     *     @OA\Property(property="currentPassword", type="string", description="The user's current password, required if a password is already set"),
-     *     @OA\Property(property="newPassword", type="string", minLength=8, maxLength=300, description="The new password to set")
-     *   )),
-     *   @OA\Response(response="200", description="Password successfully changed", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission (staff required)", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Invalid new password, or the current password is missing or incorrect", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/me/password',
+        operationId: 'PostUsersMePassword',
+        description: 'Sets a new password for the currently signed in user. Requires staff permission. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.',
+        tags: ['users'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['newPassword'],
+                properties: [
+                    new OA\Property(
+                        property: 'currentPassword',
+                        type: 'string',
+                        description: 'The user\'s current password, required if a password is already set',
+                    ),
+                    new OA\Property(
+                        property: 'newPassword',
+                        type: 'string',
+                        minLength: 8,
+                        maxLength: 300,
+                        description: 'The new password to set',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Password successfully changed',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission (staff required)',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid new password, or the current password is missing or incorrect',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setPassword(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -343,24 +388,19 @@ class UsersController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *   path="/users/signout",
-     *   description="Shortcut for calling the token DELETE endpoint with the current token",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Response(
-     *     response="204",
-     *     description="Signout successful"
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @return Response
      */
+    #[OA\Post(
+        path: '/users/signout',
+        description: 'Shortcut for calling the token DELETE endpoint with the current token',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        responses: [
+            new OA\Response(response: '204', description: 'Signout successful'),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function signout(Request $request): Response
     {
         /** @var User $user */
@@ -412,22 +452,54 @@ class UsersController extends Controller
             ])->values()->all();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/sessions",
-     *   operationId="GetUsersIdSessions",
-     *   description="Browser sessions of a user, most recently active first: the user themselves or staff (the account page of somebody else). `current` is only ever true for the requester's own.",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="Success", @OA\JsonContent(type="object", required={"sessions"}, additionalProperties=false,
-     *     @OA\Property(property="sessions", type="array", @OA\Items(ref="#/components/schemas/BrowserSession"))
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the user themselves or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="No such user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/sessions',
+        operationId: 'GetUsersIdSessions',
+        description: 'Browser sessions of a user, most recently active first: the user themselves or staff (the account page of somebody else). `current` is only ever true for the requester\'s own.',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Success',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['sessions'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'sessions',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/BrowserSession'),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the user themselves or staff',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'No such user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function sessionsOf(Request $request, int $id): JsonResponse
     {
         $target = $this->sessionsTarget($request, $id);
@@ -437,21 +509,46 @@ class UsersController extends Controller
         return response()->json(['sessions' => $this->mapSessions($target, $current)]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/users/{id}/sessions/{sessionId}",
-     *   operationId="DeleteUsersIdSessionsSessionId",
-     *   description="Ends one browser session of a user (the user themselves or staff), which signs that browser out",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="path", name="sessionId", required=true, @OA\Schema(type="string"), description="The `id` from `GET /users/{id}/sessions`"),
-     *   @OA\Response(response="204", description="The session was ended"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the user themselves or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="No such user or session", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/users/{id}/sessions/{sessionId}',
+        operationId: 'DeleteUsersIdSessionsSessionId',
+        description: 'Ends one browser session of a user (the user themselves or staff), which signs that browser out',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'sessionId',
+                required: true,
+                description: 'The `id` from `GET /users/{id}/sessions`',
+                schema: new OA\Schema(type: 'string'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'The session was ended'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the user themselves or staff',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'No such user or session',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function deleteSessionOf(Request $request, int $id, string $sessionId): Response
     {
         $target = $this->sessionsTarget($request, $id);
@@ -465,20 +562,39 @@ class UsersController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/users/{id}/sessions",
-     *   operationId="DeleteUsersIdSessions",
-     *   description="Signs a user out everywhere: ends all of their browser sessions and deletes all of their access tokens. The user themselves or staff.",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Everything of the user was ended"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the user themselves or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="No such user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/users/{id}/sessions',
+        operationId: 'DeleteUsersIdSessions',
+        description: 'Signs a user out everywhere: ends all of their browser sessions and deletes all of their access tokens. The user themselves or staff.',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Everything of the user was ended'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the user themselves or staff',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'No such user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function deleteSessionsOf(Request $request, int $id): Response
     {
         self::endAllSessionsOf($this->sessionsTarget($request, $id));
@@ -487,78 +603,64 @@ class UsersController extends Controller
     }
 
     /**
-     * @OA\Schema(
-     *   schema="Token",
-     *   type="object",
-     *   required={
-     *     "id",
-     *     "name",
-     *     "lastUsedAt",
-     *     "createdAt"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="id",
-     *     type="integer",
-     *     minimum=1,
-     *     example=1,
-     *   ),
-     *   @OA\Property(
-     *     property="name",
-     *     type="string",
-     *     description="Name of the token, either generated (from OS and browser version) or user-supplied if renamed",
-     *   ),
-     *   @OA\Property(
-     *     property="lastUsedAt",
-     *     nullable=true,
-     *     description="Null for a token that was never used",
-     *     oneOf={@OA\Schema(ref="#/components/schemas/IsoStandardDate")}
-     *   ),
-     *   @OA\Property(
-     *     property="createdAt",
-     *     ref="#/components/schemas/IsoStandardDate"
-     *   ),
-     * )
-     *
-     * @OA\Get(
-     *   path="/users/tokens",
-     *   description="Returns a list of access tokens that belong to the current user",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Response(
-     *     response="200",
-     *     description="Success",
-     *     @OA\JsonContent(
-     *       required={
-     *         "currentTokenId",
-     *         "tokens",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="currentTokenId",
-     *         description="ID of the token used to make this request. Will be null if the request is authenticated through CookieAuth",
-     *         type="integer",
-     *         minimum=1,
-     *         example=1,
-     *         nullable=true,
-     *       ),
-     *       @OA\Property(
-     *         property="tokens",
-     *         description="A list of tokens that belong to the user",
-     *         type="array",
-     *         minItems=1,
-     *         @OA\Items(ref="#/components/schemas/Token")
-     *       )
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse
      */
+    #[OA\Schema(
+        schema: 'Token',
+        type: 'object',
+        required: ['id', 'name', 'lastUsedAt', 'createdAt'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', type: 'integer', minimum: 1, example: 1),
+            new OA\Property(
+                property: 'name',
+                type: 'string',
+                description: 'Name of the token, either generated (from OS and browser version) or user-supplied if renamed',
+            ),
+            new OA\Property(
+                property: 'lastUsedAt',
+                nullable: true,
+                description: 'Null for a token that was never used',
+                oneOf: [new OA\Schema(ref: '#/components/schemas/IsoStandardDate')],
+            ),
+            new OA\Property(property: 'createdAt', ref: '#/components/schemas/IsoStandardDate'),
+        ],
+    )]
+    #[OA\Get(
+        path: '/users/tokens',
+        description: 'Returns a list of access tokens that belong to the current user',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Success',
+                content: new OA\JsonContent(
+                    required: ['currentTokenId', 'tokens'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'currentTokenId',
+                            description: 'ID of the token used to make this request. Will be null if the request is authenticated through CookieAuth',
+                            type: 'integer',
+                            minimum: 1,
+                            example: 1,
+                            nullable: true,
+                        ),
+                        new OA\Property(
+                            property: 'tokens',
+                            description: 'A list of tokens that belong to the user',
+                            type: 'array',
+                            minItems: 1,
+                            items: new OA\Items(ref: '#/components/schemas/Token'),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function tokens(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -580,33 +682,76 @@ class UsersController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Schema(
-     *   schema="BrowserSession",
-     *   type="object",
-     *   description="A browser session of the current user (cookie authentication)",
-     *   required={"id", "device", "userAgent", "ip", "lastActiveAt", "createdAt", "current"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", type="string", description="Opaque identifier to pass to DELETE /users/sessions/{id}. Not the session id itself", example="9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"),
-     *   @OA\Property(property="device", type="string", description="Browser and operating system the session was started from", example="Firefox on Linux"),
-     *   @OA\Property(property="userAgent", type="string", nullable=true, description="The raw User-Agent header the session was started with"),
-     *   @OA\Property(property="ip", type="string", nullable=true, description="IP address the session was last used from"),
-     *   @OA\Property(property="lastActiveAt", type="string", format="date-time"),
-     *   @OA\Property(property="createdAt", type="string", format="date-time", nullable=true),
-     *   @OA\Property(property="current", type="boolean", description="Whether this is the session that made the request")
-     * )
-     * @OA\Get(
-     *   path="/users/sessions",
-     *   operationId="GetUsersSessions",
-     *   description="Browser sessions (cookie authentication) of the current user, most recently active first. Access tokens are listed by `GET /users/tokens`.",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Response(response="200", description="Success", @OA\JsonContent(type="object", required={"sessions"}, additionalProperties=false,
-     *     @OA\Property(property="sessions", type="array", @OA\Items(ref="#/components/schemas/BrowserSession"))
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'BrowserSession',
+        type: 'object',
+        description: 'A browser session of the current user (cookie authentication)',
+        required: ['id', 'device', 'userAgent', 'ip', 'lastActiveAt', 'createdAt', 'current'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'id',
+                type: 'string',
+                description: 'Opaque identifier to pass to DELETE /users/sessions/{id}. Not the session id itself',
+                example: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+            ),
+            new OA\Property(
+                property: 'device',
+                type: 'string',
+                description: 'Browser and operating system the session was started from',
+                example: 'Firefox on Linux',
+            ),
+            new OA\Property(
+                property: 'userAgent',
+                type: 'string',
+                nullable: true,
+                description: 'The raw User-Agent header the session was started with',
+            ),
+            new OA\Property(
+                property: 'ip',
+                type: 'string',
+                nullable: true,
+                description: 'IP address the session was last used from',
+            ),
+            new OA\Property(property: 'lastActiveAt', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'createdAt', type: 'string', format: 'date-time', nullable: true),
+            new OA\Property(
+                property: 'current',
+                type: 'boolean',
+                description: 'Whether this is the session that made the request',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/users/sessions',
+        operationId: 'GetUsersSessions',
+        description: 'Browser sessions (cookie authentication) of the current user, most recently active first. Access tokens are listed by `GET /users/tokens`.',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Success',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['sessions'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'sessions',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/BrowserSession'),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function sessions(Request $request): JsonResponse
     {
         $current = $request->hasSession() ? $request->session()->getId() : null;
@@ -615,19 +760,35 @@ class UsersController extends Controller
         return response()->json(['sessions' => $sessions]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/users/sessions/{id}",
-     *   operationId="DeleteUsersSessionsId",
-     *   description="Ends a browser session of the current user, which signs that browser out. Use `POST /users/signout` for the session making the request.",
-     *   tags={"authentication","users"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(type="string"), description="The `id` from `GET /users/sessions`"),
-     *   @OA\Response(response="204", description="The session was ended"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="No such session for this user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/users/sessions/{id}',
+        operationId: 'DeleteUsersSessionsId',
+        description: 'Ends a browser session of the current user, which signs that browser out. Use `POST /users/signout` for the session making the request.',
+        tags: ['authentication', 'users'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                description: 'The `id` from `GET /users/sessions`',
+                schema: new OA\Schema(type: 'string'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'The session was ended'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'No such session for this user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function deleteSession(Request $request, string $id): Response
     {
         $table = config('session.table');
@@ -641,39 +802,30 @@ class UsersController extends Controller
     }
 
     /**
-     * @OA\Delete(
-     *   path="/users/tokens/{id}",
-     *   description="Deletes an access token that belongs to the current user",
-     *   tags={"authentication"},
-     *   security={{"BearerAuth":{}},{"CookieAuth":{}}},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(
-     *       type="integer",
-     *       minimum=1,
-     *       example=1
-     *     ),
-     *     description="The ID of the token to delete"
-     *   ),
-     *   @OA\Response(
-     *     response="204",
-     *     description="Success"
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="Token not found",
-     *   ),
-     *   @OA\Response(
-     *     response="401",
-     *     description="Unathorized",
-     *   )
-     * )
      * @param  int  $token_id
      * @param  Request  $request
      * @return Response
      */
+    #[OA\Delete(
+        path: '/users/tokens/{id}',
+        description: 'Deletes an access token that belongs to the current user',
+        tags: ['authentication'],
+        security: [['BearerAuth' => []], ['CookieAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                description: 'The ID of the token to delete',
+                schema: new OA\Schema(type: 'integer', minimum: 1, example: 1),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Success'),
+            new OA\Response(response: '404', description: 'Token not found'),
+            new OA\Response(response: '401', description: 'Unathorized'),
+        ],
+    )]
     public function deleteToken(int $token_id, Request $request): Response
     {
         /** @var User $user */
@@ -690,21 +842,55 @@ class UsersController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Put(
-     *   path="/users/{id}/role",
-     *   operationId="PutUsersIdRole",
-     *   description="Change the role of a user in the same or a lower level group than yours. Changing a developer's role changes the label that is shown for developers instead. Requires staff",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"value"}, @OA\Property(property="value", ref="#/components/schemas/DatabaseRole"))),
-     *   @OA\Response(response="200", description="The user already has this role", @OA\JsonContent(type="object", required={"alreadyIn"}, @OA\Property(property="alreadyIn", type="boolean"))),
-     *   @OA\Response(response="204", description="Changed"),
-     *   @OA\Response(response="403", description="Not allowed to change this user's role", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/users/{id}/role',
+        operationId: 'PutUsersIdRole',
+        description: 'Change the role of a user in the same or a lower level group than yours. Changing a developer\'s role changes the label that is shown for developers instead. Requires staff',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['value'],
+                properties: [new OA\Property(property: 'value', ref: '#/components/schemas/DatabaseRole')],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The user already has this role',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['alreadyIn'],
+                    properties: [new OA\Property(property: 'alreadyIn', type: 'boolean')],
+                ),
+            ),
+            new OA\Response(response: '204', description: 'Changed'),
+            new OA\Response(
+                response: '403',
+                description: 'Not allowed to change this user\'s role',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setRole(Request $request, int $id)
     {
         $target = User::findOrFail($id);

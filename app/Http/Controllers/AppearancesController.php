@@ -23,84 +23,84 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class AppearancesController extends Controller
 {
     /**
-     * @OA\Schema(
-     *   schema="ListOfColorGroups",
-     *   type="object",
-     *   description="Array of color groups under the `colorGroups` key",
-     *   required={
-     *     "colorGroups"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="colorGroups",
-     *     type="array",
-     *     minItems=0,
-     *     @OA\Items(ref="#/components/schemas/ColorGroup"),
-     *    description="Array of color groups belonging to an appearance (may be an empty array)."
-     *   )
-     * )
-     * @OA\Get(
-     *   path="/appearances",
-     *   description="Allows querying the full library of public appearances with forced pagination",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="guide",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/GuideName"),
-     *     description="Determines the guide to search in"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="page",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/PageNumber"),
-     *     description="Which page of results to return"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="size",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/GuidePageSize"),
-     *     description="The number of results to return per page"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="q",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/QueryString"),
-     *     description="Search query"
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/AppearanceList"),
-     *         @OA\Schema(ref="#/components/schemas/PageData")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="503",
-     *     description="Temporarily Unavailable",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse|Response
      * @throws ValidationException
      */
+    #[OA\Schema(
+        schema: 'ListOfColorGroups',
+        type: 'object',
+        description: 'Array of color groups under the `colorGroups` key',
+        required: ['colorGroups'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'colorGroups',
+                type: 'array',
+                minItems: 0,
+                description: 'Array of color groups belonging to an appearance (may be an empty array).',
+                items: new OA\Items(ref: '#/components/schemas/ColorGroup'),
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/appearances',
+        description: 'Allows querying the full library of public appearances with forced pagination',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'guide',
+                required: true,
+                description: 'Determines the guide to search in',
+                schema: new OA\Schema(ref: '#/components/schemas/GuideName'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'page',
+                required: false,
+                description: 'Which page of results to return',
+                schema: new OA\Schema(ref: '#/components/schemas/PageNumber'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                required: false,
+                description: 'The number of results to return per page',
+                schema: new OA\Schema(ref: '#/components/schemas/GuidePageSize'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'q',
+                required: false,
+                description: 'Search query',
+                schema: new OA\Schema(ref: '#/components/schemas/QueryString'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    allOf: [
+                        new OA\Schema(ref: '#/components/schemas/AppearanceList'),
+                        new OA\Schema(ref: '#/components/schemas/PageData'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '503',
+                description: 'Temporarily Unavailable',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function queryPublic(Request $request)
     {
         if (!ColorGuideHelper::isElasticAvailable()) {
@@ -130,40 +130,44 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/full",
-     *   description="Get a list of every appearance in the database (without color group data)",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="guide",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/GuideName"),
-     *     description="Determines the guide to search in"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="sort",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/FullGuideSortField"),
-     *     description="Determines how the results will be sorted"
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/SlimAppearanceList"),
-     *         @OA\Schema(ref="#/components/schemas/GuideFullListGroups")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse
      * @throws ValidationException
      */
+    #[OA\Get(
+        path: '/appearances/full',
+        description: 'Get a list of every appearance in the database (without color group data)',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'guide',
+                required: true,
+                description: 'Determines the guide to search in',
+                schema: new OA\Schema(ref: '#/components/schemas/GuideName'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'sort',
+                required: true,
+                description: 'Determines how the results will be sorted',
+                schema: new OA\Schema(ref: '#/components/schemas/FullGuideSortField'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    allOf: [
+                        new OA\Schema(ref: '#/components/schemas/SlimAppearanceList'),
+                        new OA\Schema(ref: '#/components/schemas/GuideFullListGroups'),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function queryFullPublic(Request $request)
     {
         $valid = Validator::make($request->all(), [
@@ -205,40 +209,36 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/{id}",
-     *   description="Get all relevant information about a sn appearance at once, including tags, color groups and relations (heavy)",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="Complete appearance information",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/DetailedAppearance")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="Appearance not found or has been deleted",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @param  Appearance  $appearance
      * @return JsonResponse
      */
+    #[OA\Get(
+        path: '/appearances/{id}',
+        description: 'Get all relevant information about a sn appearance at once, including tags, color groups and relations (heavy)',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Complete appearance information',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/DetailedAppearance')]),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found or has been deleted',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function get(Request $request, Appearance $appearance)
     {
         if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
@@ -268,31 +268,31 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/{id}/color-groups",
-     *   description="Get all color groups associated with an appearance",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ListOfColorGroups")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @param  Appearance  $appearance
      * @return JsonResponse|Response
      */
+    #[OA\Get(
+        path: '/appearances/{id}/color-groups',
+        description: 'Get all color groups associated with an appearance',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ListOfColorGroups')]),
+            ),
+        ],
+    )]
     public function colorGroups(Request $request, Appearance $appearance)
     {
         if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
@@ -303,78 +303,72 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Schema(
-     *   schema="AppearanceToken",
-     *   type="string",
-     *   format="uuid"
-     * )
-     * @OA\Schema(
-     *   schema="LocationHeader",
-     *   description="Contains a URL that most clients will automatically redirect to for 301 and 302 responses",
-     *   type="string",
-     *   format="URL"
-     * )
-     * @OA\Get(
-     *   path="/appearances/{id}/sprite",
-     *   description="Fetch the sprite file associated with the appearance",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="size",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/SpriteSize")
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="token",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/AppearanceToken")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="The sprite image data (if the appearance is private)",
-     *     @OA\MediaType(
-     *       mediaType="image/png",
-     *       @OA\Schema(ref="#/components/schemas/File")
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="302",
-     *     description="Redirect to the current sprite image URL (if the appearance is public).",
-     *     @OA\Header(
-     *       header="Location",
-     *       @OA\Schema(ref="#/components/schemas/LocationHeader"),
-     *     ),
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="Sprite image missing",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="403",
-     *     description="You don't have permission to access this resource",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @param  Appearance  $appearance
      */
+    #[OA\Schema(schema: 'AppearanceToken', type: 'string', format: 'uuid')]
+    #[OA\Schema(
+        schema: 'LocationHeader',
+        description: 'Contains a URL that most clients will automatically redirect to for 301 and 302 responses',
+        type: 'string',
+        format: 'URL',
+    )]
+    #[OA\Get(
+        path: '/appearances/{id}/sprite',
+        description: 'Fetch the sprite file associated with the appearance',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/SpriteSize'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                required: false,
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The sprite image data (if the appearance is private)',
+                content: new OA\MediaType(
+                    mediaType: 'image/png',
+                    schema: new OA\Schema(ref: '#/components/schemas/File'),
+                ),
+            ),
+            new OA\Response(
+                response: '302',
+                description: 'Redirect to the current sprite image URL (if the appearance is public).',
+                headers: [
+                    new OA\Header(
+                        header: 'Location',
+                        schema: new OA\Schema(ref: '#/components/schemas/LocationHeader'),
+                    ),
+                ],
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Sprite image missing',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'You don\'t have permission to access this resource',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function sprite(Request $request, Appearance $appearance)
     {
         if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
@@ -405,53 +399,49 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/{id}/preview",
-     *   description="Fetch the preview file associated with the appearance",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="token",
-     *     @OA\Schema(ref="#/components/schemas/AppearanceToken")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="The appearance preview image",
-     *     @OA\MediaType(
-     *       mediaType="image/svg+xml",
-     *       @OA\Schema(ref="#/components/schemas/SVGFile")
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="Appearance missing",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="403",
-     *     description="You don't have permission to access this resource",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @param  Appearance  $appearance
      * @return JsonResponse|Response
      */
+    #[OA\Get(
+        path: '/appearances/{id}/preview',
+        description: 'Fetch the preview file associated with the appearance',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'token',
+                schema: new OA\Schema(ref: '#/components/schemas/AppearanceToken'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The appearance preview image',
+                content: new OA\MediaType(
+                    mediaType: 'image/svg+xml',
+                    schema: new OA\Schema(ref: '#/components/schemas/SVGFile'),
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance missing',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'You don\'t have permission to access this resource',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function preview(Request $request, Appearance $appearance)
     {
         if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {
@@ -463,40 +453,40 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/pinned",
-     *   description="Get list of pinned appearances for a specific guide",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="guide",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/GuideName")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="The list of pinned appearances",
-     *     @OA\JsonContent(
-     *       additionalProperties=false,
-     *       type="array",
-     *       minItems=0,
-     *       @OA\Items(ref="#/components/schemas/Appearance")
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="422",
-     *     description="Invalid guide name",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse|Response
      */
+    #[OA\Get(
+        path: '/appearances/pinned',
+        description: 'Get list of pinned appearances for a specific guide',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'guide',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/GuideName'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The list of pinned appearances',
+                content: new OA\JsonContent(
+                    additionalProperties: false,
+                    type: 'array',
+                    minItems: 0,
+                    items: new OA\Items(ref: '#/components/schemas/Appearance'),
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid guide name',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function pinned(Request $request)
     {
         $valid = Validator::make($request->all(), [
@@ -512,47 +502,47 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/autocomplete",
-     *   description="Get list of pinned appearances for a specific guide",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="guide",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/GuideName")
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="q",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/QueryString"),
-     *     description="Search query"
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="List of matching appearances",
-     *     @OA\JsonContent(
-     *       additionalProperties=false,
-     *       type="array",
-     *       minItems=0,
-     *       @OA\Items(ref="#/components/schemas/AutocompleteAppearance")
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="422",
-     *     description="Invalid guide name",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse|Response
      */
+    #[OA\Get(
+        path: '/appearances/autocomplete',
+        description: 'Get list of pinned appearances for a specific guide',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'guide',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/GuideName'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'q',
+                required: true,
+                description: 'Search query',
+                schema: new OA\Schema(ref: '#/components/schemas/QueryString'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'List of matching appearances',
+                content: new OA\JsonContent(
+                    additionalProperties: false,
+                    type: 'array',
+                    minItems: 0,
+                    items: new OA\Items(ref: '#/components/schemas/AutocompleteAppearance'),
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid guide name',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function autocomplete(Request $request)
     {
         $valid = Validator::make($request->all(), [
@@ -575,39 +565,35 @@ class AppearancesController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *   path="/appearances/{id}/locate",
-     *   description="Find out the guide and label for an appearance using its ID",
-     *   tags={"appearances"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="path",
-     *     name="id",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/ZeroBasedId")
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="Bare appearance information",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/PreviewAppearance")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="404",
-     *     description="Appearance not found or has been deleted",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse|Response
      */
+    #[OA\Get(
+        path: '/appearances/{id}/locate',
+        description: 'Find out the guide and label for an appearance using its ID',
+        tags: ['appearances'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Bare appearance information',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/PreviewAppearance')]),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found or has been deleted',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function locate(Request $request, Appearance $appearance)
     {
         if ($error = self::_handlePrivateAppearanceCheck($request, $appearance)) {

@@ -9,24 +9,58 @@ use App\Exceptions\ImageProviderException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class PostsController extends Controller
 {
-    /**
-     * @OA\Get(
-     *   path="/posts",
-     *   operationId="GetPosts",
-     *   description="The requests or reservations of a show. Broken posts are only listed for staff",
-     *   tags={"posts"},
-     *   security={},
-     *   @OA\Parameter(in="query", name="showId", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="kind", required=true, @OA\Schema(type="string", enum={"request", "reservation"})),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"posts"}, @OA\Property(property="posts", type="array", @OA\Items(ref="#/components/schemas/PostItem")))),
-     *   @OA\Response(response="404", description="Show not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts',
+        operationId: 'GetPosts',
+        description: 'The requests or reservations of a show. Broken posts are only listed for staff',
+        tags: ['posts'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'showId',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'kind',
+                required: true,
+                schema: new OA\Schema(type: 'string', enum: ['request', 'reservation']),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['posts'],
+                    properties: [
+                        new OA\Property(
+                            property: 'posts',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/PostItem'),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Show not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function index(Request $request): JsonResponse
     {
         $valid = Validator::make($request->query(), [
@@ -55,26 +89,64 @@ class PostsController extends Controller
         return response()->json(['posts' => $posts->map(fn(Post $post) => $post->toContract($viewer))->values()]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/posts/{id}/deviation",
-     *   operationId="GetPostsIdDeviation",
-     *   description="The DeviantArt submission a finished post points at (title, author and images from DeviantArt's cached oEmbed data). It is a separate request because looking it up can take a moment, pages load it as the post scrolls into view. Broken posts are only available to staff",
-     *   tags={"posts"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"id", "title", "author", "previewUrl", "fullsizeUrl"},
-     *     @OA\Property(property="id", type="string", description="Submission ID (https://fav.me/{id})"),
-     *     @OA\Property(property="title", type="string"),
-     *     @OA\Property(property="author", type="string", nullable=true),
-     *     @OA\Property(property="previewUrl", type="string", nullable=true),
-     *     @OA\Property(property="fullsizeUrl", type="string", nullable=true)
-     *   )),
-     *   @OA\Response(response="202", description="The details are being fetched in the background, ask again after retryAfter seconds", @OA\JsonContent(type="object", required={"pending", "retryAfter"}, @OA\Property(property="pending", type="boolean"), @OA\Property(property="retryAfter", type="integer"))),
-     *   @OA\Response(response="404", description="No such post, the post is not finished, or DeviantArt does not know the submission", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="502", description="DeviantArt could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts/{id}/deviation',
+        operationId: 'GetPostsIdDeviation',
+        description: 'The DeviantArt submission a finished post points at (title, author and images from DeviantArt\'s cached oEmbed data). It is a separate request because looking it up can take a moment, pages load it as the post scrolls into view. Broken posts are only available to staff',
+        tags: ['posts'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id', 'title', 'author', 'previewUrl', 'fullsizeUrl'],
+                    properties: [
+                        new OA\Property(
+                            property: 'id',
+                            type: 'string',
+                            description: 'Submission ID (https://fav.me/{id})',
+                        ),
+                        new OA\Property(property: 'title', type: 'string'),
+                        new OA\Property(property: 'author', type: 'string', nullable: true),
+                        new OA\Property(property: 'previewUrl', type: 'string', nullable: true),
+                        new OA\Property(property: 'fullsizeUrl', type: 'string', nullable: true),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '202',
+                description: 'The details are being fetched in the background, ask again after retryAfter seconds',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['pending', 'retryAfter'],
+                    properties: [
+                        new OA\Property(property: 'pending', type: 'boolean'),
+                        new OA\Property(property: 'retryAfter', type: 'integer'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'No such post, the post is not finished, or DeviantArt does not know the submission',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '502',
+                description: 'DeviantArt could not be reached',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function deviation(Request $request, int $id): JsonResponse
     {
         $post = Post::findOrFail($id);
@@ -106,19 +178,56 @@ class PostsController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/posts/requests/suggestion",
-     *   operationId="GetPostsRequestsSuggestion",
-     *   description="A random request that is still open (not finished, and not reserved or reserved more than 3 weeks ago) for the Request Roulette on the profile page. Pass the IDs that were suggested already to get a different one each time. Requires a signed in user",
-     *   tags={"posts"},
-     *   @OA\Parameter(in="query", name="alreadyLoaded", required=false, description="Comma separated post IDs not to suggest again", @OA\Schema(type="string")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"post"},
-     *     @OA\Property(property="post", allOf={@OA\Schema(ref="#/components/schemas/PostItem"), @OA\Schema(type="object", required={"show"}, @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))}))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="There is nothing left to suggest", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/posts/requests/suggestion',
+        operationId: 'GetPostsRequestsSuggestion',
+        description: 'A random request that is still open (not finished, and not reserved or reserved more than 3 weeks ago) for the Request Roulette on the profile page. Pass the IDs that were suggested already to get a different one each time. Requires a signed in user',
+        tags: ['posts'],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'alreadyLoaded',
+                required: false,
+                description: 'Comma separated post IDs not to suggest again',
+                schema: new OA\Schema(type: 'string'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['post'],
+                    properties: [
+                        new OA\Property(
+                            property: 'post',
+                            allOf: [
+                                new OA\Schema(ref: '#/components/schemas/PostItem'),
+                                new OA\Schema(
+                                    type: 'object',
+                                    required: ['show'],
+                                    properties: [
+                                        new OA\Property(property: 'show', ref: '#/components/schemas/ShowListItem'),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'There is nothing left to suggest',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function suggestion(Request $request): JsonResponse
     {
         $loaded = array_values(array_filter(array_map('intval', explode(',', (string) $request->query('alreadyLoaded', ''))), fn(int $id) => $id > 0));

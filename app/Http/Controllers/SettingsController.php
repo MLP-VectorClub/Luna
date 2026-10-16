@@ -11,30 +11,56 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class SettingsController extends Controller
 {
-    /**
-     * @OA\Schema(
-     *   schema="SettingValue",
-     *   type="object",
-     *   required={"value"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="value", type="string")
-     * )
-     * @OA\Get(
-     *   path="/settings/{key}",
-     *   operationId="GetSettingsKey",
-     *   description="Get the value of a global site setting. Requires staff role",
-     *   tags={"settings"},
-     *   @OA\Parameter(name="key", in="path", required=true, @OA\Schema(type="string", enum={"reservation_rules","about_reservations","dev_role_label"})),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/SettingValue")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Unknown setting key", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'SettingValue',
+        type: 'object',
+        required: ['value'],
+        additionalProperties: false,
+        properties: [new OA\Property(property: 'value', type: 'string')],
+    )]
+    #[OA\Get(
+        path: '/settings/{key}',
+        operationId: 'GetSettingsKey',
+        description: 'Get the value of a global site setting. Requires staff role',
+        tags: ['settings'],
+        parameters: [
+            new OA\Parameter(
+                name: 'key',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['reservation_rules', 'about_reservations', 'dev_role_label'],
+                ),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/SettingValue'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Unknown setting key',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(string $key): JsonResponse
     {
         $this->assertKnown($key);
@@ -42,21 +68,54 @@ class SettingsController extends Controller
         return response()->json(['value' => SettingsHelper::get($key)]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/settings/{key}",
-     *   operationId="PutSettingsKey",
-     *   description="Update the value of a global site setting, an empty value resets it to the default. Requires staff role",
-     *   tags={"settings"},
-     *   @OA\Parameter(name="key", in="path", required=true, @OA\Schema(type="string", enum={"reservation_rules","about_reservations","dev_role_label"})),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/SettingValue")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/SettingValue")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Unknown setting key", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/settings/{key}',
+        operationId: 'PutSettingsKey',
+        description: 'Update the value of a global site setting, an empty value resets it to the default. Requires staff role',
+        tags: ['settings'],
+        parameters: [
+            new OA\Parameter(
+                name: 'key',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['reservation_rules', 'about_reservations', 'dev_role_label'],
+                ),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SettingValue'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/SettingValue'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Unknown setting key',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, string $key): JsonResponse
     {
         $this->assertKnown($key);

@@ -2,16 +2,14 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="TagType",
- *     type="string",
- *     description="List of types tags in the color guide can have",
- *     example="spec"
- * )
- */
+#[OA\Schema(
+    schema: 'TagType',
+    type: 'string',
+    description: 'List of types tags in the color guide can have',
+    example: 'spec',
+)]
 enum TagType: string
 {
     use ValuableEnum;

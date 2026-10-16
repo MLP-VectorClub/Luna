@@ -16,34 +16,94 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PersonalGuideController extends Controller
 {
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/personal-guide/appearances",
-     *   operationId="GetUsersIdPersonalGuideAppearances",
-     *   description="The appearances in a user's Personal Color Guide. Private ones only show their name to visitors who cannot manage them",
-     *   tags={"personal guide"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
-     *   @OA\Parameter(in="query", name="size", description="Defaults to the user's items per page preference", @OA\Schema(type="integer", minimum=1, maximum=50)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"appearances", "pagination", "canManage"},
-     *     @OA\Property(property="appearances", type="array", @OA\Items(anyOf={
-     *       @OA\Schema(allOf={@OA\Schema(ref="#/components/schemas/Appearance"), @OA\Schema(type="object", required={"private"}, @OA\Property(property="private", type="boolean"))}),
-     *       @OA\Schema(type="object", description="Stub of a private appearance that the visitor may not see in full", required={"id", "label", "private"}, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"), @OA\Property(property="private", type="boolean", enum={true}))
-     *     })),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination"),
-     *     @OA\Property(property="canManage", type="boolean", description="Whether the visitor may add and edit appearances in this guide")
-     *   )),
-     *   @OA\Response(response="403", description="The user hides their guide", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/personal-guide/appearances',
+        operationId: 'GetUsersIdPersonalGuideAppearances',
+        description: 'The appearances in a user\'s Personal Color Guide. Private ones only show their name to visitors who cannot manage them',
+        tags: ['personal guide'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(in: 'query', name: 'page', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                description: 'Defaults to the user\'s items per page preference',
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 50),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['appearances', 'pagination', 'canManage'],
+                    properties: [
+                        new OA\Property(
+                            property: 'appearances',
+                            type: 'array',
+                            items: new OA\Items(
+                                anyOf: [
+                                    new OA\Schema(
+                                        allOf: [
+                                            new OA\Schema(ref: '#/components/schemas/Appearance'),
+                                            new OA\Schema(
+                                                type: 'object',
+                                                required: ['private'],
+                                                properties: [new OA\Property(property: 'private', type: 'boolean')],
+                                            ),
+                                        ],
+                                    ),
+                                    new OA\Schema(
+                                        type: 'object',
+                                        description: 'Stub of a private appearance that the visitor may not see in full',
+                                        required: ['id', 'label', 'private'],
+                                        properties: [
+                                            new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                            new OA\Property(property: 'label', type: 'string'),
+                                            new OA\Property(property: 'private', type: 'boolean', enum: [true]),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                        new OA\Property(
+                            property: 'canManage',
+                            type: 'boolean',
+                            description: 'Whether the visitor may add and edit appearances in this guide',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'The user hides their guide',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function appearances(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
@@ -76,31 +136,75 @@ class PersonalGuideController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/personal-guide/point-history",
-     *   operationId="GetUsersIdPersonalGuidePointHistory",
-     *   description="The history of slot changes, newest first. Requires being the user, or staff",
-     *   tags={"personal guide"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
-     *   @OA\Parameter(in="query", name="size", @OA\Schema(type="integer", minimum=1, maximum=100, default=20)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"entries", "pagination"},
-     *     @OA\Property(property="entries", type="array", @OA\Items(type="object", required={"id", "changeType", "reason", "amount", "data", "createdAt"},
-     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="changeType", type="string"),
-     *       @OA\Property(property="reason", type="string"),
-     *       @OA\Property(property="amount", type="number"),
-     *       @OA\Property(property="data", type="object", nullable=true, description="What the change was about. Only staff see who granted points (`by`, with their name as `byName`); entries about a post or an appearance say whether it is `gone`, appearances also whether they are `private` and the `previewColor` of public ones"),
-     *       @OA\Property(property="createdAt", type="string", format="date-time")
-     *     )),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/personal-guide/point-history',
+        operationId: 'GetUsersIdPersonalGuidePointHistory',
+        description: 'The history of slot changes, newest first. Requires being the user, or staff',
+        tags: ['personal guide'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(in: 'query', name: 'page', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['entries', 'pagination'],
+                    properties: [
+                        new OA\Property(
+                            property: 'entries',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                required: ['id', 'changeType', 'reason', 'amount', 'data', 'createdAt'],
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'changeType', type: 'string'),
+                                    new OA\Property(property: 'reason', type: 'string'),
+                                    new OA\Property(property: 'amount', type: 'number'),
+                                    new OA\Property(
+                                        property: 'data',
+                                        type: 'object',
+                                        nullable: true,
+                                        description: 'What the change was about. Only staff see who granted points (`by`, with their name as `byName`); entries about a post or an appearance say whether it is `gone`, appearances also whether they are `private` and the `previewColor` of public ones',
+                                    ),
+                                    new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function pointHistory(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
@@ -170,17 +274,28 @@ class PersonalGuideController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/{id}/personal-guide/point-history/recalculation",
-     *   operationId="PostUsersIdPersonalGuidePointHistoryRecalculation",
-     *   description="Rebuild the slot history of a user from approved requests, appearances and manual grants. Requires developer permission",
-     *   tags={"personal guide"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Rebuilt"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/{id}/personal-guide/point-history/recalculation',
+        operationId: 'PostUsersIdPersonalGuidePointHistoryRecalculation',
+        description: 'Rebuild the slot history of a user from approved requests, appearances and manual grants. Requires developer permission',
+        tags: ['personal guide'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Rebuilt'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function recalculate(int $id): Response
     {
         User::findOrFail($id)->recalculatePcgSlotHistory();
@@ -188,20 +303,43 @@ class PersonalGuideController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/personal-guide/slots",
-     *   operationId="GetUsersIdPersonalGuideSlots",
-     *   description="Whether the user can create another Personal Color Guide appearance. 204 means yes",
-     *   tags={"personal guide"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="A slot is available"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Creating personal guide appearances is switched off for the user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="No slots left", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/personal-guide/slots',
+        operationId: 'GetUsersIdPersonalGuideSlots',
+        description: 'Whether the user can create another Personal Color Guide appearance. 204 means yes',
+        tags: ['personal guide'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'A slot is available'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Creating personal guide appearances is switched off for the user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'No slots left',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function slots(Request $request, int $id): Response
     {
         $user = User::findOrFail($id);
@@ -223,38 +361,91 @@ class PersonalGuideController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/personal-guide/points",
-     *   operationId="GetUsersIdPersonalGuidePoints",
-     *   description="How many points the user has beyond the 10 needed per appearance. Requires staff",
-     *   tags={"personal guide"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"amount"}, @OA\Property(property="amount", type="integer"))),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/personal-guide/points',
+        operationId: 'GetUsersIdPersonalGuidePoints',
+        description: 'How many points the user has beyond the 10 needed per appearance. Requires staff',
+        tags: ['personal guide'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['amount'],
+                    properties: [new OA\Property(property: 'amount', type: 'integer')],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function points(int $id): JsonResponse
     {
         return response()->json(['amount' => User::findOrFail($id)->pcgAvailablePoints() - 10]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/{id}/personal-guide/points",
-     *   operationId="PostUsersIdPersonalGuidePoints",
-     *   description="Give or take points. The user cannot go below 10 points. Requires staff",
-     *   tags={"personal guide"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"amount"},
-     *     @OA\Property(property="amount", type="integer", description="Positive to give, negative to take"),
-     *     @OA\Property(property="comment", type="string", minLength=2, maxLength=140)
-     *   )),
-     *   @OA\Response(response="201", description="Recorded", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/{id}/personal-guide/points',
+        operationId: 'PostUsersIdPersonalGuidePoints',
+        description: 'Give or take points. The user cannot go below 10 points. Requires staff',
+        tags: ['personal guide'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['amount'],
+                properties: [
+                    new OA\Property(
+                        property: 'amount',
+                        type: 'integer',
+                        description: 'Positive to give, negative to take',
+                    ),
+                    new OA\Property(property: 'comment', type: 'string', minLength: 2, maxLength: 140),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Recorded',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function givePoints(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);

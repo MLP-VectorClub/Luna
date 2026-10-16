@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use OpenSearch\Common\Exceptions\OpenSearchException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -44,29 +44,91 @@ class AdminController extends Controller
         'derpimerge' => 'Derpibooru merge detected',
     ];
 
-    /**
-     * @OA\Get(
-     *   path="/admin/pcg-appearances",
-     *   operationId="GetAdminPcgAppearances",
-     *   description="List every personal color guide appearance of every user, newest first. Staff only.",
-     *   tags={"admin"},
-     *   @OA\Parameter(in="query", name="page", required=false, @OA\Schema(type="integer", default=1, minimum=1)),
-     *   @OA\Parameter(in="query", name="size", required=false, @OA\Schema(type="integer", default=10, minimum=1, maximum=100)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"appearances", "pagination"},
-     *     @OA\Property(property="appearances", type="array", @OA\Items(allOf={
-     *       @OA\Schema(ref="#/components/schemas/PreviewAppearance"),
-     *       @OA\Schema(type="object", required={"private", "createdAt", "owner", "sprite", "cutieMarks"}, @OA\Property(property="private", type="boolean"), @OA\Property(property="createdAt", type="string", format="date-time"),
-     *         @OA\Property(property="owner", type="object", nullable=true, required={"id", "name"}, @OA\Property(property="id", type="integer"), @OA\Property(property="name", type="string")),
-     *         @OA\Property(property="sprite", nullable=true, oneOf={@OA\Schema(ref="#/components/schemas/Sprite")}),
-     *         @OA\Property(property="cutieMarks", type="array", @OA\Items(ref="#/components/schemas/CutieMark")))
-     *     })),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Invalid query", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/admin/pcg-appearances',
+        operationId: 'GetAdminPcgAppearances',
+        description: 'List every personal color guide appearance of every user, newest first. Staff only.',
+        tags: ['admin'],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 1, minimum: 1),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 10, minimum: 1, maximum: 100),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['appearances', 'pagination'],
+                    properties: [
+                        new OA\Property(
+                            property: 'appearances',
+                            type: 'array',
+                            items: new OA\Items(
+                                allOf: [
+                                    new OA\Schema(ref: '#/components/schemas/PreviewAppearance'),
+                                    new OA\Schema(
+                                        type: 'object',
+                                        required: ['private', 'createdAt', 'owner', 'sprite', 'cutieMarks'],
+                                        properties: [
+                                            new OA\Property(property: 'private', type: 'boolean'),
+                                            new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+                                            new OA\Property(
+                                                property: 'owner',
+                                                type: 'object',
+                                                nullable: true,
+                                                required: ['id', 'name'],
+                                                properties: [
+                                                    new OA\Property(property: 'id', type: 'integer'),
+                                                    new OA\Property(property: 'name', type: 'string'),
+                                                ],
+                                            ),
+                                            new OA\Property(
+                                                property: 'sprite',
+                                                nullable: true,
+                                                oneOf: [new OA\Schema(ref: '#/components/schemas/Sprite')],
+                                            ),
+                                            new OA\Property(
+                                                property: 'cutieMarks',
+                                                type: 'array',
+                                                items: new OA\Items(ref: '#/components/schemas/CutieMark'),
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid query',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function pcgAppearances(Request $request): JsonResponse
     {
         $valid = Validator::make($request->query(), [
@@ -96,27 +158,72 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/admin/logs",
-     *   operationId="GetAdminLogs",
-     *   description="List log entries, newest first. Staff only",
-     *   tags={"admin"},
-     *   @OA\Parameter(in="query", name="type", @OA\Schema(type="string")),
-     *   @OA\Parameter(in="query", name="initiatorId", description="0 selects entries made by the web server itself", @OA\Schema(type="integer", minimum=0)),
-     *   @OA\Parameter(in="query", name="by", description="Like the old site's filter box: a user name, `me`, `Web server`, `my IP` or an IP address (not part of Winterchilla's contract)", @OA\Schema(type="string", maxLength=45)),
-     *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
-     *   @OA\Parameter(in="query", name="size", @OA\Schema(type="integer", minimum=1, maximum=100, default=20)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"entries", "pagination", "entryTypes"},
-     *     @OA\Property(property="entries", type="array", @OA\Items(ref="#/components/schemas/LogItem")),
-     *     @OA\Property(property="entryTypes", type="object", description="Every entry type with its label, for the filter", additionalProperties=@OA\AdditionalProperties(type="string")),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/admin/logs',
+        operationId: 'GetAdminLogs',
+        description: 'List log entries, newest first. Staff only',
+        tags: ['admin'],
+        parameters: [
+            new OA\Parameter(in: 'query', name: 'type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(
+                in: 'query',
+                name: 'initiatorId',
+                description: '0 selects entries made by the web server itself',
+                schema: new OA\Schema(type: 'integer', minimum: 0),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'by',
+                description: 'Like the old site\'s filter box: a user name, `me`, `Web server`, `my IP` or an IP address (not part of Winterchilla\'s contract)',
+                schema: new OA\Schema(type: 'string', maxLength: 45),
+            ),
+            new OA\Parameter(in: 'query', name: 'page', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['entries', 'pagination', 'entryTypes'],
+                    properties: [
+                        new OA\Property(
+                            property: 'entries',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/LogItem'),
+                        ),
+                        new OA\Property(
+                            property: 'entryTypes',
+                            type: 'object',
+                            description: 'Every entry type with its label, for the filter',
+                            additionalProperties: new OA\AdditionalProperties(type: 'string'),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function logs(Request $request): JsonResponse
     {
         $valid = Validator::make($request->query(), [
@@ -177,21 +284,61 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/admin/logs/{id}",
-     *   operationId="GetAdminLogsId",
-     *   description="Get the data logged with an entry. Staff only",
-     *   tags={"admin"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"details", "data"},
-     *     @OA\Property(property="details", type="array", description="Always empty in Luna, use `data`", @OA\Items(type="array", @OA\Items())),
-     *     @OA\Property(property="data", type="object", additionalProperties=true, description="The structured data that was logged with the entry, its keys depend on the entry type")
-     *   )),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="There are no details to show", @OA\JsonContent(type="object", required={"message", "unclickable"}, @OA\Property(property="message", type="string"), @OA\Property(property="unclickable", type="boolean")))
-     * )
-     */
+    #[OA\Get(
+        path: '/admin/logs/{id}',
+        operationId: 'GetAdminLogsId',
+        description: 'Get the data logged with an entry. Staff only',
+        tags: ['admin'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['details', 'data'],
+                    properties: [
+                        new OA\Property(
+                            property: 'details',
+                            type: 'array',
+                            description: 'Always empty in Luna, use `data`',
+                            items: new OA\Items(type: 'array', items: new OA\Items()),
+                        ),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            additionalProperties: true,
+                            description: 'The structured data that was logged with the entry, its keys depend on the entry type',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'There are no details to show',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message', 'unclickable'],
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'unclickable', type: 'boolean'),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function logDetail(int $id): JsonResponse
     {
         $log = Log::findOrFail($id);
@@ -202,22 +349,56 @@ class AdminController extends Controller
         return response()->json(['details' => [], 'data' => $log->data]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/notifications",
-     *   operationId="GetNotifications",
-     *   description="The signed in user's unread notifications, oldest first. A post notification carries the post and its show (null when the post is gone)",
-     *   tags={"notifications"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"notifications"}, @OA\Property(property="notifications", type="array",
-     *     @OA\Items(type="object", required={"id", "type", "createdAt", "post"},
-     *       @OA\Property(property="id", type="integer"),
-     *       @OA\Property(property="type", type="string", enum={"post-finished", "post-approved"}),
-     *       @OA\Property(property="createdAt", type="string", format="date-time"),
-     *       @OA\Property(property="post", type="object", nullable=true, required={"id", "show"}, @OA\Property(property="id", type="integer"), @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))
-     *     )))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/notifications',
+        operationId: 'GetNotifications',
+        description: 'The signed in user\'s unread notifications, oldest first. A post notification carries the post and its show (null when the post is gone)',
+        tags: ['notifications'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['notifications'],
+                    properties: [
+                        new OA\Property(
+                            property: 'notifications',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                required: ['id', 'type', 'createdAt', 'post'],
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer'),
+                                    new OA\Property(
+                                        property: 'type',
+                                        type: 'string',
+                                        enum: ['post-finished', 'post-approved'],
+                                    ),
+                                    new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+                                    new OA\Property(
+                                        property: 'post',
+                                        type: 'object',
+                                        nullable: true,
+                                        required: ['id', 'show'],
+                                        properties: [
+                                            new OA\Property(property: 'id', type: 'integer'),
+                                            new OA\Property(property: 'show', ref: '#/components/schemas/ShowListItem'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function notifications(Request $request): JsonResponse
     {
         $list = Notification::where('recipient_id', $request->user()->id)->whereNull('read_at')->orderBy('id')->get();
@@ -235,18 +416,33 @@ class AdminController extends Controller
         })->values()]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/notifications/{id}/read",
-     *   operationId="PostNotificationsIdRead",
-     *   description="Mark one of the current user's notifications as read",
-     *   tags={"notifications"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Marked as read"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found, or it belongs to somebody else", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/notifications/{id}/read',
+        operationId: 'PostNotificationsIdRead',
+        description: 'Mark one of the current user\'s notifications as read',
+        tags: ['notifications'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Marked as read'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found, or it belongs to somebody else',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function readNotification(Request $request, int $id): Response
     {
         $notification = Notification::where('recipient_id', $request->user()->id)->findOrFail($id);
@@ -259,18 +455,50 @@ class AdminController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/admin/posts/recent",
-     *   operationId="GetAdminPostsRecent",
-     *   description="The 20 most recently posted requests and reservations, for the admin area. Requires staff",
-     *   tags={"admin"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"posts"}, @OA\Property(property="posts", type="array",
-     *     @OA\Items(allOf={@OA\Schema(ref="#/components/schemas/PostItem"), @OA\Schema(type="object", required={"show"}, @OA\Property(property="show", ref="#/components/schemas/ShowListItem"))})))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/admin/posts/recent',
+        operationId: 'GetAdminPostsRecent',
+        description: 'The 20 most recently posted requests and reservations, for the admin area. Requires staff',
+        tags: ['admin'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['posts'],
+                    properties: [
+                        new OA\Property(
+                            property: 'posts',
+                            type: 'array',
+                            items: new OA\Items(
+                                allOf: [
+                                    new OA\Schema(ref: '#/components/schemas/PostItem'),
+                                    new OA\Schema(
+                                        type: 'object',
+                                        required: ['show'],
+                                        properties: [
+                                            new OA\Property(property: 'show', ref: '#/components/schemas/ShowListItem'),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function recentPosts(Request $request): JsonResponse
     {
         $posts = Post::with(['requester', 'reserver', 'show'])
@@ -280,18 +508,37 @@ class AdminController extends Controller
         return response()->json(['posts' => $posts]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/admin/search-status",
-     *   operationId="GetAdminSearchStatus",
-     *   description="State of the OpenSearch server behind the color guide search. Requires developer permission",
-     *   tags={"admin"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"down", "indices", "nodes"},
-     *     @OA\Property(property="down", type="boolean"), @OA\Property(property="indices", type="array", @OA\Items(type="string")), @OA\Property(property="nodes", type="array", @OA\Items(type="string")))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/admin/search-status',
+        operationId: 'GetAdminSearchStatus',
+        description: 'State of the OpenSearch server behind the color guide search. Requires developer permission',
+        tags: ['admin'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['down', 'indices', 'nodes'],
+                    properties: [
+                        new OA\Property(property: 'down', type: 'boolean'),
+                        new OA\Property(property: 'indices', type: 'array', items: new OA\Items(type: 'string')),
+                        new OA\Property(property: 'nodes', type: 'array', items: new OA\Items(type: 'string')),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function searchStatus(): JsonResponse
     {
         try {
@@ -321,18 +568,38 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *   path="/color-guide/reindex",
-     *   operationId="PostColorGuideReindex",
-     *   description="Rebuild the color guide search index. Developer permission required",
-     *   tags={"color guide"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="503", description="OpenSearch is down", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/color-guide/reindex',
+        operationId: 'PostColorGuideReindex',
+        description: 'Rebuild the color guide search index. Developer permission required',
+        tags: ['color guide'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '503',
+                description: 'OpenSearch is down',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function reindex(): JsonResponse
     {
         try {
@@ -347,16 +614,20 @@ class AdminController extends Controller
         return response()->json(['message' => "Re-index successful, $count ".($count === 1 ? 'appearance was' : 'appearances were').' indexed']);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/color-guide/export",
-     *   operationId="GetColorGuideExport",
-     *   description="The full color guide as a JSON file (same layout as Winterchilla's public `mlpvc-colorguide.json`, which tools such as the swatch import script for Adobe Illustrator read; colors of private appearances are left out). Public, kept for an hour",
-     *   tags={"color guide"},
-     *   security={},
-     *   @OA\Response(response="200", description="The export file", @OA\MediaType(mediaType="application/json", @OA\Schema(type="object")))
-     * )
-     */
+    #[OA\Get(
+        path: '/color-guide/export',
+        operationId: 'GetColorGuideExport',
+        description: 'The full color guide as a JSON file (same layout as Winterchilla\'s public `mlpvc-colorguide.json`, which tools such as the swatch import script for Adobe Illustrator read; colors of private appearances are left out). Public, kept for an hour',
+        tags: ['color guide'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The export file',
+                content: new OA\MediaType(mediaType: 'application/json', schema: new OA\Schema(type: 'object')),
+            ),
+        ],
+    )]
     public function export()
     {
         $data = ['$schema' => rtrim((string) config('app.frontend_url'), '/').'/dist/mlpvc-colorguide-schema.json?v1.2', 'Appearances' => [], 'Tags' => []];

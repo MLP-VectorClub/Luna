@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class UsefulLinksController extends Controller
 {
@@ -37,16 +37,23 @@ class UsefulLinksController extends Controller
         return $link->minrole === 'guest' || perm(Role::from($link->minrole), $role);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/useful-links/sidebar",
-     *   operationId="GetUsefulLinksSidebar",
-     *   description="Get the list of useful links available to the visitor for display in the sidebar: the links for everybody (minRole `guest`) and, when signed in, the ones their role is allowed to see",
-     *   tags={"useful links"},
-     *   security={},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/SidebarUsefulLink")))
-     * )
-     */
+    #[OA\Get(
+        path: '/useful-links/sidebar',
+        operationId: 'GetUsefulLinksSidebar',
+        description: 'Get the list of useful links available to the visitor for display in the sidebar: the links for everybody (minRole `guest`) and, when signed in, the ones their role is allowed to see',
+        tags: ['useful links'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/SidebarUsefulLink'),
+                ),
+            ),
+        ],
+    )]
     public function sidebar(Request $request): JsonResponse
     {
         // Signed-out visitors see the links meant for everybody, like in Winterchilla's sidebar
@@ -60,33 +67,63 @@ class UsefulLinksController extends Controller
         );
     }
 
-    /**
-     * @OA\Get(
-     *   path="/useful-links",
-     *   operationId="GetUsefulLinks",
-     *   description="Every useful link in display order, whatever role it is meant for, for managing them. Staff only",
-     *   tags={"useful links"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/SidebarUsefulLink"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/useful-links',
+        operationId: 'GetUsefulLinks',
+        description: 'Every useful link in display order, whatever role it is meant for, for managing them. Staff only',
+        tags: ['useful links'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/SidebarUsefulLink'),
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function index(): JsonResponse
     {
         return response()->json(UsefulLink::ordered()->get()->map(fn(UsefulLink $link) => self::sidebarItem($link))->values());
     }
 
-    /**
-     * @OA\Get(
-     *   path="/useful-links/{id}",
-     *   operationId="GetUsefulLinksId",
-     *   description="Get the details of a useful link. Requires staff role",
-     *   tags={"useful links"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/UsefulLink")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/useful-links/{id}',
+        operationId: 'GetUsefulLinksId',
+        description: 'Get the details of a useful link. Requires staff role',
+        tags: ['useful links'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/UsefulLink'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(int $id): JsonResponse
     {
         $link = UsefulLink::findOrFail($id);
@@ -99,17 +136,32 @@ class UsefulLinksController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/useful-links",
-     *   operationId="PostUsefulLinks",
-     *   description="Create a new useful link. Requires staff role",
-     *   tags={"useful links"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UsefulLinkInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", required={"id"}, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"))),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/useful-links',
+        operationId: 'PostUsefulLinks',
+        description: 'Create a new useful link. Requires staff role',
+        tags: ['useful links'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/UsefulLinkInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Created',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id'],
+                    properties: [new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId')],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function create(Request $request): JsonResponse
     {
         $link = new UsefulLink($this->validated($request));
@@ -118,19 +170,37 @@ class UsefulLinksController extends Controller
         return response()->json(['id' => $link->id], 201);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/useful-links/{id}",
-     *   operationId="PutUsefulLinksId",
-     *   description="Update an existing useful link. Requires staff role",
-     *   tags={"useful links"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UsefulLinkInput")),
-     *   @OA\Response(response="204", description="Updated"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/useful-links/{id}',
+        operationId: 'PutUsefulLinksId',
+        description: 'Update an existing useful link. Requires staff role',
+        tags: ['useful links'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/UsefulLinkInput'),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Updated'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id): Response
     {
         $link = UsefulLink::findOrFail($id);
@@ -139,17 +209,28 @@ class UsefulLinksController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/useful-links/{id}",
-     *   operationId="DeleteUsefulLinksId",
-     *   description="Delete a useful link. Requires staff role",
-     *   tags={"useful links"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Deleted"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/useful-links/{id}',
+        operationId: 'DeleteUsefulLinksId',
+        description: 'Delete a useful link. Requires staff role',
+        tags: ['useful links'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Deleted'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function destroy(int $id): Response
     {
         UsefulLink::findOrFail($id)->delete();
@@ -157,20 +238,38 @@ class UsefulLinksController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Put(
-     *   path="/useful-links/order",
-     *   operationId="PutUsefulLinksOrder",
-     *   description="Reorder useful links. Requires staff role",
-     *   tags={"useful links"},
-     *   @OA\RequestBody(required=true, @OA\MediaType(
-     *     mediaType="application/x-www-form-urlencoded",
-     *     @OA\Schema(type="object", required={"list"}, @OA\Property(property="list", type="string", example="3,1,2", description="Comma-separated list of useful link IDs in their new order"))
-     *   )),
-     *   @OA\Response(response="204", description="Reordered"),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/useful-links/order',
+        operationId: 'PutUsefulLinksOrder',
+        description: 'Reorder useful links. Requires staff role',
+        tags: ['useful links'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/x-www-form-urlencoded',
+                schema: new OA\Schema(
+                    type: 'object',
+                    required: ['list'],
+                    properties: [
+                        new OA\Property(
+                            property: 'list',
+                            type: 'string',
+                            example: '3,1,2',
+                            description: 'Comma-separated list of useful link IDs in their new order',
+                        ),
+                    ],
+                ),
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Reordered'),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function order(Request $request): Response
     {
         $valid = Validator::make($request->all(), ['list' => ['required', 'regex:/^\d+(,\d+)*$/']])->validate();

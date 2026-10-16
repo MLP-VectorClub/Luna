@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 /**
  * The passkeys of the signed in account. Adding one is two steps (options for `navigator.credentials.create`, then what the browser made), asks for
@@ -22,18 +22,18 @@ class PasskeysController extends Controller
     private const PURPOSE = 'passkey-register';
     private const MAX_PER_USER = 20;
 
-    /**
-     * @OA\Schema(
-     *   schema="Passkey",
-     *   type="object",
-     *   required={"id", "name", "createdAt", "lastUsedAt"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", type="integer", minimum=1),
-     *   @OA\Property(property="name", type="string"),
-     *   @OA\Property(property="createdAt", type="string", format="date-time"),
-     *   @OA\Property(property="lastUsedAt", type="string", format="date-time", nullable=true)
-     * )
-     */
+    #[OA\Schema(
+        schema: 'Passkey',
+        type: 'object',
+        required: ['id', 'name', 'createdAt', 'lastUsedAt'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', type: 'integer', minimum: 1),
+            new OA\Property(property: 'name', type: 'string'),
+            new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'lastUsedAt', type: 'string', format: 'date-time', nullable: true),
+        ],
+    )]
     private static function map(Passkey $passkey): array
     {
         return [
@@ -49,15 +49,23 @@ class PasskeysController extends Controller
         return Passkey::where('user_id', $request->user()->id)->findOrFail($id);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/me/passkeys",
-     *   description="The passkeys of the account",
-     *   tags={"account"},
-     *   @OA\Response(response="200", description="Passkeys, oldest first", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Passkey"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/me/passkeys',
+        description: 'The passkeys of the account',
+        tags: ['account'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Passkeys, oldest first',
+                content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/Passkey')),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function index(Request $request): JsonResponse
     {
         return response()->json(
@@ -65,17 +73,39 @@ class PasskeysController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/me/passkeys/options",
-     *   description="Options for adding a passkey (`navigator.credentials.create`), good for five minutes",
-     *   tags={"account"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="currentPassword", type="string"), @OA\Property(property="code", type="string"))),
-     *   @OA\Response(response="200", description="Options for the browser", @OA\JsonContent(ref="#/components/schemas/PasskeyOptionsResponse")),
-     *   @OA\Response(response="409", description="The account has as many passkeys as it may", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="The password (or code) is missing or wrong", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/me/passkeys/options',
+        description: 'Options for adding a passkey (`navigator.credentials.create`), good for five minutes',
+        tags: ['account'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(property: 'currentPassword', type: 'string'),
+                    new OA\Property(property: 'code', type: 'string'),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Options for the browser',
+                content: new OA\JsonContent(ref: '#/components/schemas/PasskeyOptionsResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The account has as many passkeys as it may',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'The password (or code) is missing or wrong',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function options(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -95,26 +125,46 @@ class PasskeysController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/me/passkeys",
-     *   description="Adds the passkey the browser made for the options",
-     *   tags={"account"},
-     *   @OA\RequestBody(
-     *     required=true,
-     *     @OA\JsonContent(
-     *       type="object",
-     *       required={"challenge", "credential"},
-     *       additionalProperties=false,
-     *       @OA\Property(property="challenge", type="string"),
-     *       @OA\Property(property="credential", type="object", additionalProperties=true, description="What `navigator.credentials.create` returned, as JSON"),
-     *       @OA\Property(property="name", type="string", maxLength=64, description="What the passkey is called in the list, `Passkey` when left out")
-     *     )
-     *   ),
-     *   @OA\Response(response="201", description="Added", @OA\JsonContent(ref="#/components/schemas/Passkey")),
-     *   @OA\Response(response="422", description="The options expired or the browser's answer did not check out", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/me/passkeys',
+        description: 'Adds the passkey the browser made for the options',
+        tags: ['account'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['challenge', 'credential'],
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(property: 'challenge', type: 'string'),
+                    new OA\Property(
+                        property: 'credential',
+                        type: 'object',
+                        additionalProperties: true,
+                        description: 'What `navigator.credentials.create` returned, as JSON',
+                    ),
+                    new OA\Property(
+                        property: 'name',
+                        type: 'string',
+                        maxLength: 64,
+                        description: 'What the passkey is called in the list, `Passkey` when left out',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Added',
+                content: new OA\JsonContent(ref: '#/components/schemas/Passkey'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'The options expired or the browser\'s answer did not check out',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function register(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -151,18 +201,45 @@ class PasskeysController extends Controller
         return response()->json(self::map($passkey->refresh()), 201);
     }
 
-    /**
-     * @OA\Patch(
-     *   path="/users/me/passkeys/{id}",
-     *   description="Renames a passkey",
-     *   tags={"account"},
-     *   @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer", minimum=1)),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"name"}, additionalProperties=false, @OA\Property(property="name", type="string", maxLength=64))),
-     *   @OA\Response(response="200", description="Renamed", @OA\JsonContent(ref="#/components/schemas/Passkey")),
-     *   @OA\Response(response="404", description="Not a passkey of the account", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Invalid name", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Patch(
+        path: '/users/me/passkeys/{id}',
+        description: 'Renames a passkey',
+        tags: ['account'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', minimum: 1),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['name'],
+                additionalProperties: false,
+                properties: [new OA\Property(property: 'name', type: 'string', maxLength: 64)],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Renamed',
+                content: new OA\JsonContent(ref: '#/components/schemas/Passkey'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not a passkey of the account',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid name',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function rename(Request $request, int $id): JsonResponse
     {
         $passkey = $this->own($request, $id);
@@ -172,18 +249,43 @@ class PasskeysController extends Controller
         return response()->json(self::map($passkey));
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/users/me/passkeys/{id}",
-     *   description="Removes a passkey. Every other session and token of the account ends",
-     *   tags={"account"},
-     *   @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer", minimum=1)),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="currentPassword", type="string"), @OA\Property(property="code", type="string"))),
-     *   @OA\Response(response="204", description="Removed"),
-     *   @OA\Response(response="404", description="Not a passkey of the account", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="The password (or code) is missing or wrong", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/users/me/passkeys/{id}',
+        description: 'Removes a passkey. Every other session and token of the account ends',
+        tags: ['account'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', minimum: 1),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(property: 'currentPassword', type: 'string'),
+                    new OA\Property(property: 'code', type: 'string'),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Removed'),
+            new OA\Response(
+                response: '404',
+                description: 'Not a passkey of the account',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'The password (or code) is missing or wrong',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function destroy(Request $request, int $id): Response
     {
         $passkey = $this->own($request, $id);

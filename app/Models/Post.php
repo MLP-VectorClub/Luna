@@ -8,7 +8,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class Post extends Model
 {
@@ -107,54 +107,125 @@ class Post extends Model
             || (!$this->isRequest() && $this->reserved_by === $user->id);
     }
 
-    /**
-     * @OA\Schema(
-     *   schema="PostItem",
-     *   description="A request or reservation on a show's page, as data",
-     *   type="object",
-     *   required={"id", "kind", "showId", "label", "previewUrl", "fullsizeUrl", "postedAt", "postedBy", "reservedBy", "reservedAt", "finishedAt", "deviationId", "approved", "approvedAt", "approvedBy", "broken", "overdue", "canEdit"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="kind", type="string", enum={"request", "reservation"}),
-     *   @OA\Property(property="type", type="string", enum={"chr", "obj", "bg"}, description="What the request asks for; requests only"),
-     *   @OA\Property(property="showId", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="label", type="string"),
-     *   @OA\Property(property="previewUrl", type="string"),
-     *   @OA\Property(property="fullsizeUrl", type="string"),
-     *   @OA\Property(property="postedAt", type="string", format="date-time"),
-     *   @OA\Property(property="postedBy", ref="#/components/schemas/PostUser", nullable=true),
-     *   @OA\Property(property="reservedBy", ref="#/components/schemas/PostReserver", nullable=true),
-     *   @OA\Property(property="reservedAt", type="string", format="date-time", nullable=true),
-     *   @OA\Property(property="finishedAt", type="string", format="date-time", nullable=true, description="Set once the post has a deviation"),
-     *   @OA\Property(property="deviationId", type="string", nullable=true, description="ID of the finished deviation (https://fav.me/{id})"),
-     *   @OA\Property(property="approved", type="boolean", description="Whether the finished post has been accepted to the club gallery"),
-     *   @OA\Property(property="approvedAt", type="string", format="date-time", nullable=true, description="When the post was approved, null when it is not or the date was not kept"),
-     *   @OA\Property(property="approvedBy", ref="#/components/schemas/PostUser", nullable=true, description="Who approved the post, only given to staff"),
-     *   @OA\Property(property="broken", type="boolean", description="Whether the image was deemed unavailable; only staff see broken posts"),
-     *   @OA\Property(property="overdue", type="boolean", description="Reserved and unfinished for over 3 weeks, so others may reserve it"),
-     *   @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit the post")
-     * )
-     * @OA\Schema(
-     *   schema="PostReserver",
-     *   description="The user who reserved a post, with what is needed to show them next to it",
-     *   type="object",
-     *   required={"id", "name", "avatarUrl", "avatarProvider", "vectorApp"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="name", type="string"),
-     *   @OA\Property(property="avatarUrl", type="string", nullable=true),
-     *   @OA\Property(property="avatarProvider", ref="#/components/schemas/AvatarProvider"),
-     *   @OA\Property(property="vectorApp", type="string", nullable=true, description="The vector program the user chose to show publicly")
-     * )
-     * @OA\Schema(
-     *   schema="PostUser",
-     *   type="object",
-     *   required={"id", "name"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *   @OA\Property(property="name", type="string")
-     * )
-     */
+    #[OA\Schema(
+        schema: 'PostItem',
+        description: 'A request or reservation on a show\'s page, as data',
+        type: 'object',
+        required: [
+            'id',
+            'kind',
+            'showId',
+            'label',
+            'previewUrl',
+            'fullsizeUrl',
+            'postedAt',
+            'postedBy',
+            'reservedBy',
+            'reservedAt',
+            'finishedAt',
+            'deviationId',
+            'approved',
+            'approvedAt',
+            'approvedBy',
+            'broken',
+            'overdue',
+            'canEdit',
+        ],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+            new OA\Property(property: 'kind', type: 'string', enum: ['request', 'reservation']),
+            new OA\Property(
+                property: 'type',
+                type: 'string',
+                enum: ['chr', 'obj', 'bg'],
+                description: 'What the request asks for; requests only',
+            ),
+            new OA\Property(property: 'showId', ref: '#/components/schemas/OneBasedId'),
+            new OA\Property(property: 'label', type: 'string'),
+            new OA\Property(property: 'previewUrl', type: 'string'),
+            new OA\Property(property: 'fullsizeUrl', type: 'string'),
+            new OA\Property(property: 'postedAt', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'postedBy', ref: '#/components/schemas/PostUser', nullable: true),
+            new OA\Property(property: 'reservedBy', ref: '#/components/schemas/PostReserver', nullable: true),
+            new OA\Property(property: 'reservedAt', type: 'string', format: 'date-time', nullable: true),
+            new OA\Property(
+                property: 'finishedAt',
+                type: 'string',
+                format: 'date-time',
+                nullable: true,
+                description: 'Set once the post has a deviation',
+            ),
+            new OA\Property(
+                property: 'deviationId',
+                type: 'string',
+                nullable: true,
+                description: 'ID of the finished deviation (https://fav.me/{id})',
+            ),
+            new OA\Property(
+                property: 'approved',
+                type: 'boolean',
+                description: 'Whether the finished post has been accepted to the club gallery',
+            ),
+            new OA\Property(
+                property: 'approvedAt',
+                type: 'string',
+                format: 'date-time',
+                nullable: true,
+                description: 'When the post was approved, null when it is not or the date was not kept',
+            ),
+            new OA\Property(
+                property: 'approvedBy',
+                ref: '#/components/schemas/PostUser',
+                nullable: true,
+                description: 'Who approved the post, only given to staff',
+            ),
+            new OA\Property(
+                property: 'broken',
+                type: 'boolean',
+                description: 'Whether the image was deemed unavailable; only staff see broken posts',
+            ),
+            new OA\Property(
+                property: 'overdue',
+                type: 'boolean',
+                description: 'Reserved and unfinished for over 3 weeks, so others may reserve it',
+            ),
+            new OA\Property(
+                property: 'canEdit',
+                type: 'boolean',
+                description: 'Whether the current user may edit the post',
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'PostReserver',
+        description: 'The user who reserved a post, with what is needed to show them next to it',
+        type: 'object',
+        required: ['id', 'name', 'avatarUrl', 'avatarProvider', 'vectorApp'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+            new OA\Property(property: 'name', type: 'string'),
+            new OA\Property(property: 'avatarUrl', type: 'string', nullable: true),
+            new OA\Property(property: 'avatarProvider', ref: '#/components/schemas/AvatarProvider'),
+            new OA\Property(
+                property: 'vectorApp',
+                type: 'string',
+                nullable: true,
+                description: 'The vector program the user chose to show publicly',
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'PostUser',
+        type: 'object',
+        required: ['id', 'name'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+            new OA\Property(property: 'name', type: 'string'),
+        ],
+    )]
     public function toContract(?User $viewer): array
     {
         $user = fn(?User $u) => $u === null ? null : ['id' => $u->id, 'name' => $u->name];

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Throwable;
 use Valorin\Pwned\Pwned;
 
@@ -25,17 +25,38 @@ use Valorin\Pwned\Pwned;
  */
 class PasswordResetController extends Controller
 {
-    /**
-     * @OA\Post(
-     *   path="/users/password/forgot",
-     *   description="Sends a link for setting a new password to the address of an account. The answer is the same whether or not an account uses the address, so it can't be used to find out who is a member",
-     *   tags={"authentication"},
-     *   security={},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"email"}, additionalProperties=false, @OA\Property(property="email", type="string"))),
-     *   @OA\Response(response="202", description="Accepted", @OA\JsonContent(type="object", required={"message"}, additionalProperties=false, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="422", description="No address", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/password/forgot',
+        description: 'Sends a link for setting a new password to the address of an account. The answer is the same whether or not an account uses the address, so it can\'t be used to find out who is a member',
+        tags: ['authentication'],
+        security: [],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['email'],
+                additionalProperties: false,
+                properties: [new OA\Property(property: 'email', type: 'string')],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '202',
+                description: 'Accepted',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    additionalProperties: false,
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'No address',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function forgot(Request $request): JsonResponse
     {
         $input = $request->validate(['email' => 'required|string|max:128']);
@@ -78,20 +99,41 @@ class PasswordResetController extends Controller
         return $answer;
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/password/reset",
-     *   description="Sets a new password with the token of the link that `POST /users/password/forgot` sent. Ends every session and token of the account",
-     *   tags={"authentication"},
-     *   security={},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"token", "newPassword"}, additionalProperties=false,
-     *     @OA\Property(property="token", type="string", minLength=64, maxLength=64),
-     *     @OA\Property(property="newPassword", type="string", minLength=8, maxLength=300)
-     *   )),
-     *   @OA\Response(response="200", description="Changed", @OA\JsonContent(type="object", required={"message"}, additionalProperties=false, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="422", description="The link is not valid (any more), or the password is not acceptable", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/password/reset',
+        description: 'Sets a new password with the token of the link that `POST /users/password/forgot` sent. Ends every session and token of the account',
+        tags: ['authentication'],
+        security: [],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['token', 'newPassword'],
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(property: 'token', type: 'string', minLength: 64, maxLength: 64),
+                    new OA\Property(property: 'newPassword', type: 'string', minLength: 8, maxLength: 300),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Changed',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    additionalProperties: false,
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'The link is not valid (any more), or the password is not acceptable',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function reset(Request $request): JsonResponse
     {
         $input = $request->validate([

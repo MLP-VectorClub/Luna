@@ -12,28 +12,55 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DiscordController extends Controller
 {
     private const API = 'https://discord.com/api/v10';
 
-    /**
-     * @OA\Post(
-     *   path="/users/{user_id}/discord/sync",
-     *   operationId="PostUsersUserIdDiscordSync",
-     *   description="Refresh the stored Discord account information (name, avatar, server membership) of a user. The user themselves or staff. At most once every 5 minutes.",
-     *   tags={"discord"},
-     *   @OA\Parameter(in="path", name="user_id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Synced"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the user or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="User not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="No Discord account is bound to the user, or it is not linked", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="429", description="Synced less than 5 minutes ago", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/{user_id}/discord/sync',
+        operationId: 'PostUsersUserIdDiscordSync',
+        description: 'Refresh the stored Discord account information (name, avatar, server membership) of a user. The user themselves or staff. At most once every 5 minutes.',
+        tags: ['discord'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'user_id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Synced'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the user or staff',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'User not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'No Discord account is bound to the user, or it is not linked',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '429',
+                description: 'Synced less than 5 minutes ago',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function sync(Request $request, int $user_id): Response
     {
         $member = $this->target($request, $user_id);
@@ -64,22 +91,52 @@ class DiscordController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Post(
-     *   path="/users/{user_id}/discord",
-     *   operationId="PostUsersUserIdDiscord",
-     *   description="Link a Discord account to the signed in user with the authorization code Discord sent back (the redirect that started it is `GET /users/oauth/signin/discord`, the same one sign-in uses). Only for the user themselves. A Discord account that another user has linked cannot be taken over, and a previously linked other account is replaced.",
-     *   tags={"discord"},
-     *   @OA\Parameter(in="path", name="user_id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/OauthCode")),
-     *   @OA\Response(response="204", description="Linked"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The Discord account belongs to another user, or the user has linked one already", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="No code, or Discord refused it", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")),
-     *   @OA\Response(response="502", description="Discord could not be reached", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/{user_id}/discord',
+        operationId: 'PostUsersUserIdDiscord',
+        description: 'Link a Discord account to the signed in user with the authorization code Discord sent back (the redirect that started it is `GET /users/oauth/signin/discord`, the same one sign-in uses). Only for the user themselves. A Discord account that another user has linked cannot be taken over, and a previously linked other account is replaced.',
+        tags: ['discord'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'user_id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/OauthCode'),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Linked'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The Discord account belongs to another user, or the user has linked one already',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'No code, or Discord refused it',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+            new OA\Response(
+                response: '502',
+                description: 'Discord could not be reached',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function link(Request $request, int $user_id): Response
     {
         $user = $request->user();
@@ -122,21 +179,56 @@ class DiscordController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/users/{user_id}/discord",
-     *   operationId="DeleteUsersUserIdDiscord",
-     *   description="Revoke the site's access to a user's Discord account and forget the account. The user themselves or staff.",
-     *   tags={"discord"},
-     *   @OA\Parameter(in="path", name="user_id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="Unlinked", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not the user or staff", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="User not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="No Discord account is bound to the user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="502", description="Discord refused to revoke the access", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/users/{user_id}/discord',
+        operationId: 'DeleteUsersUserIdDiscord',
+        description: 'Revoke the site\'s access to a user\'s Discord account and forget the account. The user themselves or staff.',
+        tags: ['discord'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'user_id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Unlinked',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not the user or staff',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'User not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'No Discord account is bound to the user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '502',
+                description: 'Discord refused to revoke the access',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function unlink(Request $request, int $user_id): JsonResponse
     {
         $member = $this->target($request, $user_id);

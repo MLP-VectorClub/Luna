@@ -5,24 +5,41 @@ namespace App\Http\Controllers;
 use App\Utils\WebsocketServer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class WebsocketController extends Controller
 {
-    /**
-     * @OA\Post(
-     *   path="/users/me/socket-token",
-     *   operationId="PostUsersMeSocketToken",
-     *   description="A one time token that lets the signed in user's browser identify itself to the websocket server (which pushes notifications). It works for one connection and a couple of minutes, ask for a new one for every (re)connection. 404 when there is no websocket server",
-     *   tags={"users"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, required={"token", "expiresIn"},
-     *     @OA\Property(property="token", type="string"),
-     *     @OA\Property(property="expiresIn", type="integer", description="Seconds")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="There is no websocket server", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/users/me/socket-token',
+        operationId: 'PostUsersMeSocketToken',
+        description: 'A one time token that lets the signed in user\'s browser identify itself to the websocket server (which pushes notifications). It works for one connection and a couple of minutes, ask for a new one for every (re)connection. 404 when there is no websocket server',
+        tags: ['users'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['token', 'expiresIn'],
+                    properties: [
+                        new OA\Property(property: 'token', type: 'string'),
+                        new OA\Property(property: 'expiresIn', type: 'integer', description: 'Seconds'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'There is no websocket server',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function token(Request $request): JsonResponse
     {
         abort_unless(WebsocketServer::enabled(), 404, 'There is no websocket server');

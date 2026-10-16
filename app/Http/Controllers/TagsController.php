@@ -13,37 +13,75 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class TagsController extends Controller
 {
-    /**
-     * @OA\Schema(
-     *   schema="TagInput",
-     *   type="object",
-     *   required={"name"},
-     *   @OA\Property(property="name", type="string", description="Tag name"),
-     *   @OA\Property(property="type", type="string", description="Tag type/category"),
-     *   @OA\Property(property="title", type="string", nullable=true, maxLength=255, description="Optional human-friendly title"),
-     *   @OA\Property(property="addTo", type="integer", description="Only when creating: appearance to add the new tag to")
-     * )
-     * @OA\Get(
-     *   path="/tags",
-     *   operationId="GetTags",
-     *   description="List tags, ordered by type and name",
-     *   tags={"tags"},
-     *   security={},
-     *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
-     *   @OA\Parameter(in="query", name="size", @OA\Schema(type="integer", minimum=1, maximum=100, default=50)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(
-     *     type="object", required={"tags", "pagination", "canEdit"}, additionalProperties=false,
-     *     @OA\Property(property="tags", type="array", @OA\Items(ref="#/components/schemas/TagListItem")),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination"),
-     *     @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit tags")
-     *   )),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'TagInput',
+        type: 'object',
+        required: ['name'],
+        properties: [
+            new OA\Property(property: 'name', type: 'string', description: 'Tag name'),
+            new OA\Property(property: 'type', type: 'string', description: 'Tag type/category'),
+            new OA\Property(
+                property: 'title',
+                type: 'string',
+                nullable: true,
+                maxLength: 255,
+                description: 'Optional human-friendly title',
+            ),
+            new OA\Property(
+                property: 'addTo',
+                type: 'integer',
+                description: 'Only when creating: appearance to add the new tag to',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/tags',
+        operationId: 'GetTags',
+        description: 'List tags, ordered by type and name',
+        tags: ['tags'],
+        security: [],
+        parameters: [
+            new OA\Parameter(in: 'query', name: 'page', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 50),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['tags', 'pagination', 'canEdit'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'tags',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/TagListItem'),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                        new OA\Property(
+                            property: 'canEdit',
+                            type: 'boolean',
+                            description: 'Whether the current user may edit tags',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function index(Request $request): JsonResponse
     {
         $valid = Validator::make($request->query(), [
@@ -77,43 +115,108 @@ class TagsController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/tags/{id}",
-     *   operationId="GetTagsId",
-     *   description="Get a tag. Staff only",
-     *   tags={"tags"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/Tag")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/tags/{id}',
+        operationId: 'GetTagsId',
+        description: 'Get a tag. Staff only',
+        tags: ['tags'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/Tag'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(int $id): JsonResponse
     {
         return response()->json(self::resource(Tag::findOrFail($id)));
     }
 
-    /**
-     * @OA\Get(
-     *   path="/tags/autocomplete",
-     *   operationId="GetTagsAutocomplete",
-     *   description="Tags whose name contains the text, most used first, for the tag editor and the synonym target field. Requires staff",
-     *   tags={"tags"},
-     *   @OA\Parameter(in="query", name="s", required=true, @OA\Schema(type="string", maxLength=64)),
-     *   @OA\Parameter(in="query", name="not", required=false, description="A tag to leave out", @OA\Schema(type="integer")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"tags"}, additionalProperties=false,
-     *     @OA\Property(property="tags", type="array", @OA\Items(type="object", required={"id", "name", "type", "uses", "synonymOf", "synonymTarget"}, additionalProperties=false,
-     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="name", type="string"),
-     *       @OA\Property(property="type", type="string", nullable=true),
-     *       @OA\Property(property="uses", type="integer"),
-     *       @OA\Property(property="synonymOf", type="integer", nullable=true, description="ID of the tag this one is a synonym of"),
-     *       @OA\Property(property="synonymTarget", type="string", nullable=true, description="Name of that tag")
-     *     )))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/tags/autocomplete',
+        operationId: 'GetTagsAutocomplete',
+        description: 'Tags whose name contains the text, most used first, for the tag editor and the synonym target field. Requires staff',
+        tags: ['tags'],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 's',
+                required: true,
+                schema: new OA\Schema(type: 'string', maxLength: 64),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'not',
+                required: false,
+                description: 'A tag to leave out',
+                schema: new OA\Schema(type: 'integer'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['tags'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'tags',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                required: ['id', 'name', 'type', 'uses', 'synonymOf', 'synonymTarget'],
+                                additionalProperties: false,
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'name', type: 'string'),
+                                    new OA\Property(property: 'type', type: 'string', nullable: true),
+                                    new OA\Property(property: 'uses', type: 'integer'),
+                                    new OA\Property(
+                                        property: 'synonymOf',
+                                        type: 'integer',
+                                        nullable: true,
+                                        description: 'ID of the tag this one is a synonym of',
+                                    ),
+                                    new OA\Property(
+                                        property: 'synonymTarget',
+                                        type: 'string',
+                                        nullable: true,
+                                        description: 'Name of that tag',
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function autocomplete(Request $request): JsonResponse
     {
         $valid = Validator::make($request->query(), ['s' => ['required', 'string', 'max:64'], 'not' => ['sometimes', 'integer']])->validate();
@@ -137,19 +240,42 @@ class TagsController extends Controller
         ])->values()]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/tags",
-     *   operationId="PostTags",
-     *   description="Create a tag, optionally adding it to an appearance right away. Staff only",
-     *   tags={"tags"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/TagInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(
-     *     allOf={@OA\Schema(ref="#/components/schemas/Tag"), @OA\Schema(type="object", @OA\Property(property="warning", type="string", description="Present when the tag could not be added to the requested appearance"))}
-     *   )),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/tags',
+        operationId: 'PostTags',
+        description: 'Create a tag, optionally adding it to an appearance right away. Staff only',
+        tags: ['tags'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TagInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Created',
+                content: new OA\JsonContent(
+                    allOf: [
+                        new OA\Schema(ref: '#/components/schemas/Tag'),
+                        new OA\Schema(
+                            type: 'object',
+                            properties: [
+                                new OA\Property(
+                                    property: 'warning',
+                                    type: 'string',
+                                    description: 'Present when the tag could not be added to the requested appearance',
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function create(Request $request): JsonResponse
     {
         $tag = new Tag();
@@ -175,19 +301,41 @@ class TagsController extends Controller
         return response()->json($created, 201);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/tags/{id}",
-     *   operationId="PutTagsId",
-     *   description="Update a tag. Staff only",
-     *   tags={"tags"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/TagInput")),
-     *   @OA\Response(response="200", description="Updated", @OA\JsonContent(ref="#/components/schemas/Tag")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/tags/{id}',
+        operationId: 'PutTagsId',
+        description: 'Update a tag. Staff only',
+        tags: ['tags'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TagInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Updated',
+                content: new OA\JsonContent(ref: '#/components/schemas/Tag'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id): JsonResponse
     {
         $tag = Tag::findOrFail($id);
@@ -197,21 +345,50 @@ class TagsController extends Controller
         return response()->json(self::resource($tag->fresh()));
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/tags/{id}",
-     *   operationId="DeleteTagsId",
-     *   description="Delete a tag. When the tag is in use the request has to be repeated with `sanityCheck` set. Staff only",
-     *   tags={"tags"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="sanityCheck", description="Confirms deleting a tag that is in use", @OA\Schema(type="boolean")),
-     *   @OA\Response(response="204", description="Deleted"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The tag is in use", @OA\JsonContent(
-     *     type="object", required={"message", "uses"}, @OA\Property(property="message", type="string"), @OA\Property(property="uses", type="integer", description="Number of appearances the tag is used on")
-     *   ))
-     * )
-     */
+    #[OA\Delete(
+        path: '/tags/{id}',
+        operationId: 'DeleteTagsId',
+        description: 'Delete a tag. When the tag is in use the request has to be repeated with `sanityCheck` set. Staff only',
+        tags: ['tags'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'sanityCheck',
+                description: 'Confirms deleting a tag that is in use',
+                schema: new OA\Schema(type: 'boolean'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Deleted'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The tag is in use',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message', 'uses'],
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(
+                            property: 'uses',
+                            type: 'integer',
+                            description: 'Number of appearances the tag is used on',
+                        ),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function destroy(Request $request, int $id)
     {
         $tag = Tag::findOrFail($id);
@@ -231,22 +408,50 @@ class TagsController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Post(
-     *   path="/tags/recount-uses",
-     *   operationId="PostTagsRecountUses",
-     *   description="Recount how many appearances each of the given tags is used on. Staff only",
-     *   tags={"tags"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"tagIds"},
-     *     @OA\Property(property="tagIds", type="array", description="IDs of tags to recount", @OA\Items(ref="#/components/schemas/OneBasedId"))
-     *   )),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="message", type="string"),
-     *     @OA\Property(property="counts", type="object", description="Map of tag ID to its new use count")
-     *   )),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/tags/recount-uses',
+        operationId: 'PostTagsRecountUses',
+        description: 'Recount how many appearances each of the given tags is used on. Staff only',
+        tags: ['tags'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['tagIds'],
+                properties: [
+                    new OA\Property(
+                        property: 'tagIds',
+                        type: 'array',
+                        description: 'IDs of tags to recount',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(
+                            property: 'counts',
+                            type: 'object',
+                            description: 'Map of tag ID to its new use count',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function recountUses(Request $request): JsonResponse
     {
         $ids = $request->input('tagIds');
@@ -282,20 +487,54 @@ class TagsController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/tags/{id}/synonym",
-     *   operationId="PutTagsIdSynonym",
-     *   description="Make the tag a synonym of another one, moving its uses to the target. Staff only",
-     *   tags={"tags"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"targetId"}, @OA\Property(property="targetId", ref="#/components/schemas/OneBasedId"))),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="target", ref="#/components/schemas/Tag"))),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Either tag is already a synonym", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/tags/{id}/synonym',
+        operationId: 'PutTagsIdSynonym',
+        description: 'Make the tag a synonym of another one, moving its uses to the target. Staff only',
+        tags: ['tags'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['targetId'],
+                properties: [new OA\Property(property: 'targetId', ref: '#/components/schemas/OneBasedId')],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [new OA\Property(property: 'target', ref: '#/components/schemas/Tag')],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Either tag is already a synonym',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function makeSynonym(Request $request, int $id): JsonResponse
     {
         $tag = Tag::with('synonymTarget')->findOrFail($id);
@@ -330,19 +569,43 @@ class TagsController extends Controller
         return response()->json(['message' => 'Tag synonyms created', 'target' => self::resource($target->fresh())]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/tags/{id}/synonym",
-     *   operationId="DeleteTagsIdSynonym",
-     *   description="Stop treating the tag as a synonym. Answers 204 when it was not a synonym. Staff only",
-     *   tags={"tags"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="keepTagged", description="Apply the tag to the appearances its former target is on", @OA\Schema(type="boolean")),
-     *   @OA\Response(response="200", description="The synonym was removed", @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="keepTagged", type="boolean"))),
-     *   @OA\Response(response="204", description="The tag was not a synonym"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/tags/{id}/synonym',
+        operationId: 'DeleteTagsIdSynonym',
+        description: 'Stop treating the tag as a synonym. Answers 204 when it was not a synonym. Staff only',
+        tags: ['tags'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'keepTagged',
+                description: 'Apply the tag to the appearances its former target is on',
+                schema: new OA\Schema(type: 'boolean'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The synonym was removed',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [new OA\Property(property: 'keepTagged', type: 'boolean')],
+                ),
+            ),
+            new OA\Response(response: '204', description: 'The tag was not a synonym'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function removeSynonym(Request $request, int $id)
     {
         $tag = Tag::with('synonymTarget')->findOrFail($id);

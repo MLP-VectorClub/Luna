@@ -2,16 +2,14 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *   schema="SocialProvider",
- *   type="string",
- *   description="List of available social signin providers",
- *   example="deviantart"
- * )
- */
+#[OA\Schema(
+    schema: 'SocialProvider',
+    type: 'string',
+    description: 'List of available social signin providers',
+    example: 'deviantart',
+)]
 enum SocialProvider: string
 {
     use ValuableEnum;

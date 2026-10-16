@@ -23,7 +23,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
-use OpenApi\Annotations as OA;
 
 class User extends Authenticatable implements MustVerifyEmail
 {

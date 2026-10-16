@@ -6,7 +6,7 @@ use App\Enums\Role;
 use App\Enums\ShowType;
 use App\Enums\TagType;
 use Illuminate\Http\JsonResponse;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class ConfigController extends Controller
 {
@@ -43,42 +43,85 @@ class ConfigController extends Controller
         ShowType::Special->value => 'Special',
     ];
 
-    /**
-     * @OA\Get(
-     *   path="/config",
-     *   description="Constants, validation patterns and client settings that the front end needs before it can render forms. The same for every visitor.",
-     *   operationId="GetConfig",
-     *   security={},
-     *   tags={"configuration"},
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       type="object",
-     *       required={"tagTypes", "roles", "showTypes", "vectorApps", "maxUploadSize", "patterns", "wsServerHost", "discordInviteLink", "readOnly"},
-     *       additionalProperties=false,
-     *       @OA\Property(property="tagTypes", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Tag type key to label"),
-     *       @OA\Property(property="roles", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Role key to label"),
-     *       @OA\Property(property="showTypes", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Show type key to label"),
-     *       @OA\Property(property="vectorApps", type="object", additionalProperties=@OA\AdditionalProperties(type="string"), description="Choices for the `p_vectorapp` preference, key to label; the empty key means none"),
-     *       @OA\Property(property="maxUploadSize", type="string", example="2 MB"),
-     *       @OA\Property(
-     *         property="patterns",
-     *         type="object",
-     *         required={"printableAscii", "hexColor", "username", "episodeTitle"},
-     *         additionalProperties=false,
-     *         @OA\Property(property="printableAscii", ref="#/components/schemas/RegexPattern"),
-     *         @OA\Property(property="hexColor", ref="#/components/schemas/RegexPattern"),
-     *         @OA\Property(property="username", ref="#/components/schemas/RegexPattern"),
-     *         @OA\Property(property="episodeTitle", ref="#/components/schemas/RegexPattern")
-     *       ),
-     *       @OA\Property(property="wsServerHost", type="string", nullable=true, description="Address of the websocket server that pushes notifications, null when there is none"),
-     *       @OA\Property(property="discordInviteLink", type="string"),
-     *       @OA\Property(property="readOnly", type="boolean", description="Whether the site only shows what it holds and refuses changes, the front end tells visitors so")
-     *     )
-     *   )
-     * )
-     */
+    #[OA\Get(
+        path: '/config',
+        description: 'Constants, validation patterns and client settings that the front end needs before it can render forms. The same for every visitor.',
+        operationId: 'GetConfig',
+        security: [],
+        tags: ['configuration'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: [
+                        'tagTypes',
+                        'roles',
+                        'showTypes',
+                        'vectorApps',
+                        'maxUploadSize',
+                        'patterns',
+                        'wsServerHost',
+                        'discordInviteLink',
+                        'readOnly',
+                    ],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'tagTypes',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(type: 'string'),
+                            description: 'Tag type key to label',
+                        ),
+                        new OA\Property(
+                            property: 'roles',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(type: 'string'),
+                            description: 'Role key to label',
+                        ),
+                        new OA\Property(
+                            property: 'showTypes',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(type: 'string'),
+                            description: 'Show type key to label',
+                        ),
+                        new OA\Property(
+                            property: 'vectorApps',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(type: 'string'),
+                            description: 'Choices for the `p_vectorapp` preference, key to label; the empty key means none',
+                        ),
+                        new OA\Property(property: 'maxUploadSize', type: 'string', example: '2 MB'),
+                        new OA\Property(
+                            property: 'patterns',
+                            type: 'object',
+                            required: ['printableAscii', 'hexColor', 'username', 'episodeTitle'],
+                            additionalProperties: false,
+                            properties: [
+                                new OA\Property(property: 'printableAscii', ref: '#/components/schemas/RegexPattern'),
+                                new OA\Property(property: 'hexColor', ref: '#/components/schemas/RegexPattern'),
+                                new OA\Property(property: 'username', ref: '#/components/schemas/RegexPattern'),
+                                new OA\Property(property: 'episodeTitle', ref: '#/components/schemas/RegexPattern'),
+                            ],
+                        ),
+                        new OA\Property(
+                            property: 'wsServerHost',
+                            type: 'string',
+                            nullable: true,
+                            description: 'Address of the websocket server that pushes notifications, null when there is none',
+                        ),
+                        new OA\Property(property: 'discordInviteLink', type: 'string'),
+                        new OA\Property(
+                            property: 'readOnly',
+                            type: 'boolean',
+                            description: 'Whether the site only shows what it holds and refuses changes, the front end tells visitors so',
+                        ),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function get(): JsonResponse
     {
         return response()->camelJson([

@@ -20,24 +20,39 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class UserProfileController extends Controller
 {
     public const CONTRIBUTION_TYPES = ['cms-provided', 'requests', 'reservations', 'finished-posts', 'fulfilled-requests'];
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/profile",
-     *   operationId="GetUsersIdProfile",
-     *   description="Everything the profile page shows about a user",
-     *   tags={"users"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/UserProfile")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/profile',
+        operationId: 'GetUsersIdProfile',
+        description: 'Everything the profile page shows about a user',
+        tags: ['users'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserProfile'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function profile(Request $request, int $id): JsonResponse
     {
         $user = User::with('daUser', 'discordMember')->findOrFail($id);
@@ -144,31 +159,90 @@ class UserProfileController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/contributions/{type}",
-     *   operationId="GetUsersIdContributionsType",
-     *   description="A page of what the user contributed. Their requests are only visible to themselves and staff",
-     *   tags={"users"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="path", name="type", required=true, @OA\Schema(type="string", enum={"cms-provided", "requests", "reservations", "finished-posts", "fulfilled-requests"})),
-     *   @OA\Parameter(in="query", name="page", @OA\Schema(type="integer", minimum=1, default=1)),
-     *   @OA\Parameter(in="query", name="size", @OA\Schema(type="integer", minimum=1, maximum=50, default=10)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"type", "items", "pagination"},
-     *     @OA\Property(property="type", type="string"),
-     *     @OA\Property(property="items", type="array", @OA\Items(oneOf={
-     *       @OA\Schema(ref="#/components/schemas/PostItem"),
-     *       @OA\Schema(type="object", required={"appearance", "favMe"}, @OA\Property(property="appearance", ref="#/components/schemas/PreviewAppearance"), @OA\Property(property="favMe", type="string", nullable=true))
-     *     })),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/contributions/{type}',
+        operationId: 'GetUsersIdContributionsType',
+        description: 'A page of what the user contributed. Their requests are only visible to themselves and staff',
+        tags: ['users'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'type',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['cms-provided', 'requests', 'reservations', 'finished-posts', 'fulfilled-requests'],
+                ),
+            ),
+            new OA\Parameter(in: 'query', name: 'page', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 50, default: 10),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['type', 'items', 'pagination'],
+                    properties: [
+                        new OA\Property(property: 'type', type: 'string'),
+                        new OA\Property(
+                            property: 'items',
+                            type: 'array',
+                            items: new OA\Items(
+                                oneOf: [
+                                    new OA\Schema(ref: '#/components/schemas/PostItem'),
+                                    new OA\Schema(
+                                        type: 'object',
+                                        required: ['appearance', 'favMe'],
+                                        properties: [
+                                            new OA\Property(
+                                                property: 'appearance',
+                                                ref: '#/components/schemas/PreviewAppearance',
+                                            ),
+                                            new OA\Property(property: 'favMe', type: 'string', nullable: true),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function contributions(Request $request, int $id, string $type): JsonResponse
     {
         $user = User::findOrFail($id);
@@ -211,19 +285,38 @@ class UserProfileController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/users/{id}/contributions/cache",
-     *   operationId="DeleteUsersIdContributionsCache",
-     *   description="Forget the cached contribution counts of the profile so they are counted again. Requires staff",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Purged"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/users/{id}/contributions/cache',
+        operationId: 'DeleteUsersIdContributionsCache',
+        description: 'Forget the cached contribution counts of the profile so they are counted again. Requires staff',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Purged'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function purgeContributionsCache(int $id): Response
     {
         $user = User::findOrFail($id);

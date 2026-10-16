@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 enum Role: string
 {
@@ -16,20 +16,18 @@ enum Role: string
     case Developer = 'developer';
 }
 
-/**
- * @OA\Schema(
- *   schema="DatabaseRole",
- *   type="string",
- *   description="List of roles values that can be stored by the backend",
- *   enum=DATABASE_ROLES,
- *   example="developer",
- * )
- * @OA\Schema(
- *   schema="Role",
- *   type="string",
- *   description="List of roles values that can be publicly displayed",
- *   enum=CLIENT_ROLES,
- *   example="user",
- * )
- */
+#[OA\Schema(
+    schema: 'DatabaseRole',
+    type: 'string',
+    description: 'List of roles values that can be stored by the backend',
+    enum: \DATABASE_ROLES,
+    example: 'developer',
+)]
+#[OA\Schema(
+    schema: 'Role',
+    type: 'string',
+    description: 'List of roles values that can be publicly displayed',
+    enum: \CLIENT_ROLES,
+    example: 'user',
+)]
 class RoleC {}

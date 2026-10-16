@@ -14,58 +14,52 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class ColorGuideController extends Controller
 {
     /**
-     * @OA\Schema(
-     *   schema="MajorChangeList",
-     *   type="object",
-     *   description="An array of major change items under the changes key",
-     *   required={
-     *     "changes"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="changes",
-     *     type="array",
-     *     @OA\Items(ref="#/components/schemas/MajorChange")
-     *   )
-     * )
-     * @OA\Get(
-     *   path="/color-guide",
-     *   description="Get data about the color guides available on the server",
-     *   tags={"color guide"},
-     *   security={},
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       type="object",
-     *       required={
-     *         "entryCounts",
-     *       },
-     *       additionalProperties=false,
-     *       @OA\Property(
-     *         property="entryCounts",
-     *         ref="#/components/schemas/GuideEntryCounts"
-     *       )
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="503",
-     *     description="The application server is currently unavailable, more information may be in the request body",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
-     *
      * @return \Illuminate\Http\JsonResponse
      */
+    #[OA\Schema(
+        schema: 'MajorChangeList',
+        type: 'object',
+        description: 'An array of major change items under the changes key',
+        required: ['changes'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'changes',
+                type: 'array',
+                items: new OA\Items(ref: '#/components/schemas/MajorChange'),
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/color-guide',
+        description: 'Get data about the color guides available on the server',
+        tags: ['color guide'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['entryCounts'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'entryCounts', ref: '#/components/schemas/GuideEntryCounts'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '503',
+                description: 'The application server is currently unavailable, more information may be in the request body',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function index()
     {
         $entry_counts = array_reduce(GuideName::values(), function (array $acc, string $value) {
@@ -79,65 +73,64 @@ class ColorGuideController extends Controller
     }
 
     /**
-     * @OA\Schema(
-     *   schema="GuideMajorChangesPageSize",
-     *   type="integer",
-     *   minimum=1,
-     *   maximum=15,
-     *   default=9,
-     *   description="The number of results to return per page"
-     * )
-     * @OA\Get(
-     *   path="/color-guide/major-changes",
-     *   description="Get a list of major changes in the provided guide",
-     *   tags={"color guide"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="guide",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/GuideName"),
-     *     description="Determines the guide to return results for"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="page",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/PageNumber"),
-     *     description="Which page of results to return"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="size",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/GuideMajorChangesPageSize"),
-     *     description="The number of results to return per page"
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/MajorChangeList"),
-     *         @OA\Schema(ref="#/components/schemas/PageData")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="503",
-     *     description="The application server is currently unavailable, more information may be in the request body",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse
      * @throws \Illuminate\Validation\ValidationException
      */
+    #[OA\Schema(
+        schema: 'GuideMajorChangesPageSize',
+        type: 'integer',
+        minimum: 1,
+        maximum: 15,
+        default: 9,
+        description: 'The number of results to return per page',
+    )]
+    #[OA\Get(
+        path: '/color-guide/major-changes',
+        description: 'Get a list of major changes in the provided guide',
+        tags: ['color guide'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'guide',
+                required: true,
+                description: 'Determines the guide to return results for',
+                schema: new OA\Schema(ref: '#/components/schemas/GuideName'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'page',
+                required: false,
+                description: 'Which page of results to return',
+                schema: new OA\Schema(ref: '#/components/schemas/PageNumber'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                required: false,
+                description: 'The number of results to return per page',
+                schema: new OA\Schema(ref: '#/components/schemas/GuideMajorChangesPageSize'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    allOf: [
+                        new OA\Schema(ref: '#/components/schemas/MajorChangeList'),
+                        new OA\Schema(ref: '#/components/schemas/PageData'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '503',
+                description: 'The application server is currently unavailable, more information may be in the request body',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function majorChanges(Request $request)
     {
         $valid = Validator::make($request->all(), [

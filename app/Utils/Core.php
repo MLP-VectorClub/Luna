@@ -6,57 +6,34 @@ use Browser;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use function gettype;
 
 class Core
 {
     /**
-     * @OA\Schema(
-     *   schema="PageData",
-     *   required={
-     *     "pagination"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="pagination",
-     *     type="object",
-     *     required={
-     *       "currentPage",
-     *       "totalPages",
-     *       "totalItems",
-     *       "itemsPerPage"
-     *     },
-     *     additionalProperties=false,
-     *     @OA\Property(
-     *       property="currentPage",
-     *       type="integer",
-     *       minimum=1,
-     *       example=1
-     *     ),
-     *     @OA\Property(
-     *       property="totalPages",
-     *       type="integer",
-     *       minimum=1,
-     *       example=20
-     *     ),
-     *     @OA\Property(
-     *       property="totalItems",
-     *       type="integer",
-     *       minimum=0,
-     *       example=200
-     *     ),
-     *     @OA\Property(
-     *       property="itemsPerPage",
-     *       type="integer",
-     *       minimum=1,
-     *       example=10
-     *     ),
-     *   ),
-     * )
      * @param  LengthAwarePaginator  $paginator
      * @return array
      */
+    #[OA\Schema(
+        schema: 'PageData',
+        required: ['pagination'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'pagination',
+                type: 'object',
+                required: ['currentPage', 'totalPages', 'totalItems', 'itemsPerPage'],
+                additionalProperties: false,
+                properties: [
+                    new OA\Property(property: 'currentPage', type: 'integer', minimum: 1, example: 1),
+                    new OA\Property(property: 'totalPages', type: 'integer', minimum: 1, example: 20),
+                    new OA\Property(property: 'totalItems', type: 'integer', minimum: 0, example: 200),
+                    new OA\Property(property: 'itemsPerPage', type: 'integer', minimum: 1, example: 10),
+                ],
+            ),
+        ],
+    )]
     public static function mapPagination(LengthAwarePaginator $paginator): array
     {
         return [

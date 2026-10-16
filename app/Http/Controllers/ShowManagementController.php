@@ -14,66 +14,160 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ShowManagementController extends Controller
 {
-    /**
-     * @OA\Schema(
-     *   schema="Show",
-     *   description="Represents a show entry (episode or movie/special)",
-     *   type="object",
-     *   required={"id", "type", "season", "episode", "parts", "no", "title", "airs", "notes", "createdAt", "updatedAt", "score", "postedBy"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="id", type="integer", example=1),
-     *   @OA\Property(property="type", type="string", enum={"episode", "movie", "short", "special"}),
-     *   @OA\Property(property="season", type="integer", nullable=true),
-     *   @OA\Property(property="episode", type="integer", nullable=true),
-     *   @OA\Property(property="parts", type="integer", description="Number of parts the episode is split into (1 or 2)"),
-     *   @OA\Property(property="no", type="integer", nullable=true, description="Overall number"),
-     *   @OA\Property(property="title", type="string"),
-     *   @OA\Property(property="airs", type="string", format="date-time"),
-     *   @OA\Property(property="notes", type="string", nullable=true),
-     *   @OA\Property(property="score", type="number", nullable=true, description="Average rating"),
-     *   @OA\Property(property="createdAt", type="string", format="date-time"),
-     *   @OA\Property(property="updatedAt", type="string", format="date-time", nullable=true),
-     *   @OA\Property(property="postedBy", type="integer", description="ID of the user who created this show entry")
-     * )
-     * @OA\Schema(
-     *   schema="ShowInput",
-     *   type="object",
-     *   required={"title", "airs"},
-     *   @OA\Property(property="type", type="string", description="Required when creating. Cannot be changed to episode via update"),
-     *   @OA\Property(property="season", type="integer", description="Required for episodes"),
-     *   @OA\Property(property="episode", type="integer", description="Required for episodes"),
-     *   @OA\Property(property="twoparter", type="boolean", description="Marks the episode as a two-parter"),
-     *   @OA\Property(property="no", type="integer", description="Overall number"),
-     *   @OA\Property(property="title", type="string", minLength=5, maxLength=100),
-     *   @OA\Property(property="airs", type="string", description="Air date and time"),
-     *   @OA\Property(property="notes", type="string", nullable=true, maxLength=1000)
-     * )
-     * @OA\Get(
-     *   path="/show/{id}",
-     *   operationId="GetShowId",
-     *   description="Get a show entry with its state, the visitor's permissions and related appearances",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"show"}, @OA\Property(property="show", allOf={
-     *     @OA\Schema(ref="#/components/schemas/Show"),
-     *     @OA\Schema(type="object", required={"aired", "willAir", "canEdit", "userVote", "relatedAppearances", "postedByUser"},
-     *       @OA\Property(property="aired", type="boolean", description="Whether the show has already aired"),
-     *       @OA\Property(property="willAir", type="string", format="date-time", description="When the show will have aired (air time plus its running time)"),
-     *       @OA\Property(property="canEdit", type="boolean", description="Whether the current user may edit the show"),
-     *       @OA\Property(property="postedByUser", ref="#/components/schemas/PostUser", nullable=true, description="The user who created the entry (postedBy holds the ID), for the added by line"),
-     *       @OA\Property(property="userVote", type="integer", minimum=1, maximum=5, nullable=true, description="The rating (1-5) the signed in visitor gave, null when they have not voted or are not signed in"),
-     *       @OA\Property(property="relatedAppearances", type="array", @OA\Items(ref="#/components/schemas/PreviewAppearance"))
-     *     )
-     *   }))),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'Show',
+        description: 'Represents a show entry (episode or movie/special)',
+        type: 'object',
+        required: [
+            'id',
+            'type',
+            'season',
+            'episode',
+            'parts',
+            'no',
+            'title',
+            'airs',
+            'notes',
+            'createdAt',
+            'updatedAt',
+            'score',
+            'postedBy',
+        ],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(property: 'id', type: 'integer', example: 1),
+            new OA\Property(property: 'type', type: 'string', enum: ['episode', 'movie', 'short', 'special']),
+            new OA\Property(property: 'season', type: 'integer', nullable: true),
+            new OA\Property(property: 'episode', type: 'integer', nullable: true),
+            new OA\Property(
+                property: 'parts',
+                type: 'integer',
+                description: 'Number of parts the episode is split into (1 or 2)',
+            ),
+            new OA\Property(property: 'no', type: 'integer', nullable: true, description: 'Overall number'),
+            new OA\Property(property: 'title', type: 'string'),
+            new OA\Property(property: 'airs', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'notes', type: 'string', nullable: true),
+            new OA\Property(property: 'score', type: 'number', nullable: true, description: 'Average rating'),
+            new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'updatedAt', type: 'string', format: 'date-time', nullable: true),
+            new OA\Property(
+                property: 'postedBy',
+                type: 'integer',
+                description: 'ID of the user who created this show entry',
+            ),
+        ],
+    )]
+    #[OA\Schema(
+        schema: 'ShowInput',
+        type: 'object',
+        required: ['title', 'airs'],
+        properties: [
+            new OA\Property(
+                property: 'type',
+                type: 'string',
+                description: 'Required when creating. Cannot be changed to episode via update',
+            ),
+            new OA\Property(property: 'season', type: 'integer', description: 'Required for episodes'),
+            new OA\Property(property: 'episode', type: 'integer', description: 'Required for episodes'),
+            new OA\Property(property: 'twoparter', type: 'boolean', description: 'Marks the episode as a two-parter'),
+            new OA\Property(property: 'no', type: 'integer', description: 'Overall number'),
+            new OA\Property(property: 'title', type: 'string', minLength: 5, maxLength: 100),
+            new OA\Property(property: 'airs', type: 'string', description: 'Air date and time'),
+            new OA\Property(property: 'notes', type: 'string', nullable: true, maxLength: 1000),
+        ],
+    )]
+    #[OA\Get(
+        path: '/show/{id}',
+        operationId: 'GetShowId',
+        description: 'Get a show entry with its state, the visitor\'s permissions and related appearances',
+        tags: ['shows'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['show'],
+                    properties: [
+                        new OA\Property(
+                            property: 'show',
+                            allOf: [
+                                new OA\Schema(ref: '#/components/schemas/Show'),
+                                new OA\Schema(
+                                    type: 'object',
+                                    required: [
+                                        'aired',
+                                        'willAir',
+                                        'canEdit',
+                                        'userVote',
+                                        'relatedAppearances',
+                                        'postedByUser',
+                                    ],
+                                    properties: [
+                                        new OA\Property(
+                                            property: 'aired',
+                                            type: 'boolean',
+                                            description: 'Whether the show has already aired',
+                                        ),
+                                        new OA\Property(
+                                            property: 'willAir',
+                                            type: 'string',
+                                            format: 'date-time',
+                                            description: 'When the show will have aired (air time plus its running time)',
+                                        ),
+                                        new OA\Property(
+                                            property: 'canEdit',
+                                            type: 'boolean',
+                                            description: 'Whether the current user may edit the show',
+                                        ),
+                                        new OA\Property(
+                                            property: 'postedByUser',
+                                            ref: '#/components/schemas/PostUser',
+                                            nullable: true,
+                                            description: 'The user who created the entry (postedBy holds the ID), for the added by line',
+                                        ),
+                                        new OA\Property(
+                                            property: 'userVote',
+                                            type: 'integer',
+                                            minimum: 1,
+                                            maximum: 5,
+                                            nullable: true,
+                                            description: 'The rating (1-5) the signed in visitor gave, null when they have not voted or are not signed in',
+                                        ),
+                                        new OA\Property(
+                                            property: 'relatedAppearances',
+                                            type: 'array',
+                                            items: new OA\Items(ref: '#/components/schemas/PreviewAppearance'),
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(Request $request, int $id): JsonResponse
     {
         $show = Show::findOrFail($id);
@@ -92,17 +186,25 @@ class ShowManagementController extends Controller
         ]]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/latest",
-     *   operationId="GetShowLatest",
-     *   description="The latest episode that aired or is about to",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/ShowListItem")),
-     *   @OA\Response(response="404", description="Nothing has aired yet", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/latest',
+        operationId: 'GetShowLatest',
+        description: 'The latest episode that aired or is about to',
+        tags: ['shows'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/ShowListItem'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Nothing has aired yet',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function latest(): JsonResponse
     {
         $latest = Show::whereNotNull('season')->where('airs', '<', now()->addDay())->orderByDesc('airs')->first();
@@ -113,20 +215,40 @@ class ShowManagementController extends Controller
         return response()->camelJson(ShowController::mapShowListItem($latest));
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/next",
-     *   operationId="GetShowNext",
-     *   description="The next upcoming episode",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="episode", type="integer"), @OA\Property(property="airs", type="string", format="date-time"),
-     *     @OA\Property(property="season", type="integer"), @OA\Property(property="title", type="string")
-     *   )),
-     *   @OA\Response(response="404", description="The show is on hiatus", @OA\JsonContent(type="object", @OA\Property(property="message", type="string"), @OA\Property(property="hiatus", type="boolean")))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/next',
+        operationId: 'GetShowNext',
+        description: 'The next upcoming episode',
+        tags: ['shows'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'episode', type: 'integer'),
+                        new OA\Property(property: 'airs', type: 'string', format: 'date-time'),
+                        new OA\Property(property: 'season', type: 'integer'),
+                        new OA\Property(property: 'title', type: 'string'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'The show is on hiatus',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'hiatus', type: 'boolean'),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function next(): JsonResponse
     {
         $next = Show::whereNotNull('season')->where('airs', '>', now())->orderBy('airs')->first();
@@ -142,18 +264,27 @@ class ShowManagementController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/reservation-info",
-     *   operationId="GetShowReservationInfo",
-     *   description="The two texts shown on every episode page: what reservations are and the reservation rules (HTML that was sanitized when staff saved it, see `PUT /settings/{key}`)",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"aboutReservations", "reservationRules"},
-     *     @OA\Property(property="aboutReservations", type="string"), @OA\Property(property="reservationRules", type="string")
-     *   ))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/reservation-info',
+        operationId: 'GetShowReservationInfo',
+        description: 'The two texts shown on every episode page: what reservations are and the reservation rules (HTML that was sanitized when staff saved it, see `PUT /settings/{key}`)',
+        tags: ['shows'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['aboutReservations', 'reservationRules'],
+                    properties: [
+                        new OA\Property(property: 'aboutReservations', type: 'string'),
+                        new OA\Property(property: 'reservationRules', type: 'string'),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function reservationInfo(): JsonResponse
     {
         return response()->json([
@@ -162,21 +293,40 @@ class ShowManagementController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/{id}/adjacent",
-     *   operationId="GetShowIdAdjacent",
-     *   description="The entries before and after this one: by overall number for episodes, by episode number among the other entries (movies, specials) for those",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"previous", "next"},
-     *     @OA\Property(property="previous", ref="#/components/schemas/ShowListItem", nullable=true),
-     *     @OA\Property(property="next", ref="#/components/schemas/ShowListItem", nullable=true)
-     *   )),
-     *   @OA\Response(response="404", description="Show not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/{id}/adjacent',
+        operationId: 'GetShowIdAdjacent',
+        description: 'The entries before and after this one: by overall number for episodes, by episode number among the other entries (movies, specials) for those',
+        tags: ['shows'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['previous', 'next'],
+                    properties: [
+                        new OA\Property(property: 'previous', ref: '#/components/schemas/ShowListItem', nullable: true),
+                        new OA\Property(property: 'next', ref: '#/components/schemas/ShowListItem', nullable: true),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Show not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function adjacent(int $id): JsonResponse
     {
         $show = Show::findOrFail($id);
@@ -196,20 +346,38 @@ class ShowManagementController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/prefill",
-     *   operationId="GetShowPrefill",
-     *   description="Suggested values for the next episode to add. Staff only",
-     *   tags={"shows"},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"season", "episode", "no", "airday"},
-     *     @OA\Property(property="season", type="integer"), @OA\Property(property="episode", type="integer"),
-     *     @OA\Property(property="no", type="integer", description="Suggested overall number"),
-     *     @OA\Property(property="airday", type="string", format="date", description="Suggested air date")
-     *   )),
-     *   @OA\Response(response="404", description="No last added episode found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/prefill',
+        operationId: 'GetShowPrefill',
+        description: 'Suggested values for the next episode to add. Staff only',
+        tags: ['shows'],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['season', 'episode', 'no', 'airday'],
+                    properties: [
+                        new OA\Property(property: 'season', type: 'integer'),
+                        new OA\Property(property: 'episode', type: 'integer'),
+                        new OA\Property(property: 'no', type: 'integer', description: 'Suggested overall number'),
+                        new OA\Property(
+                            property: 'airday',
+                            type: 'string',
+                            format: 'date',
+                            description: 'Suggested air date',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'No last added episode found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function prefill(): JsonResponse
     {
         $last = Show::whereNotNull('season')->orderByDesc('no')->first();
@@ -230,18 +398,46 @@ class ShowManagementController extends Controller
         return response()->json(['season' => $season, 'episode' => $episode, 'no' => ($last->no ?? 0) + $last->parts, 'airday' => $airs]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/show",
-     *   operationId="PostShow",
-     *   description="Create a show entry. Staff only",
-     *   tags={"shows"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/ShowInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", required={"id", "url"}, additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="url", type="string", format="uri", description="URL of the newly created show entry"))),
-     *   @OA\Response(response="409", description="An episode with the same season and episode number exists", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/show',
+        operationId: 'PostShow',
+        description: 'Create a show entry. Staff only',
+        tags: ['shows'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ShowInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Created',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id', 'url'],
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                        new OA\Property(
+                            property: 'url',
+                            type: 'string',
+                            format: 'uri',
+                            description: 'URL of the newly created show entry',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'An episode with the same season and episode number exists',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function create(Request $request): JsonResponse
     {
         $data = $this->validated($request, null);
@@ -251,20 +447,42 @@ class ShowManagementController extends Controller
         return response()->json(['id' => $show->id, 'url' => $show->toUrl()], 201);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/show/{id}",
-     *   operationId="PutShowId",
-     *   description="Update a show entry. Staff only",
-     *   tags={"shows"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/ShowInput")),
-     *   @OA\Response(response="204", description="Updated"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="Another episode has the same season and episode number", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/show/{id}',
+        operationId: 'PutShowId',
+        description: 'Update a show entry. Staff only',
+        tags: ['shows'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ShowInput'),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Updated'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Another episode has the same season and episode number',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id)
     {
         $show = Show::findOrFail($id);
@@ -273,17 +491,28 @@ class ShowManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/show/{id}",
-     *   operationId="DeleteShowId",
-     *   description="Delete a show entry. Staff only",
-     *   tags={"shows"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="Deleted"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/show/{id}',
+        operationId: 'DeleteShowId',
+        description: 'Delete a show entry. Staff only',
+        tags: ['shows'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '200', description: 'Deleted'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function destroy(int $id): JsonResponse
     {
         Show::findOrFail($id)->delete();
@@ -291,37 +520,104 @@ class ShowManagementController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/{id}/vote",
-     *   operationId="GetShowIdVote",
-     *   description="How many votes each rating (1-5) received",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"data"}, @OA\Property(property="data", type="object", description="Map of vote values (1-5) to the number of votes received", additionalProperties=@OA\AdditionalProperties(type="integer")))),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/{id}/vote',
+        operationId: 'GetShowIdVote',
+        description: 'How many votes each rating (1-5) received',
+        tags: ['shows'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['data'],
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            description: 'Map of vote values (1-5) to the number of votes received',
+                            additionalProperties: new OA\AdditionalProperties(type: 'integer'),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function votes(int $id): JsonResponse
     {
         return response()->json(['data' => (object) $this->voteCounts(Show::findOrFail($id))]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/show/{id}/vote",
-     *   operationId="PostShowIdVote",
-     *   description="Rate a show that has aired. Everybody can vote once",
-     *   tags={"shows"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"vote"}, @OA\Property(property="vote", type="integer", minimum=1, maximum=5))),
-     *   @OA\Response(response="200", description="The vote counts after voting, and the rating that was recorded", @OA\JsonContent(type="object", required={"data", "userVote"}, @OA\Property(property="data", type="object", additionalProperties=@OA\AdditionalProperties(type="integer")), @OA\Property(property="userVote", type="integer", minimum=1, maximum=5))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The show has not aired yet, or the user already voted", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/show/{id}/vote',
+        operationId: 'PostShowIdVote',
+        description: 'Rate a show that has aired. Everybody can vote once',
+        tags: ['shows'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['vote'],
+                properties: [new OA\Property(property: 'vote', type: 'integer', minimum: 1, maximum: 5)],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'The vote counts after voting, and the rating that was recorded',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['data', 'userVote'],
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
+                            additionalProperties: new OA\AdditionalProperties(type: 'integer'),
+                        ),
+                        new OA\Property(property: 'userVote', type: 'integer', minimum: 1, maximum: 5),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The show has not aired yet, or the user already voted',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function vote(Request $request, int $id): JsonResponse
     {
         $show = Show::findOrFail($id);
@@ -344,21 +640,60 @@ class ShowManagementController extends Controller
         return response()->json(['data' => (object) $this->voteCounts($show), 'userVote' => (int) $valid['vote']]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/{id}/appearances",
-     *   operationId="GetShowIdAppearances",
-     *   description="Official appearances that can be linked to the show, and which ones are. Staff only",
-     *   tags={"shows"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"groups", "entries", "linkedIds"},
-     *     @OA\Property(property="groups", type="object", description="Map of guide names to their display labels"),
-     *     @OA\Property(property="entries", type="array", description="Appearances eligible to be linked, excluding pinned and personal ones", @OA\Items(type="object", @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"), @OA\Property(property="guide", type="string", nullable=true))),
-     *     @OA\Property(property="linkedIds", type="array", @OA\Items(ref="#/components/schemas/OneBasedId"))
-     *   )),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/{id}/appearances',
+        operationId: 'GetShowIdAppearances',
+        description: 'Official appearances that can be linked to the show, and which ones are. Staff only',
+        tags: ['shows'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['groups', 'entries', 'linkedIds'],
+                    properties: [
+                        new OA\Property(
+                            property: 'groups',
+                            type: 'object',
+                            description: 'Map of guide names to their display labels',
+                        ),
+                        new OA\Property(
+                            property: 'entries',
+                            type: 'array',
+                            description: 'Appearances eligible to be linked, excluding pinned and personal ones',
+                            items: new OA\Items(
+                                type: 'object',
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'label', type: 'string'),
+                                    new OA\Property(property: 'guide', type: 'string', nullable: true),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(
+                            property: 'linkedIds',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function appearances(int $id): JsonResponse
     {
         $show = Show::findOrFail($id);
@@ -371,19 +706,46 @@ class ShowManagementController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/show/{id}/appearances",
-     *   operationId="PutShowIdAppearances",
-     *   description="Replace the appearances linked to the show. Staff only",
-     *   tags={"shows"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(@OA\JsonContent(type="object", @OA\Property(property="ids", type="array", description="Appearance IDs that should be linked", @OA\Items(ref="#/components/schemas/OneBasedId")))),
-     *   @OA\Response(response="200", description="Saved"),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/show/{id}/appearances',
+        operationId: 'PutShowIdAppearances',
+        description: 'Replace the appearances linked to the show. Staff only',
+        tags: ['shows'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: 'ids',
+                        type: 'array',
+                        description: 'Appearance IDs that should be linked',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '200', description: 'Saved'),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setAppearances(Request $request, int $id): JsonResponse
     {
         $show = Show::findOrFail($id);

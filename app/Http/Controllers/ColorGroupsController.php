@@ -17,41 +17,99 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class ColorGroupsController extends Controller
 {
-    /**
-     * @OA\Schema(
-     *   schema="ColorGroupInput",
-     *   type="object",
-     *   required={"label", "colors"},
-     *   @OA\Property(property="appearanceId", ref="#/components/schemas/OneBasedId", description="Only when creating"),
-     *   @OA\Property(property="label", type="string", minLength=2, maxLength=30),
-     *   @OA\Property(property="colors", type="array", minItems=1, description="Existing colors should include their id, omitted existing colors are deleted",
-     *     @OA\Items(type="object", required={"label"},
-     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="label", type="string", minLength=3, maxLength=30),
-     *       @OA\Property(property="hex", type="string", nullable=true),
-     *       @OA\Property(property="opacity", type="integer", minimum=1, maximum=99, nullable=true, description="How opaque the color is drawn, in percent. Null means fully opaque. Left unchanged when omitted"),
-     *       @OA\Property(property="blendMode", ref="#/components/schemas/BlendMode", nullable=true, description="How the color combines with what is under it. Null means normal. Left unchanged when omitted")
-     *     )
-     *   ),
-     *   @OA\Property(property="major", type="boolean", description="Record as a major change (official guide only)"),
-     *   @OA\Property(property="reason", type="string", maxLength=255, description="Required when major is set")
-     * )
-     * @OA\Get(
-     *   path="/color-groups/{id}",
-     *   operationId="GetColorGroupsId",
-     *   description="Get a color group with its colors. Requires being the owner of the appearance, or staff",
-     *   tags={"color groups"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/PrivateColorGroup")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'ColorGroupInput',
+        type: 'object',
+        required: ['label', 'colors'],
+        properties: [
+            new OA\Property(
+                property: 'appearanceId',
+                ref: '#/components/schemas/OneBasedId',
+                description: 'Only when creating',
+            ),
+            new OA\Property(property: 'label', type: 'string', minLength: 2, maxLength: 30),
+            new OA\Property(
+                property: 'colors',
+                type: 'array',
+                minItems: 1,
+                description: 'Existing colors should include their id, omitted existing colors are deleted',
+                items: new OA\Items(
+                    type: 'object',
+                    required: ['label'],
+                    properties: [
+                        new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                        new OA\Property(property: 'label', type: 'string', minLength: 3, maxLength: 30),
+                        new OA\Property(property: 'hex', type: 'string', nullable: true),
+                        new OA\Property(
+                            property: 'opacity',
+                            type: 'integer',
+                            minimum: 1,
+                            maximum: 99,
+                            nullable: true,
+                            description: 'How opaque the color is drawn, in percent. Null means fully opaque. Left unchanged when omitted',
+                        ),
+                        new OA\Property(
+                            property: 'blendMode',
+                            ref: '#/components/schemas/BlendMode',
+                            nullable: true,
+                            description: 'How the color combines with what is under it. Null means normal. Left unchanged when omitted',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Property(
+                property: 'major',
+                type: 'boolean',
+                description: 'Record as a major change (official guide only)',
+            ),
+            new OA\Property(
+                property: 'reason',
+                type: 'string',
+                maxLength: 255,
+                description: 'Required when major is set',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/color-groups/{id}',
+        operationId: 'GetColorGroupsId',
+        description: 'Get a color group with its colors. Requires being the owner of the appearance, or staff',
+        tags: ['color groups'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/PrivateColorGroup'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(Request $request, int $id): JsonResponse
     {
         $group = $this->load($request, $id);
@@ -72,20 +130,47 @@ class ColorGroupsController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/color-groups",
-     *   operationId="PostColorGroups",
-     *   description="Create a color group on an appearance. Requires being the owner of the appearance, or staff",
-     *   tags={"color groups"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/ColorGroupInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", required={"id"}, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/color-groups',
+        operationId: 'PostColorGroups',
+        description: 'Create a color group on an appearance. Requires being the owner of the appearance, or staff',
+        tags: ['color groups'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ColorGroupInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Created',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id'],
+                    properties: [new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function create(Request $request): JsonResponse
     {
         $valid = Validator::make($request->all(), ['appearanceId' => ['required', 'integer', 'min:0']], [
@@ -103,21 +188,55 @@ class ColorGroupsController extends Controller
         return response()->json(['id' => $group->id], 201);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/color-groups/{id}",
-     *   operationId="PutColorGroupsId",
-     *   description="Replace a color group's label and colors. Requires being the owner of the appearance, or staff",
-     *   tags={"color groups"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/ColorGroupInput")),
-     *   @OA\Response(response="200", description="Updated", @OA\JsonContent(type="object", required={"id"}, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/color-groups/{id}',
+        operationId: 'PutColorGroupsId',
+        description: 'Replace a color group\'s label and colors. Requires being the owner of the appearance, or staff',
+        tags: ['color groups'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ColorGroupInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Updated',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['id'],
+                    properties: [new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id): JsonResponse
     {
         $group = $this->load($request, $id);
@@ -126,19 +245,38 @@ class ColorGroupsController extends Controller
         return response()->json(['id' => $group->id]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/color-groups/{id}",
-     *   operationId="DeleteColorGroupsId",
-     *   description="Delete a color group. Requires being the owner of the appearance, or staff",
-     *   tags={"color groups"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="204", description="Deleted"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/color-groups/{id}',
+        operationId: 'DeleteColorGroupsId',
+        description: 'Delete a color group. Requires being the owner of the appearance, or staff',
+        tags: ['color groups'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Deleted'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function destroy(Request $request, int $id): Response
     {
         $group = $this->load($request, $id);

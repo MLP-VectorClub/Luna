@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
 
 enum AvatarProvider: string
 {

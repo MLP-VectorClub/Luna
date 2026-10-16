@@ -26,7 +26,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -49,29 +49,63 @@ class AppearanceManagementController extends Controller
         'Eyes' => ['Gradient Top', 'Gradient Middle', 'Gradient Bottom', 'Highlight Top', 'Highlight Bottom', 'Eyebrows'],
     ];
 
-    /**
-     * @OA\Schema(
-     *   schema="AppearanceInput",
-     *   type="object",
-     *   required={"label"},
-     *   @OA\Property(property="guide", type="string", nullable=true, description="Guide identifier (staff only). When omitted, the appearance is created in the user's Personal Color Guide"),
-     *   @OA\Property(property="label", type="string", minLength=2, maxLength=70),
-     *   @OA\Property(property="notes", type="string", nullable=true, maxLength=1000),
-     *   @OA\Property(property="private", type="boolean"),
-     *   @OA\Property(property="template", type="boolean", description="Only when creating: apply the default color group template")
-     * )
-     * @OA\Get(
-     *   path="/appearances/{id}/metadata",
-     *   operationId="GetAppearancesIdMetadata",
-     *   description="The editable fields of an appearance. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/PrivateAppearance")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'AppearanceInput',
+        type: 'object',
+        required: ['label'],
+        properties: [
+            new OA\Property(
+                property: 'guide',
+                type: 'string',
+                nullable: true,
+                description: 'Guide identifier (staff only). When omitted, the appearance is created in the user\'s Personal Color Guide',
+            ),
+            new OA\Property(property: 'label', type: 'string', minLength: 2, maxLength: 70),
+            new OA\Property(property: 'notes', type: 'string', nullable: true, maxLength: 1000),
+            new OA\Property(property: 'private', type: 'boolean'),
+            new OA\Property(
+                property: 'template',
+                type: 'boolean',
+                description: 'Only when creating: apply the default color group template',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/appearances/{id}/metadata',
+        operationId: 'GetAppearancesIdMetadata',
+        description: 'The editable fields of an appearance. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/PrivateAppearance'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function metadata(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -83,23 +117,54 @@ class AppearanceManagementController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *   path="/appearances",
-     *   operationId="PostAppearances",
-     *   description="Create an appearance. Staff can create them in the official guides, everybody else in their Personal Color Guide (needs free slots)",
-     *   tags={"appearances"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AppearanceInput")),
-     *   @OA\Response(response="201", description="Created", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *     @OA\Property(property="info", type="string", description="Additional info, e.g. if applying the template failed")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="No free personal guide slots", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/appearances',
+        operationId: 'PostAppearances',
+        description: 'Create an appearance. Staff can create them in the official guides, everybody else in their Personal Color Guide (needs free slots)',
+        tags: ['appearances'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/AppearanceInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '201',
+                description: 'Created',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                        new OA\Property(
+                            property: 'info',
+                            type: 'string',
+                            description: 'Additional info, e.g. if applying the template failed',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'No free personal guide slots',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function create(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -155,21 +220,55 @@ class AppearanceManagementController extends Controller
         return response()->json($response, 201);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/{id}",
-     *   operationId="PutAppearancesId",
-     *   description="Update an appearance's name, notes and privacy. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AppearanceInput")),
-     *   @OA\Response(response="200", description="Updated", @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="label", type="string"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/{id}',
+        operationId: 'PutAppearancesId',
+        description: 'Update an appearance\'s name, notes and privacy. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/AppearanceInput'),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Updated',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [new OA\Property(property: 'label', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -204,20 +303,43 @@ class AppearanceManagementController extends Controller
         return response()->json(['label' => $appearance->label]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/appearances/{id}",
-     *   operationId="DeleteAppearancesId",
-     *   description="Delete an appearance. Requires being the owner, or staff. Pinned appearances cannot be deleted",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="204", description="Deleted"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The appearance is pinned", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/appearances/{id}',
+        operationId: 'DeleteAppearancesId',
+        description: 'Delete an appearance. Requires being the owner, or staff. Pinned appearances cannot be deleted',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '204', description: 'Deleted'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The appearance is pinned',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function destroy(Request $request, int $id): Response
     {
         $appearance = $this->managed($request, $id);
@@ -250,20 +372,43 @@ class AppearanceManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Post(
-     *   path="/appearances/{id}/template",
-     *   operationId="PostAppearancesIdTemplate",
-     *   description="Add the default color groups to an appearance that has none. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="Applied"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="409", description="The appearance already has color groups", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/appearances/{id}/template',
+        operationId: 'PostAppearancesIdTemplate',
+        description: 'Add the default color groups to an appearance that has none. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: '200', description: 'Applied'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'The appearance already has color groups',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function template(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -276,27 +421,64 @@ class AppearanceManagementController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/appearances/{id}/contents",
-     *   operationId="DeleteAppearancesIdContents",
-     *   description="Selectively clear parts of an appearance. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(@OA\JsonContent(type="object",
-     *     @OA\Property(property="wipeColors", type="string", enum={"color_hex", "color_all", "all"}, description="color_hex: clear hex values; color_all: delete all colors; all: delete all color groups"),
-     *     @OA\Property(property="wipeTags", type="boolean", description="Remove all tags (official guide only)"),
-     *     @OA\Property(property="wipeNotes", type="boolean"),
-     *     @OA\Property(property="wipeSprite", type="boolean"),
-     *     @OA\Property(property="mkpriv", type="boolean", description="Make the appearance private"),
-     *     @OA\Property(property="resetPrivKey", type="boolean", description="Generate a new private access token")
-     *   )),
-     *   @OA\Response(response="204", description="Cleared"),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/appearances/{id}/contents',
+        operationId: 'DeleteAppearancesIdContents',
+        description: 'Selectively clear parts of an appearance. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: 'wipeColors',
+                        type: 'string',
+                        enum: ['color_hex', 'color_all', 'all'],
+                        description: 'color_hex: clear hex values; color_all: delete all colors; all: delete all color groups',
+                    ),
+                    new OA\Property(
+                        property: 'wipeTags',
+                        type: 'boolean',
+                        description: 'Remove all tags (official guide only)',
+                    ),
+                    new OA\Property(property: 'wipeNotes', type: 'boolean'),
+                    new OA\Property(property: 'wipeSprite', type: 'boolean'),
+                    new OA\Property(property: 'mkpriv', type: 'boolean', description: 'Make the appearance private'),
+                    new OA\Property(
+                        property: 'resetPrivKey',
+                        type: 'boolean',
+                        description: 'Generate a new private access token',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Cleared'),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function clear(Request $request, int $id): Response
     {
         $appearance = $this->managed($request, $id);
@@ -344,19 +526,49 @@ class AppearanceManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/color-groups/order",
-     *   operationId="GetAppearancesIdColorGroupsOrder",
-     *   description="The color groups of an appearance, for reordering. Needs at least 2 color groups. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="cgs", type="array", @OA\Items(type="object", additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string")))
-     *   )),
-     *   @OA\Response(response="409", description="Fewer than 2 color groups", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/color-groups/order',
+        operationId: 'GetAppearancesIdColorGroupsOrder',
+        description: 'The color groups of an appearance, for reordering. Needs at least 2 color groups. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'cgs',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                additionalProperties: false,
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'label', type: 'string'),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Fewer than 2 color groups',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function colorGroupOrder(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -371,18 +583,43 @@ class AppearanceManagementController extends Controller
         return response()->json(['cgs' => $groups->map(fn(ColorGroup $group) => ['id' => $group->id, 'label' => $group->label])->values()]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/{id}/color-groups/order",
-     *   operationId="PutAppearancesIdColorGroupsOrder",
-     *   description="Reorder the color groups of an appearance. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"cgs"}, @OA\Property(property="cgs", type="array", description="Color group IDs in the desired order", @OA\Items(ref="#/components/schemas/OneBasedId")))),
-     *   @OA\Response(response="200", description="Reordered"),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/{id}/color-groups/order',
+        operationId: 'PutAppearancesIdColorGroupsOrder',
+        description: 'Reorder the color groups of an appearance. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['cgs'],
+                properties: [
+                    new OA\Property(
+                        property: 'cgs',
+                        type: 'array',
+                        description: 'Color group IDs in the desired order',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '200', description: 'Reordered'),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setColorGroupOrder(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -412,20 +649,62 @@ class AppearanceManagementController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/relations",
-     *   operationId="GetAppearancesIdRelations",
-     *   description="Appearances of the same guide split into linked and unlinked ones. Not available for personal guide appearances. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="unlinked", type="array", @OA\Items(type="object", additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"))),
-     *     @OA\Property(property="linked", type="array", @OA\Items(type="object", additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"), @OA\Property(property="mutual", type="boolean")))
-     *   )),
-     *   @OA\Response(response="409", description="Personal guide appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/relations',
+        operationId: 'GetAppearancesIdRelations',
+        description: 'Appearances of the same guide split into linked and unlinked ones. Not available for personal guide appearances. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'unlinked',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                additionalProperties: false,
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'label', type: 'string'),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(
+                            property: 'linked',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                additionalProperties: false,
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'label', type: 'string'),
+                                    new OA\Property(property: 'mutual', type: 'boolean'),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Personal guide appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function relations(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -450,22 +729,52 @@ class AppearanceManagementController extends Controller
         return response()->json($result);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/{id}/relations",
-     *   operationId="PutAppearancesIdRelations",
-     *   description="Replace the relations of an appearance. Not available for personal guide appearances. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(@OA\JsonContent(type="object",
-     *     @OA\Property(property="ids", type="array", description="IDs of related appearances", @OA\Items(ref="#/components/schemas/OneBasedId")),
-     *     @OA\Property(property="mutuals", type="array", description="IDs (a subset of ids) for which the relation should be mutual", @OA\Items(ref="#/components/schemas/OneBasedId"))
-     *   )),
-     *   @OA\Response(response="200", description="Saved"),
-     *   @OA\Response(response="409", description="Personal guide appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/{id}/relations',
+        operationId: 'PutAppearancesIdRelations',
+        description: 'Replace the relations of an appearance. Not available for personal guide appearances. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: 'ids',
+                        type: 'array',
+                        description: 'IDs of related appearances',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                    new OA\Property(
+                        property: 'mutuals',
+                        type: 'array',
+                        description: 'IDs (a subset of ids) for which the relation should be mutual',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '200', description: 'Saved'),
+            new OA\Response(
+                response: '409',
+                description: 'Personal guide appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setRelations(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -493,17 +802,42 @@ class AppearanceManagementController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/tags",
-     *   operationId="GetAppearancesIdTags",
-     *   description="The tags of an appearance as comma-separated text for editing. Not available for personal guide or pinned appearances. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="tags", type="string", description="Comma-separated list of tag names"))),
-     *   @OA\Response(response="409", description="Tagging is unavailable", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/tags',
+        operationId: 'GetAppearancesIdTags',
+        description: 'The tags of an appearance as comma-separated text for editing. Not available for personal guide or pinned appearances. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'tags',
+                            type: 'string',
+                            description: 'Comma-separated list of tag names',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Tagging is unavailable',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function tags(Request $request, int $id): JsonResponse
     {
         $appearance = $this->taggable($request, $id);
@@ -511,22 +845,52 @@ class AppearanceManagementController extends Controller
         return response()->json(['tags' => $appearance->tags()->whereNull('synonym_of')->orderBy('name')->pluck('name')->implode(', ')]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/{id}/tags",
-     *   operationId="PutAppearancesIdTags",
-     *   description="Apply the difference between the original and the new comma-separated tag lists, creating unknown tags. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"tags"},
-     *     @OA\Property(property="origTags", type="string", description="Comma-separated list of tags as they were before editing"),
-     *     @OA\Property(property="tags", type="string", description="Comma-separated list of the new tags")
-     *   )),
-     *   @OA\Response(response="204", description="Saved"),
-     *   @OA\Response(response="409", description="Tagging is unavailable", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/{id}/tags',
+        operationId: 'PutAppearancesIdTags',
+        description: 'Apply the difference between the original and the new comma-separated tag lists, creating unknown tags. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['tags'],
+                properties: [
+                    new OA\Property(
+                        property: 'origTags',
+                        type: 'string',
+                        description: 'Comma-separated list of tags as they were before editing',
+                    ),
+                    new OA\Property(
+                        property: 'tags',
+                        type: 'string',
+                        description: 'Comma-separated list of the new tags',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '204', description: 'Saved'),
+            new OA\Response(
+                response: '409',
+                description: 'Tagging is unavailable',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setTags(Request $request, int $id): Response
     {
         $appearance = $this->taggable($request, $id);
@@ -579,20 +943,55 @@ class AppearanceManagementController extends Controller
         return response()->noContent();
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/shows",
-     *   operationId="GetAppearancesIdShows",
-     *   description="Every show with whether the appearance is linked to it. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="groups", type="object", description="Map of valid show types to their display names"),
-     *     @OA\Property(property="entries", type="array", @OA\Items(type="object", additionalProperties=false, @OA\Property(property="id", ref="#/components/schemas/OneBasedId"), @OA\Property(property="label", type="string"), @OA\Property(property="type", type="string"))),
-     *     @OA\Property(property="linkedIds", type="array", @OA\Items(ref="#/components/schemas/OneBasedId"))
-     *   ))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/shows',
+        operationId: 'GetAppearancesIdShows',
+        description: 'Every show with whether the appearance is linked to it. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'groups',
+                            type: 'object',
+                            description: 'Map of valid show types to their display names',
+                        ),
+                        new OA\Property(
+                            property: 'entries',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                additionalProperties: false,
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'label', type: 'string'),
+                                    new OA\Property(property: 'type', type: 'string'),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(
+                            property: 'linkedIds',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                        ),
+                    ],
+                ),
+            ),
+        ],
+    )]
     public function shows(Request $request, int $id): JsonResponse
     {
         $appearance = Appearance::findOrFail($id);
@@ -605,18 +1004,41 @@ class AppearanceManagementController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/{id}/shows",
-     *   operationId="PutAppearancesIdShows",
-     *   description="Replace the shows an appearance is linked to. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(@OA\JsonContent(type="object", @OA\Property(property="ids", type="array", description="IDs of shows to link", @OA\Items(ref="#/components/schemas/OneBasedId")))),
-     *   @OA\Response(response="200", description="Saved"),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/{id}/shows',
+        operationId: 'PutAppearancesIdShows',
+        description: 'Replace the shows an appearance is linked to. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: 'ids',
+                        type: 'array',
+                        description: 'IDs of shows to link',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '200', description: 'Saved'),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function setShows(Request $request, int $id): JsonResponse
     {
         $appearance = Appearance::findOrFail($id);
@@ -626,26 +1048,66 @@ class AppearanceManagementController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Post(
-     *   path="/appearances/{id}/pin",
-     *   operationId="PostAppearancesIdPin",
-     *   description="Pin an official appearance. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="409", description="Personal guide appearances cannot be pinned", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     * @OA\Delete(
-     *   path="/appearances/{id}/pin",
-     *   operationId="DeleteAppearancesIdPin",
-     *   description="Unpin an appearance. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"message"}, @OA\Property(property="message", type="string"))),
-     *   @OA\Response(response="409", description="Personal guide appearances cannot be pinned", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/appearances/{id}/pin',
+        operationId: 'PostAppearancesIdPin',
+        description: 'Pin an official appearance. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Personal guide appearances cannot be pinned',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
+    #[OA\Delete(
+        path: '/appearances/{id}/pin',
+        operationId: 'DeleteAppearancesIdPin',
+        description: 'Unpin an appearance. Requires staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['message'],
+                    properties: [new OA\Property(property: 'message', type: 'string')],
+                ),
+            ),
+            new OA\Response(
+                response: '409',
+                description: 'Personal guide appearances cannot be pinned',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function pin(Request $request, int $id): JsonResponse
     {
         $appearance = Appearance::findOrFail($id);
@@ -673,20 +1135,36 @@ class AppearanceManagementController extends Controller
         return response()->json(['message' => 'The appearance has been unpinned successfully']);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/order",
-     *   operationId="PutAppearancesOrder",
-     *   description="Set the relevance order of the official guide's appearances. Requires staff",
-     *   tags={"appearances"},
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"list", "guide"},
-     *     @OA\Property(property="guide", ref="#/components/schemas/GuideName"),
-     *     @OA\Property(property="list", type="array", description="Appearance IDs in the desired order", @OA\Items(ref="#/components/schemas/OneBasedId"))
-     *   )),
-     *   @OA\Response(response="200", description="Reordered"),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/order',
+        operationId: 'PutAppearancesOrder',
+        description: 'Set the relevance order of the official guide\'s appearances. Requires staff',
+        tags: ['appearances'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['list', 'guide'],
+                properties: [
+                    new OA\Property(property: 'guide', ref: '#/components/schemas/GuideName'),
+                    new OA\Property(
+                        property: 'list',
+                        type: 'array',
+                        description: 'Appearance IDs in the desired order',
+                        items: new OA\Items(ref: '#/components/schemas/OneBasedId'),
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: '200', description: 'Reordered'),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function order(Request $request): JsonResponse
     {
         $valid = Validator::make($request->all(), ['guide' => ['required', 'in:'.implode(',', array_column(GuideName::cases(), 'value'))]])->validate();
@@ -711,21 +1189,68 @@ class AppearanceManagementController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Post(
-     *   path="/appearances/{id}/sprite",
-     *   operationId="PostAppearancesIdSprite",
-     *   description="Upload a new sprite image (PNG, 300px tall, 300 to 700px wide). Requires being the owner, or staff. Owners need the `a_pcgsprite` preference enabled",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data", @OA\Schema(type="object", required={"sprite"}, @OA\Property(property="sprite", ref="#/components/schemas/File")))),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="path", type="string", description="URL of the newly uploaded sprite"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission to manage this appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error, e.g. invalid image format or size", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/appearances/{id}/sprite',
+        operationId: 'PostAppearancesIdSprite',
+        description: 'Upload a new sprite image (PNG, 300px tall, 300 to 700px wide). Requires being the owner, or staff. Owners need the `a_pcgsprite` preference enabled',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    type: 'object',
+                    required: ['sprite'],
+                    properties: [new OA\Property(property: 'sprite', ref: '#/components/schemas/File')],
+                ),
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'path',
+                            type: 'string',
+                            description: 'URL of the newly uploaded sprite',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission to manage this appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error, e.g. invalid image format or size',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function uploadSprite(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -763,19 +1288,53 @@ class AppearanceManagementController extends Controller
         return response()->json(['path' => ColorGuideHelper::mapSprite($appearance)['path'] ?? null]);
     }
 
-    /**
-     * @OA\Delete(
-     *   path="/appearances/{id}/sprite",
-     *   operationId="DeleteAppearancesIdSprite",
-     *   description="Remove the sprite image of an appearance. Requires being the owner, or staff",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/ZeroBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false, @OA\Property(property="sprite", type="string", nullable=true, description="Always null in Luna, clients show their own placeholder"))),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission to manage this appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found, or it has no sprite", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Delete(
+        path: '/appearances/{id}/sprite',
+        operationId: 'DeleteAppearancesIdSprite',
+        description: 'Remove the sprite image of an appearance. Requires being the owner, or staff',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/ZeroBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'sprite',
+                            type: 'string',
+                            nullable: true,
+                            description: 'Always null in Luna, clients show their own placeholder',
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission to manage this appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found, or it has no sprite',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function deleteSprite(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -789,32 +1348,101 @@ class AppearanceManagementController extends Controller
         return response()->json(['sprite' => null]);
     }
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/tag-changes",
-     *   operationId="GetAppearancesIdTagChanges",
-     *   description="The history of tags being added to and removed from an appearance, newest first. Staff only; personal guide appearances have no history.",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="query", name="page", required=false, @OA\Schema(type="integer", default=1, minimum=1)),
-     *   @OA\Parameter(in="query", name="size", required=false, @OA\Schema(type="integer", default=25, minimum=1, maximum=100)),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", required={"changes", "pagination"},
-     *     @OA\Property(property="changes", type="array", @OA\Items(type="object", additionalProperties=false, required={"id", "tagId", "tagName", "added", "user", "createdAt"},
-     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="tagId", type="integer", nullable=true, description="The tag may have been deleted since, in which case it no longer resolves"),
-     *       @OA\Property(property="tagName", type="string", nullable=true, description="The tag's name at the time of the change; missing on very old entries"),
-     *       @OA\Property(property="added", type="boolean", description="True when the tag was added, false when it was removed"),
-     *       @OA\Property(property="user", nullable=true, description="Who made the change; null when the user no longer exists", oneOf={@OA\Schema(ref="#/components/schemas/PostUser")}),
-     *       @OA\Property(property="createdAt", type="string", format="date-time")
-     *     )),
-     *     @OA\Property(property="pagination", ref="#/components/schemas/Pagination")
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permissions", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found, or it belongs to a personal guide", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Invalid query", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/tag-changes',
+        operationId: 'GetAppearancesIdTagChanges',
+        description: 'The history of tags being added to and removed from an appearance, newest first. Staff only; personal guide appearances have no history.',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 1, minimum: 1),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 25, minimum: 1, maximum: 100),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    required: ['changes', 'pagination'],
+                    properties: [
+                        new OA\Property(
+                            property: 'changes',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                additionalProperties: false,
+                                required: ['id', 'tagId', 'tagName', 'added', 'user', 'createdAt'],
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(
+                                        property: 'tagId',
+                                        type: 'integer',
+                                        nullable: true,
+                                        description: 'The tag may have been deleted since, in which case it no longer resolves',
+                                    ),
+                                    new OA\Property(
+                                        property: 'tagName',
+                                        type: 'string',
+                                        nullable: true,
+                                        description: 'The tag\'s name at the time of the change; missing on very old entries',
+                                    ),
+                                    new OA\Property(
+                                        property: 'added',
+                                        type: 'boolean',
+                                        description: 'True when the tag was added, false when it was removed',
+                                    ),
+                                    new OA\Property(
+                                        property: 'user',
+                                        nullable: true,
+                                        description: 'Who made the change; null when the user no longer exists',
+                                        oneOf: [new OA\Schema(ref: '#/components/schemas/PostUser')],
+                                    ),
+                                    new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+                                ],
+                            ),
+                        ),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/Pagination'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permissions',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found, or it belongs to a personal guide',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Invalid query',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function tagChanges(Request $request, int $id): JsonResponse
     {
         $appearance = Appearance::findOrFail($id);

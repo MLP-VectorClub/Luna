@@ -17,37 +17,86 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class CutieMarksController extends Controller
 {
     private const MAX_CUTIE_MARKS = 2;
     private const MAX_SVG_BYTES = 1048576;
 
-    /**
-     * @OA\Get(
-     *   path="/appearances/{id}/cutie-marks",
-     *   operationId="GetAppearancesIdCutieMarks",
-     *   description="Get the cutie marks associated with an appearance. The user must have permission to manage the appearance.",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="cms", type="array", @OA\Items(type="object", additionalProperties=true,
-     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="appearanceId", ref="#/components/schemas/OneBasedId"),
-     *       @OA\Property(property="facing", type="string", nullable=true),
-     *       @OA\Property(property="rotation", type="integer"),
-     *       @OA\Property(property="label", type="string", nullable=true),
-     *       @OA\Property(property="deviation", type="string", format="uri", description="Present if the cutie mark is attributed to a deviation"),
-     *       @OA\Property(property="username", type="string", description="Present if the cutie mark is attributed to a contributor"),
-     *       @OA\Property(property="rendered", type="string", format="uri", description="URL of the cutie mark image")
-     *     ))
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission to manage this appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/appearances/{id}/cutie-marks',
+        operationId: 'GetAppearancesIdCutieMarks',
+        description: 'Get the cutie marks associated with an appearance. The user must have permission to manage the appearance.',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(
+                            property: 'cms',
+                            type: 'array',
+                            items: new OA\Items(
+                                type: 'object',
+                                additionalProperties: true,
+                                properties: [
+                                    new OA\Property(property: 'id', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'appearanceId', ref: '#/components/schemas/OneBasedId'),
+                                    new OA\Property(property: 'facing', type: 'string', nullable: true),
+                                    new OA\Property(property: 'rotation', type: 'integer'),
+                                    new OA\Property(property: 'label', type: 'string', nullable: true),
+                                    new OA\Property(
+                                        property: 'deviation',
+                                        type: 'string',
+                                        format: 'uri',
+                                        description: 'Present if the cutie mark is attributed to a deviation',
+                                    ),
+                                    new OA\Property(
+                                        property: 'username',
+                                        type: 'string',
+                                        description: 'Present if the cutie mark is attributed to a contributor',
+                                    ),
+                                    new OA\Property(
+                                        property: 'rendered',
+                                        type: 'string',
+                                        format: 'uri',
+                                        description: 'URL of the cutie mark image',
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission to manage this appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function index(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -55,33 +104,120 @@ class CutieMarksController extends Controller
         return response()->json(['cms' => $appearance->cutiemarks()->orderBy('id')->get()->map(fn(CutieMark $cm) => $this->present($cm))->all()]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/appearances/{id}/cutie-marks",
-     *   operationId="PutAppearancesIdCutieMarks",
-     *   description="Replace the cutie marks of an appearance (up to 2). Cutie marks missing from the list are removed. The user must have permission to manage the appearance.",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", required={"cutieMarks"},
-     *     @OA\Property(property="cutieMarks", type="array", maxItems=2, description="List of cutie mark definitions, max 2 items", @OA\Items(type="object", required={"attribution", "rotation"},
-     *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId", description="ID of an existing cutie mark to update; omit to create a new one"),
-     *       @OA\Property(property="svgdata", ref="#/components/schemas/SVGFile", description="Required when creating a new cutie mark, max 1MB"),
-     *       @OA\Property(property="label", type="string", nullable=true, minLength=1, maxLength=32, description="Unique-per-appearance display label"),
-     *       @OA\Property(property="facing", type="string", nullable=true, description="Body orientation this cutie mark applies to"),
-     *       @OA\Property(property="attribution", type="string", enum={"deviation", "user", "none"}),
-     *       @OA\Property(property="deviation", type="string", format="uri", description="Deviation URL, required when attribution is 'deviation'"),
-     *       @OA\Property(property="username", type="string", description="DeviantArt username, required when attribution is 'user'"),
-     *       @OA\Property(property="rotation", type="integer", minimum=-45, maximum=45, description="Preview rotation amount in degrees")
-     *     )),
-     *     @OA\Property(property="appearancePage", type="boolean", description="Accepted for compatibility with Winterchilla, has no effect")
-     *   )),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false)),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission to manage this appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error in one of the cutie mark entries", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/appearances/{id}/cutie-marks',
+        operationId: 'PutAppearancesIdCutieMarks',
+        description: 'Replace the cutie marks of an appearance (up to 2). Cutie marks missing from the list are removed. The user must have permission to manage the appearance.',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['cutieMarks'],
+                properties: [
+                    new OA\Property(
+                        property: 'cutieMarks',
+                        type: 'array',
+                        maxItems: 2,
+                        description: 'List of cutie mark definitions, max 2 items',
+                        items: new OA\Items(
+                            type: 'object',
+                            required: ['attribution', 'rotation'],
+                            properties: [
+                                new OA\Property(
+                                    property: 'id',
+                                    ref: '#/components/schemas/OneBasedId',
+                                    description: 'ID of an existing cutie mark to update; omit to create a new one',
+                                ),
+                                new OA\Property(
+                                    property: 'svgdata',
+                                    ref: '#/components/schemas/SVGFile',
+                                    description: 'Required when creating a new cutie mark, max 1MB',
+                                ),
+                                new OA\Property(
+                                    property: 'label',
+                                    type: 'string',
+                                    nullable: true,
+                                    minLength: 1,
+                                    maxLength: 32,
+                                    description: 'Unique-per-appearance display label',
+                                ),
+                                new OA\Property(
+                                    property: 'facing',
+                                    type: 'string',
+                                    nullable: true,
+                                    description: 'Body orientation this cutie mark applies to',
+                                ),
+                                new OA\Property(
+                                    property: 'attribution',
+                                    type: 'string',
+                                    enum: ['deviation', 'user', 'none'],
+                                ),
+                                new OA\Property(
+                                    property: 'deviation',
+                                    type: 'string',
+                                    format: 'uri',
+                                    description: 'Deviation URL, required when attribution is \'deviation\'',
+                                ),
+                                new OA\Property(
+                                    property: 'username',
+                                    type: 'string',
+                                    description: 'DeviantArt username, required when attribution is \'user\'',
+                                ),
+                                new OA\Property(
+                                    property: 'rotation',
+                                    type: 'integer',
+                                    minimum: -45,
+                                    maximum: 45,
+                                    description: 'Preview rotation amount in degrees',
+                                ),
+                            ],
+                        ),
+                    ),
+                    new OA\Property(
+                        property: 'appearancePage',
+                        type: 'boolean',
+                        description: 'Accepted for compatibility with Winterchilla, has no effect',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(type: 'object', additionalProperties: false),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission to manage this appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error in one of the cutie mark entries',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function replace(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);
@@ -232,28 +368,71 @@ class CutieMarksController extends Controller
         return response()->json(new \stdClass());
     }
 
-    /**
-     * @OA\Post(
-     *   path="/appearances/{id}/sanitize-svg",
-     *   operationId="PostAppearancesIdSanitizeSvg",
-     *   description="Upload and sanitize an SVG file for use as a cutie mark, returning the sanitized SVG markup. The user must be signed in and have permission to manage the appearance.",
-     *   tags={"appearances"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\RequestBody(required=true, @OA\MediaType(mediaType="multipart/form-data",
-     *     @OA\Schema(type="object", required={"file"}, @OA\Property(property="file", ref="#/components/schemas/SVGFile"))
-     *   )),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(type="object", additionalProperties=false,
-     *     @OA\Property(property="svgel", type="string", description="Sanitized SVG markup"),
-     *     @OA\Property(property="svgdata", type="string", description="Original uploaded SVG markup"),
-     *     @OA\Property(property="keepDialog", type="boolean"),
-     *     @OA\Property(property="warnings", type="array", @OA\Items(type="string"))
-     *   )),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Insufficient permission to manage this appearance", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Appearance not found", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="SVG data is missing, invalid or too large", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Post(
+        path: '/appearances/{id}/sanitize-svg',
+        operationId: 'PostAppearancesIdSanitizeSvg',
+        description: 'Upload and sanitize an SVG file for use as a cutie mark, returning the sanitized SVG markup. The user must be signed in and have permission to manage the appearance.',
+        tags: ['appearances'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    type: 'object',
+                    required: ['file'],
+                    properties: [new OA\Property(property: 'file', ref: '#/components/schemas/SVGFile')],
+                ),
+            ),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: [
+                        new OA\Property(property: 'svgel', type: 'string', description: 'Sanitized SVG markup'),
+                        new OA\Property(
+                            property: 'svgdata',
+                            type: 'string',
+                            description: 'Original uploaded SVG markup',
+                        ),
+                        new OA\Property(property: 'keepDialog', type: 'boolean'),
+                        new OA\Property(property: 'warnings', type: 'array', items: new OA\Items(type: 'string')),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Insufficient permission to manage this appearance',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Appearance not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'SVG data is missing, invalid or too large',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function sanitize(Request $request, int $id): JsonResponse
     {
         $appearance = $this->managed($request, $id);

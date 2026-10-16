@@ -3,16 +3,14 @@
 
 namespace App\Utils;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *     schema="AppSettings",
- *     type="string",
- *     description="List of supported application-wide settings",
- *     enum=APP_SETTINGS,
- * )
- */
+#[OA\Schema(
+    schema: 'AppSettings',
+    type: 'string',
+    description: 'List of supported application-wide settings',
+    enum: \APP_SETTINGS,
+)]
 class SettingsHelper
 {
     // Same keys and defaults as Winterchilla's GlobalSettings

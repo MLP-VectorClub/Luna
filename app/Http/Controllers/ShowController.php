@@ -12,28 +12,28 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class ShowController extends Controller
 {
     /**
-     * @OA\Schema(
-     *   schema="ShowList",
-     *   type="object",
-     *   description="An array of public show entries under the show key",
-     *   required={
-     *     "show"
-     *   },
-     *   additionalProperties=false,
-     *   @OA\Property(
-     *     property="show",
-     *     type="array",
-     *     @OA\Items(ref="#/components/schemas/ShowListItem")
-     *   )
-     * )
      * @param  Show  $show
      * @return array
      */
+    #[OA\Schema(
+        schema: 'ShowList',
+        type: 'object',
+        description: 'An array of public show entries under the show key',
+        required: ['show'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'show',
+                type: 'array',
+                items: new OA\Items(ref: '#/components/schemas/ShowListItem'),
+            ),
+        ],
+    )]
     public static function mapShowListItem(Show $show)
     {
         return [
@@ -48,16 +48,20 @@ class ShowController extends Controller
         ];
     }
 
-    /**
-     * @OA\Get(
-     *   path="/show/upcoming",
-     *   operationId="GetShowUpcoming",
-     *   description="The show entries that air within the next 6 months, soonest first (the sidebar list called Happening soon)",
-     *   tags={"shows"},
-     *   security={},
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/ShowList"))
-     * )
-     */
+    #[OA\Get(
+        path: '/show/upcoming',
+        operationId: 'GetShowUpcoming',
+        description: 'The show entries that air within the next 6 months, soonest first (the sidebar list called Happening soon)',
+        tags: ['shows'],
+        security: [],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/ShowList'),
+            ),
+        ],
+    )]
     public function upcoming(): JsonResponse
     {
         $shows = Show::where('airs', '>', now())->where('airs', '<', now()->addMonths(6))->orderBy('airs')->orderBy('id')->get();
@@ -66,89 +70,89 @@ class ShowController extends Controller
     }
 
     /**
-     * @OA\Schema(
-     *   schema="ShowListPageSize",
-     *   type="integer",
-     *   minimum=1,
-     *   maximum=10,
-     *   default=8,
-     *   description="The number of results to return per page"
-     * )
-     * @OA\Get(
-     *   path="/show",
-     *   description="Allows querying all show entries with forced pagination",
-     *   tags={"show"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="types[]",
-     *     required=true,
-     *     @OA\Schema(
-     *       type="array",
-     *       minItems=1,
-     *       @OA\Items(ref="#/components/schemas/ShowType")
-     *     ),
-     *     description="List of types of entries to return",
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="order",
-     *     required=true,
-     *     @OA\Schema(ref="#/components/schemas/ShowOrdering"),
-     *     description="What method to use for ordering results. Overall sorting is based only on the `no` field, while series sorting is meant for episodes and uses the `season` and `episode` fields to keep them in chronological order."
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="page",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/PageNumber"),
-     *     description="Which page of results to return"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="size",
-     *     required=false,
-     *     @OA\Schema(ref="#/components/schemas/ShowListPageSize"),
-     *     description="The number of results to return per page"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="season",
-     *     required=false,
-     *     @OA\Schema(type="integer", minimum=0),
-     *     description="Only list episodes of this season"
-     *   ),
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="episode",
-     *     required=false,
-     *     @OA\Schema(type="integer", minimum=0),
-     *     description="Only list episodes with this number"
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="OK",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ShowList"),
-     *         @OA\Schema(ref="#/components/schemas/PageData")
-     *       }
-     *     )
-     *   ),
-     *   @OA\Response(
-     *     response="503",
-     *     description="Temporarily Unavailable",
-     *     @OA\JsonContent(
-     *       allOf={
-     *         @OA\Schema(ref="#/components/schemas/ErrorResponse")
-     *       }
-     *     )
-     *   )
-     * )
      * @param  Request  $request
      * @return JsonResponse|Response
      * @throws ValidationException
      */
+    #[OA\Schema(
+        schema: 'ShowListPageSize',
+        type: 'integer',
+        minimum: 1,
+        maximum: 10,
+        default: 8,
+        description: 'The number of results to return per page',
+    )]
+    #[OA\Get(
+        path: '/show',
+        description: 'Allows querying all show entries with forced pagination',
+        tags: ['show'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'types[]',
+                required: true,
+                description: 'List of types of entries to return',
+                schema: new OA\Schema(
+                    type: 'array',
+                    minItems: 1,
+                    items: new OA\Items(ref: '#/components/schemas/ShowType'),
+                ),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'order',
+                required: true,
+                description: 'What method to use for ordering results. Overall sorting is based only on the `no` field, while series sorting is meant for episodes and uses the `season` and `episode` fields to keep them in chronological order.',
+                schema: new OA\Schema(ref: '#/components/schemas/ShowOrdering'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'page',
+                required: false,
+                description: 'Which page of results to return',
+                schema: new OA\Schema(ref: '#/components/schemas/PageNumber'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'size',
+                required: false,
+                description: 'The number of results to return per page',
+                schema: new OA\Schema(ref: '#/components/schemas/ShowListPageSize'),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'season',
+                required: false,
+                description: 'Only list episodes of this season',
+                schema: new OA\Schema(type: 'integer', minimum: 0),
+            ),
+            new OA\Parameter(
+                in: 'query',
+                name: 'episode',
+                required: false,
+                description: 'Only list episodes with this number',
+                schema: new OA\Schema(type: 'integer', minimum: 0),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(
+                    allOf: [
+                        new OA\Schema(ref: '#/components/schemas/ShowList'),
+                        new OA\Schema(ref: '#/components/schemas/PageData'),
+                    ],
+                ),
+            ),
+            new OA\Response(
+                response: '503',
+                description: 'Temporarily Unavailable',
+                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
+            ),
+        ],
+    )]
     public function index(Request $request)
     {
         $valid = Validator::make($request->all(), [

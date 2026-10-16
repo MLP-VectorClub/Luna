@@ -24,7 +24,7 @@ class GenerateEnumDocblocks extends Command
      *
      * @var string
      */
-    protected $description = 'Generate the docblock file for the UserPref schema';
+    protected $description = 'Generate the attribute files for the UserPrefs and GuideEntryCounts schemas';
 
     /**
      * Execute the console command.
@@ -40,7 +40,7 @@ class GenerateEnumDocblocks extends Command
     protected function getGenerationComment(): string
     {
         return <<<PHP
-        # Generated OpenAPI annotations for the darkaonline/l5-swagger package
+        # Generated OpenAPI attributes for the darkaonline/l5-swagger package
         # This file should not be edited directly, generate it using `php artisan {$this->signature}`"
         PHP;
     }
@@ -55,38 +55,22 @@ class GenerateEnumDocblocks extends Command
     {
         $properties = Collection::make(UserPrefKey::cases())->map(function (UserPrefKey $key) {
             $type_data = UserPrefHelper::type($key);
-            $property = sprintf(" *     property=\"%s\",\n", $key->value);
-            $type = '';
+            $args = ["property: '{$key->value}'"];
             if (isset($type_data['type'])) {
-                $type = " *     type=\"{$type_data['type']}\",\n";
+                $args[] = "type: '{$type_data['type']}'";
             }
-            $nullable = '';
             if (isset($type_data['nullable']) && $type_data['nullable'] === true) {
-                $nullable = " *     nullable=true,\n";
+                $args[] = 'nullable: true';
                 if (isset($type_data['ref'])) {
-                    $nullable .= <<<STR
-                     *     allOf={
-                     *       @OA\Schema(ref="{$type_data['ref']}")
-                     *     },
-
-                    STR;
+                    $args[] = "allOf: [new OA\\Schema(ref: '{$type_data['ref']}')]";
                     unset($type_data['ref']);
                 }
             }
-            $ref = '';
             if (isset($type_data['ref'])) {
-                $type = " *     ref=\"{$type_data['ref']}\",\n";
+                $args[] = "ref: '{$type_data['ref']}'";
             }
-            $comment = <<<PHP
-            use OpenAPI\Annotations as OA;
-            /**
-             *   @OA\Property(
-            $property$type$nullable$ref
-             *   ),
-             */
-            PHP;
 
-            return implode("\n", array_filter(explode("\n", $comment), fn (string $s) => str_starts_with($s, ' * ')));
+            return $this->property($args);
         })->join("\n");
 
         $docblock = <<<PHP
@@ -94,32 +78,32 @@ class GenerateEnumDocblocks extends Command
 
 namespace App\\Helpers\\types;
 
-use OpenApi\Annotations as OA;
+use OpenApi\\Attributes as OA;
 
 {$this->getGenerationComment()}
 
-/**
- * @OA\Schema(
- *   schema="UserPrefs",
- *   type="object",
- *   description="A list of preferences for the current user (or defaults if not signed in)",
- *   required=USER_PREF_KEYS,
- *   additionalProperties=false,
+#[OA\\Schema(
+    schema: 'UserPrefs',
+    type: 'object',
+    description: 'A list of preferences for the current user (or defaults if not signed in)',
+    required: \\USER_PREF_KEYS,
+    additionalProperties: false,
+    properties: [
 $properties
- * )
- */
+    ],
+)]
 class UserPrefs {}
 
 PHP;
 
         $result = File::replace($file_loc, $docblock);
         if ($result === false) {
-            $this->error("Could not write docblock to $file_loc");
+            $this->error("Could not write attributes to $file_loc");
 
             return 1;
         }
 
-        $this->info("Written docblock to $file_loc");
+        $this->info("Written attributes to $file_loc");
         return 0;
     }
 
@@ -132,21 +116,9 @@ PHP;
     protected function generateGuideEntryCounts(string $file_loc): int
     {
         $properties = Collection::make(GuideName::cases())->map(function (GuideName $key) {
-            $property = sprintf(" *     property=\"%s\",\n", Str::camel($key->value));
             $example = random_int(0, 300);
-            $comment = <<<PHP
-            use OpenAPI\Annotations as OA;
-            /**
-             *   @OA\Property(
-            $property
-             *     type="number",
-             *     example=$example,
-             *     minimum=0
-             *   ),
-             */
-            PHP;
 
-            return implode("\n", array_filter(explode("\n", $comment), fn (string $s) => str_starts_with($s, ' * ')));
+            return $this->property(["property: '".Str::camel($key->value)."'", "type: 'number'", "example: $example", 'minimum: 0']);
         })->join("\n");
 
         $docblock = <<<PHP
@@ -154,32 +126,42 @@ PHP;
 
 namespace App\\Helpers\\types;
 
-use OpenApi\Annotations as OA;
+use OpenApi\\Attributes as OA;
 
 {$this->getGenerationComment()}
 
-/**
- * @OA\Schema(
- *   schema="GuideEntryCounts",
- *   type="object",
- *   description="An object containing the number of entries in each color guide",
- *   required=GUIDE_NAMES,
- *   additionalProperties=false,
+#[OA\\Schema(
+    schema: 'GuideEntryCounts',
+    type: 'object',
+    description: 'An object containing the number of entries in each color guide',
+    required: \\GUIDE_NAMES,
+    additionalProperties: false,
+    properties: [
 $properties
- * )
- */
+    ],
+)]
 class GuideEntryCounts {}
 
 PHP;
 
         $result = File::replace($file_loc, $docblock);
         if ($result === false) {
-            $this->error("Could not write docblock to $file_loc");
+            $this->error("Could not write attributes to $file_loc");
 
             return 1;
         }
 
-        $this->info("Written docblock to $file_loc");
+        $this->info("Written attributes to $file_loc");
         return 0;
+    }
+
+    /**
+     * One property of the generated schema, as the `new OA\Property(...)` line of its `properties` list.
+     *
+     * @param  string[]  $args
+     */
+    protected function property(array $args): string
+    {
+        return '        new OA\\Property('.implode(', ', $args).'),';
     }
 }

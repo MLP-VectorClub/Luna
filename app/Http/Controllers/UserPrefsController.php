@@ -18,37 +18,40 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\TransientToken;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class UserPrefsController extends Controller
 {
     /**
-     * @OA\Get(
-     *   path="/user-prefs/me",
-     *   description="Get preferences for the current user (or defaults if none)",
-     *   tags={"user prefs"},
-     *   security={},
-     *   @OA\Parameter(
-     *     in="query",
-     *     name="keys[]",
-     *     required=false,
-     *     description="The user preferences to return",
-     *     @OA\Schema(
-     *       type="array",
-     *       minItems=1,
-     *       @OA\Items(ref="#/components/schemas/UserPrefKeys")
-     *     ),
-     *   ),
-     *   @OA\Response(
-     *     response="200",
-     *     description="Query successful",
-     *     @OA\JsonContent(ref="#/components/schemas/UserPrefs")
-     *   )
-     * )
-     *
      * @param  Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
+    #[OA\Get(
+        path: '/user-prefs/me',
+        description: 'Get preferences for the current user (or defaults if none)',
+        tags: ['user prefs'],
+        security: [],
+        parameters: [
+            new OA\Parameter(
+                in: 'query',
+                name: 'keys[]',
+                required: false,
+                description: 'The user preferences to return',
+                schema: new OA\Schema(
+                    type: 'array',
+                    minItems: 1,
+                    items: new OA\Items(ref: '#/components/schemas/UserPrefKeys'),
+                ),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'Query successful',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserPrefs'),
+            ),
+        ],
+    )]
     public function me(Request $request)
     {
 
@@ -70,19 +73,42 @@ class UserPrefsController extends Controller
         return response()->json(UserPrefHelper::getAll($user, $valid['keys'] ?? null));
     }
 
-    /**
-     * @OA\Get(
-     *   path="/users/{id}/preferences",
-     *   operationId="GetUsersIdPreferences",
-     *   description="All preferences of the specified user (what the profile page's preference forms show), defaults where nothing was set. Requires the requester to be the same user or staff. Not part of Winterchilla's contract, which renders the forms as HTML.",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/UserPrefs")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not allowed", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Unknown user", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Get(
+        path: '/users/{id}/preferences',
+        operationId: 'GetUsersIdPreferences',
+        description: 'All preferences of the specified user (what the profile page\'s preference forms show), defaults where nothing was set. Requires the requester to be the same user or staff. Not part of Winterchilla\'s contract, which renders the forms as HTML.',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserPrefs'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not allowed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Unknown user',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function index(Request $request, int $id)
     {
         $user = User::findOrFail($id);
@@ -94,28 +120,61 @@ class UserPrefsController extends Controller
         return response()->json(UserPrefHelper::getAll($user, null));
     }
 
-    /**
-     * @OA\Schema(
-     *   schema="PreferenceValue",
-     *   type="object",
-     *   description="The current (or newly set) value of a user preference",
-     *   required={"value"},
-     *   additionalProperties=false,
-     *   @OA\Property(property="value", description="The preference value. Type depends on the specified preference key.")
-     * )
-     * @OA\Get(
-     *   path="/users/{id}/preferences/{key}",
-     *   operationId="GetUsersIdPreferencesKey",
-     *   description="Gets the value of a preference for the specified user. Requires the requester to be the same user or staff.",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="path", name="key", required=true, @OA\Schema(ref="#/components/schemas/UserPrefKeys")),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/PreferenceValue")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not allowed", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Unknown user or preference", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
-     * )
-     */
+    #[OA\Schema(
+        schema: 'PreferenceValue',
+        type: 'object',
+        description: 'The current (or newly set) value of a user preference',
+        required: ['value'],
+        additionalProperties: false,
+        properties: [
+            new OA\Property(
+                property: 'value',
+                description: 'The preference value. Type depends on the specified preference key.',
+            ),
+        ],
+    )]
+    #[OA\Get(
+        path: '/users/{id}/preferences/{key}',
+        operationId: 'GetUsersIdPreferencesKey',
+        description: 'Gets the value of a preference for the specified user. Requires the requester to be the same user or staff.',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'key',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/UserPrefKeys'),
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/PreferenceValue'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not allowed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Unknown user or preference',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+        ],
+    )]
     public function show(Request $request, int $id, string $key)
     {
         [$user, $pref] = $this->resolve($request, $id, $key);
@@ -123,22 +182,57 @@ class UserPrefsController extends Controller
         return response()->json(['value' => UserPrefHelper::toOutput(UserPrefHelper::get($user, $pref))]);
     }
 
-    /**
-     * @OA\Put(
-     *   path="/users/{id}/preferences/{key}",
-     *   operationId="PutUsersIdPreferencesKey",
-     *   description="Sets the value of a preference for the specified user. An empty value resets the preference. Requires the requester to be the same user or staff.",
-     *   tags={"users"},
-     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
-     *   @OA\Parameter(in="path", name="key", required=true, @OA\Schema(ref="#/components/schemas/UserPrefKeys")),
-     *   @OA\RequestBody(required=true, @OA\JsonContent(type="object", @OA\Property(property="value"))),
-     *   @OA\Response(response="200", description="OK", @OA\JsonContent(ref="#/components/schemas/PreferenceValue")),
-     *   @OA\Response(response="401", description="Not signed in", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="403", description="Not allowed", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="404", description="Unknown user or preference", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
-     *   @OA\Response(response="422", description="Validation error", @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse"))
-     * )
-     */
+    #[OA\Put(
+        path: '/users/{id}/preferences/{key}',
+        operationId: 'PutUsersIdPreferencesKey',
+        description: 'Sets the value of a preference for the specified user. An empty value resets the preference. Requires the requester to be the same user or staff.',
+        tags: ['users'],
+        parameters: [
+            new OA\Parameter(
+                in: 'path',
+                name: 'id',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/OneBasedId'),
+            ),
+            new OA\Parameter(
+                in: 'path',
+                name: 'key',
+                required: true,
+                schema: new OA\Schema(ref: '#/components/schemas/UserPrefKeys'),
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'value')]),
+        ),
+        responses: [
+            new OA\Response(
+                response: '200',
+                description: 'OK',
+                content: new OA\JsonContent(ref: '#/components/schemas/PreferenceValue'),
+            ),
+            new OA\Response(
+                response: '401',
+                description: 'Not signed in',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '403',
+                description: 'Not allowed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '404',
+                description: 'Unknown user or preference',
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
+            ),
+            new OA\Response(
+                response: '422',
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse'),
+            ),
+        ],
+    )]
     public function update(Request $request, int $id, string $key)
     {
         [$user, $pref] = $this->resolve($request, $id, $key);

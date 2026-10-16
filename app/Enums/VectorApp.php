@@ -2,19 +2,14 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 /**
- * @OA\Schema(
- *     schema="VectorApp",
- *     type="string",
- *     description="List of available vector apps",
- *     example="illustrator"
- * )
  * @method static self Illustrator()
  * @method static self Inkscape()
  * @method static self Ponyscape()
  */
+#[OA\Schema(schema: 'VectorApp', type: 'string', description: 'List of available vector apps', example: 'illustrator')]
 enum VectorApp: string
 {
     use ValuableEnum;

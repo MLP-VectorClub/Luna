@@ -2,16 +2,14 @@
 
 namespace App\Enums;
 
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Schema(
- *   schema="ShowType",
- *   type="string",
- *   description="List of types that can be used for show entries",
- *   example="episode",
- * )
- */
+#[OA\Schema(
+    schema: 'ShowType',
+    type: 'string',
+    description: 'List of types that can be used for show entries',
+    example: 'episode',
+)]
 enum ShowType: string
 {
     use ValuableEnum;
