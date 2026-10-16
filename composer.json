@@ -4,7 +4,7 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "ext-gd": "*",
         "ext-json": "*",
         "ext-pdo": "*",
@@ -41,7 +41,7 @@
         "justinrainbow/json-schema": "^6.13",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^11.5",
+        "phpunit/phpunit": "^13.4",
         "roave/security-advisories": "dev-latest"
     },
     "config": {

@@ -4,7 +4,7 @@ Laravel API for the MLP Vector Club. Deployed by pushing `main` to the `deploy` 
 
 ## Stack
 
-Laravel 12 on PHP 8.5 (`composer.json` requires `^8.2`), PHPUnit 11. `citext` / `mlp_generation`-style column types are grammar macros in `AppServiceProvider` (no DBAL). Search runs on OpenSearch through `opensearch-project/opensearch-php` (array requests and responses; `config/opensearch.php` + `App\Utils\Search` build the client and classify failures: `Search::status`, `errorBody`, `isDown`), queries in `ColorGuideHelper` are plain arrays; the index `appearances` is rebuilt by `AppearanceIndex`. The OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves it at the route itself).
+Laravel 12 on PHP 8.5 (`composer.json` requires `^8.4`, PHPUnit 13 needs 8.4.1), PHPUnit 13. `citext` / `mlp_generation`-style column types are grammar macros in `AppServiceProvider` (no DBAL). Search runs on OpenSearch through `opensearch-project/opensearch-php` (array requests and responses; `config/opensearch.php` + `App\Utils\Search` build the client and classify failures: `Search::status`, `errorBody`, `isDown`), queries in `ColorGuideHelper` are plain arrays; the index `appearances` is rebuilt by `AppearanceIndex`. The OpenAPI JSON is pinned to `/generated/api-docs.json` (l5-swagger 9 serves it at the route itself).
 
 Not covered by tests: `AccountHelper::create` (first user becomes developer), search/autocomplete against a real server, social signin against the real providers. `StrictEmail` is `email:rfc,dns`; its DNS part needs network.
 

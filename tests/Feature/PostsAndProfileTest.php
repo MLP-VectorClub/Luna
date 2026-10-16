@@ -20,7 +20,7 @@ class PostsAndProfileTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function user(Role $role = Role::User, string $name = null): User
+    private function user(Role $role = Role::User, ?string $name = null): User
     {
         return User::factory()->create(['role' => $role] + ($name ? ['name' => $name] : []));
     }
