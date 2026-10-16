@@ -111,9 +111,9 @@ return [
     |
     */
 
-    // qcod/laravel-settings caches `pluck()`, a plain Collection. Everything else the app caches is scalars and arrays.
-    'serializable_classes' => [
-        \Illuminate\Support\Collection::class,
-    ],
+    // Laravel 13 lets an app restrict which classes may be unserialized from the cache. Luna does not: packages cache
+    // objects of their own (qcod/laravel-settings a Collection, hisorange/browser-detect a Result), and an entry of a class
+    // that is not listed comes back as an incomplete object and fails the request that reads it.
+    'serializable_classes' => true,
 
 ];
