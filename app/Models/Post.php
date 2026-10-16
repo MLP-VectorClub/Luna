@@ -142,7 +142,7 @@ class Post extends Model
                 description: 'What the request asks for; requests only',
             ),
             new OA\Property(property: 'showId', ref: '#/components/schemas/OneBasedId'),
-            new OA\Property(property: 'label', type: 'string'),
+            new OA\Property(property: 'label', type: 'string', nullable: true, description: 'Display label for the post, not every post has one'),
             new OA\Property(property: 'previewUrl', type: 'string'),
             new OA\Property(property: 'fullsizeUrl', type: 'string'),
             new OA\Property(property: 'postedAt', type: 'string', format: 'date-time'),
