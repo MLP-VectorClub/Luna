@@ -165,7 +165,7 @@ class SpriteColorCheck
                     $mode->channel($base[2], $layer[2], $opacity),
                 ];
                 if (self::distance($point, $result) <= self::BLEND_TOLERANCE) {
-                    return [[strtoupper($color['hex']), $baseHex], $mode->value, $color['opacity'] ?? null];
+                    return [[strtoupper($color['hex']), $baseHex], $mode->value, $color['opacity'] ?? 100];
                 }
             }
         }

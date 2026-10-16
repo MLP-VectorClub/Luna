@@ -12338,7 +12338,7 @@
                                     "nullable": true
                                 },
                                 "blendOpacity": {
-                                    "description": "The opacity of the layer in a blend made from a listed color",
+                                    "description": "The opacity in percent of the listed layer in a blend made from a color with an opacity or blend mode (100 when only a blend mode is set), null for other kinds",
                                     "type": "integer",
                                     "nullable": true
                                 }

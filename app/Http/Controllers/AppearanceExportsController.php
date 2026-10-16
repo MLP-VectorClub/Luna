@@ -98,7 +98,7 @@ class AppearanceExportsController extends Controller
      *       @OA\Property(property="hex", type="string"), @OA\Property(property="label", type="string"), @OA\Property(property="distance", type="number")),
      *     @OA\Property(property="blendOf", description="The two listed colors a `blend` color is made from", type="array", nullable=true, @OA\Items(type="string")),
      *     @OA\Property(property="blendMode", description="How a `blend` color is made from its two colors: `mix` is any mix of the two. Colors listed with an opacity or blend mode are tried first, as that layer over a color of the sprite", type="string", nullable=true, enum={"mix", "normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion"}),
-     *     @OA\Property(property="blendOpacity", description="The opacity of the layer in a blend made from a listed color", type="integer", nullable=true)
+     *     @OA\Property(property="blendOpacity", description="The opacity in percent of the listed layer in a blend made from a color with an opacity or blend mode (100 when only a blend mode is set), null for other kinds", type="integer", nullable=true)
      *   )),
      *   @OA\Property(property="summary", required={"missing", "translucentOnly", "near", "unknown", "specks", "ok"},
      *     @OA\Property(property="missing", description="Required colors (not optional) that the sprite does not use at all", type="integer"),
