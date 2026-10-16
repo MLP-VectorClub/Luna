@@ -32,8 +32,6 @@ class Kernel extends ConsoleKernel
             return;
         }
         $schedule->command('deviantart:warm-deviations')->everyTenMinutes()->withoutOverlapping();
-        // Keeps the DeviantArt tokens of members alive (does nothing unless DEVIANTART_TOKEN_SYNC is on)
-        $schedule->command('deviantart:refresh-tokens')->daily();
         // GDPR retention, these were Winterchilla's cron scripts
         $schedule->command('gdpr:anonymize-logged-ips')->daily();
         $schedule->command('gdpr:prune-email-verifications')->hourly();
