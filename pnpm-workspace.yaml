@@ -1,0 +1,10 @@
+packages:
+  - "."
+  - "packages/*"
+
+# 14 days, in minutes
+minimumReleaseAge: 20160
+
+allowBuilds:
+  # Only a fallback check for its platform binary, which pnpm installs anyway
+  esbuild: false
