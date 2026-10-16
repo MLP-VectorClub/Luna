@@ -1,6 +1,6 @@
 # Nightmare
 
-Work-in-progress backend for the [MLP Vector Club](https://github.com/MLP-VectorClub)'s website 
+Laravel API behind the [MLP Vector Club](https://github.com/MLP-VectorClub)'s website (see `CLAUDE.md` for working notes)
 
 ## Built with*
 
