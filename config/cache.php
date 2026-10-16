@@ -100,4 +100,17 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | Laravel 13 hardens cache unserialization against gadget chains: only the
+    | classes listed here may come back as objects, `false` allows none. The app
+    | caches nothing but scalars and arrays.
+    |
+    */
+
+    'serializable_classes' => false,
+
 ];

@@ -28,6 +28,7 @@ use App\Http\Controllers\PostsController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\ShowManagementController;
 use App\Http\Controllers\TagsController;
+use Spatie\ResponseCache\Middlewares\CacheResponse;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UsefulLinksController;
 use App\Http\Controllers\UserProfileController;
@@ -153,9 +154,9 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
 
     Route::prefix('appearances')->group(function () {
         Route::get('/', [AppearancesController::class, 'queryPublic']);
-        Route::get('full', [AppearancesController::class, 'queryFullPublic'])->name('appearances_full')->middleware('cacheResponse:300');
-        Route::get('pinned', [AppearancesController::class, 'pinned'])->name('pinned_appearance')->middleware('cacheResponse:60');
-        Route::get('autocomplete', [AppearancesController::class, 'autocomplete'])->name('appearances_autocomplete')->middleware('cacheResponse:180');
+        Route::get('full', [AppearancesController::class, 'queryFullPublic'])->name('appearances_full')->middleware(CacheResponse::for(lifetime: 300));
+        Route::get('pinned', [AppearancesController::class, 'pinned'])->name('pinned_appearance')->middleware(CacheResponse::for(lifetime: 60));
+        Route::get('autocomplete', [AppearancesController::class, 'autocomplete'])->name('appearances_autocomplete')->middleware(CacheResponse::for(lifetime: 180));
         Route::get('{appearance}', [AppearancesController::class, 'get'])->where('appearance', RoutePatterns::ID);
         Route::get('{appearance}/locate', [AppearancesController::class, 'locate'])->where('appearance', RoutePatterns::ID);
         Route::get('{appearance}/sprite', [AppearancesController::class, 'sprite'])->name('appearance_sprite')->where('appearance', RoutePatterns::ID);
@@ -240,7 +241,7 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
         Route::post('reindex', [AdminController::class, 'reindex']);
     });
     // The old site published this as a static file that other tools read, so it is public (and kept for an hour, building it takes a while)
-    Route::get('color-guide/export', [AdminController::class, 'export'])->middleware('cacheResponse:3600');
+    Route::get('color-guide/export', [AdminController::class, 'export'])->middleware(CacheResponse::for(lifetime: 3600));
     Route::middleware('auth:sanctum')->get('notifications', [AdminController::class, 'notifications']);
     Route::middleware('auth:sanctum')->post('notifications/{id}/read', [AdminController::class, 'readNotification'])->where('id', RoutePatterns::ID);
 

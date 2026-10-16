@@ -23,7 +23,7 @@ class StartSession extends Middleware
     public function handle($request, Closure $next)
     {
         if ($this->isGuestRead($request)) {
-            // Marks the request for what comes after (VerifyCsrfToken has no session to take a token from)
+            // Marks the request for what comes after (the CSRF middleware has no session to take a token from)
             $request->attributes->set('sessionless', true);
 
             return $next($request);

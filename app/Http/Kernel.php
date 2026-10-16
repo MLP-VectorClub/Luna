@@ -69,7 +69,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RequireRole::class,
         'optional.auth' => \App\Http\Middleware\OptionalAuth::class,
-        'cacheResponse' => \Spatie\ResponseCache\Middlewares\CacheResponse::class,
     ];
 
     /**

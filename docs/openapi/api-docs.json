@@ -171,10 +171,16 @@
                                                                 "nullable": true
                                                             },
                                                             "sprite": {
-                                                                "nullable": true,
                                                                 "oneOf": [
                                                                     {
                                                                         "$ref": "#/components/schemas/Sprite"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "nullable": true,
+                                                                        "enum": [
+                                                                            null
+                                                                        ]
                                                                     }
                                                                 ]
                                                             },
@@ -2717,10 +2723,16 @@
                                                     },
                                                     "user": {
                                                         "description": "Who made the change; null when the user no longer exists",
-                                                        "nullable": true,
                                                         "oneOf": [
                                                             {
                                                                 "$ref": "#/components/schemas/PostUser"
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "enum": [
+                                                                    null
+                                                                ]
                                                             }
                                                         ]
                                                     },
@@ -4356,9 +4368,9 @@
                                                 "label": {
                                                     "description": "Unique-per-appearance display label",
                                                     "type": "string",
+                                                    "nullable": true,
                                                     "maxLength": 32,
-                                                    "minLength": 1,
-                                                    "nullable": true
+                                                    "minLength": 1
                                                 },
                                                 "facing": {
                                                     "description": "Body orientation this cutie mark applies to",
@@ -6992,9 +7004,9 @@
                                 "properties": {
                                     "label": {
                                         "type": "string",
+                                        "nullable": true,
                                         "maxLength": 255,
-                                        "minLength": 3,
-                                        "nullable": true
+                                        "minLength": 3
                                     },
                                     "type": {
                                         "type": "string",
@@ -7382,9 +7394,15 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/PostUser"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         }
                                     },
                                     "type": "object"
@@ -8529,17 +8547,23 @@
                                                             "oneOf": [
                                                                 {
                                                                     "$ref": "#/components/schemas/PostUser"
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "enum": [
+                                                                        null
+                                                                    ]
                                                                 }
                                                             ],
-                                                            "nullable": true,
                                                             "description": "The user who created the entry (postedBy holds the ID), for the added by line"
                                                         },
                                                         "userVote": {
                                                             "description": "The rating (1-5) the signed in visitor gave, null when they have not voted or are not signed in",
                                                             "type": "integer",
+                                                            "nullable": true,
                                                             "maximum": 5,
-                                                            "minimum": 1,
-                                                            "nullable": true
+                                                            "minimum": 1
                                                         },
                                                         "relatedAppearances": {
                                                             "type": "array",
@@ -8820,17 +8844,29 @@
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/ShowListItem"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         },
                                         "next": {
                                             "oneOf": [
                                                 {
                                                     "$ref": "#/components/schemas/ShowListItem"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        null
+                                                    ]
                                                 }
-                                            ],
-                                            "nullable": true
+                                            ]
                                         }
                                     },
                                     "type": "object"
@@ -11676,9 +11712,9 @@
                                         "currentTokenId": {
                                             "description": "ID of the token used to make this request. Will be null if the request is authenticated through CookieAuth",
                                             "type": "integer",
-                                            "minimum": 1,
                                             "example": 1,
-                                            "nullable": true
+                                            "nullable": true,
+                                            "minimum": 1
                                         },
                                         "tokens": {
                                             "description": "A list of tokens that belong to the user",
@@ -11830,8 +11866,8 @@
                         "required": true,
                         "schema": {
                             "type": "integer",
-                            "minimum": 1,
-                            "example": 1
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -12007,26 +12043,27 @@
             "CutieMarkFacing": {
                 "description": "The direction the character is facing when this cutie mark should be used",
                 "type": "string",
+                "example": "left",
                 "enum": [
                     "left",
                     "right"
-                ],
-                "example": "left"
+                ]
             },
             "FullGuideSortField": {
                 "description": "List of possible sorting options for the full guide page",
                 "type": "string",
+                "example": "label",
                 "default": "relevance",
                 "enum": [
                     "label",
                     "added",
                     "relevance"
-                ],
-                "example": "label"
+                ]
             },
             "DatabaseRole": {
                 "description": "List of roles values that can be stored by the backend",
                 "type": "string",
+                "example": "developer",
                 "enum": [
                     "user",
                     "member",
@@ -12034,53 +12071,53 @@
                     "staff",
                     "admin",
                     "developer"
-                ],
-                "example": "developer"
+                ]
             },
             "Role": {
                 "description": "List of roles values that can be publicly displayed",
                 "type": "string",
+                "example": "user",
                 "enum": [
                     "user",
                     "member",
                     "assistant",
                     "staff",
                     "admin"
-                ],
-                "example": "user"
+                ]
             },
             "ShowOrdering": {
                 "description": "List of ordering options that can be used for show entries",
                 "type": "string",
+                "example": "series",
                 "enum": [
                     "series",
                     "overall"
-                ],
-                "example": "series"
+                ]
             },
             "ShowType": {
                 "description": "List of types that can be used for show entries",
                 "type": "string",
+                "example": "episode",
                 "enum": [
                     "episode",
                     "movie",
                     "short",
                     "special"
-                ],
-                "example": "episode"
+                ]
             },
             "SocialProvider": {
                 "description": "List of available social signin providers",
                 "type": "string",
+                "example": "deviantart",
                 "enum": [
                     "deviantart",
                     "discord"
-                ],
-                "example": "deviantart"
+                ]
             },
             "TagType": {
                 "description": "List of types tags in the color guide can have",
                 "type": "string",
+                "example": "spec",
                 "enum": [
                     "app",
                     "cat",
@@ -12088,12 +12125,12 @@
                     "spec",
                     "char",
                     "warn"
-                ],
-                "example": "spec"
+                ]
             },
             "UserPrefKeys": {
                 "description": "List of available user preferences",
                 "type": "string",
+                "example": "cg_itemsperpage",
                 "enum": [
                     "cg_itemsperpage",
                     "cg_hidesynon",
@@ -12115,18 +12152,17 @@
                     "a_postres",
                     "a_reserve",
                     "pcg_slots"
-                ],
-                "example": "cg_itemsperpage"
+                ]
             },
             "VectorApp": {
                 "description": "List of available vector apps",
                 "type": "string",
+                "example": "illustrator",
                 "enum": [
                     "illustrator",
                     "inkscape",
                     "ponyscape"
-                ],
-                "example": "illustrator"
+                ]
             },
             "GuideEntryCounts": {
                 "description": "An object containing the number of entries in each color guide",
@@ -12137,13 +12173,13 @@
                 "properties": {
                     "pony": {
                         "type": "number",
-                        "minimum": 0,
-                        "example": 53
+                        "example": 53,
+                        "minimum": 0
                     },
                     "eqg": {
                         "type": "number",
-                        "minimum": 0,
-                        "example": 246
+                        "example": 246,
+                        "minimum": 0
                     }
                 },
                 "type": "object",
@@ -12320,6 +12356,7 @@
                                 "blendMode": {
                                     "description": "How a `blend` color is made from its two colors: `mix` is any mix of the two. Colors listed with an opacity or blend mode are tried first, as that layer over a color of the sprite",
                                     "type": "string",
+                                    "nullable": true,
                                     "enum": [
                                         "mix",
                                         "normal",
@@ -12334,8 +12371,7 @@
                                         "soft-light",
                                         "difference",
                                         "exclusion"
-                                    ],
-                                    "nullable": true
+                                    ]
                                 },
                                 "blendOpacity": {
                                     "description": "The opacity in percent of the listed layer in a blend made from a color with an opacity or blend mode (100 when only a blend mode is set), null for other kinds",
@@ -12399,8 +12435,8 @@
                     },
                     "notes": {
                         "type": "string",
-                        "maxLength": 1000,
-                        "nullable": true
+                        "nullable": true,
+                        "maxLength": 1000
                     },
                     "private": {
                         "type": "boolean"
@@ -12579,17 +12615,23 @@
                                 "opacity": {
                                     "description": "How opaque the color is drawn, in percent. Null means fully opaque. Left unchanged when omitted",
                                     "type": "integer",
+                                    "nullable": true,
                                     "maximum": 99,
-                                    "minimum": 1,
-                                    "nullable": true
+                                    "minimum": 1
                                 },
                                 "blendMode": {
                                     "oneOf": [
                                         {
                                             "$ref": "#/components/schemas/BlendMode"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "nullable": true,
+                                            "enum": [
+                                                null
+                                            ]
                                         }
                                     ],
-                                    "nullable": true,
                                     "description": "How the color combines with what is under it. Null means normal. Left unchanged when omitted"
                                 }
                             },
@@ -12653,13 +12695,13 @@
             },
             "OneBasedId": {
                 "type": "integer",
-                "minimum": 1,
-                "example": 1
+                "example": 1,
+                "minimum": 1
             },
             "ZeroBasedId": {
                 "type": "integer",
-                "minimum": 0,
-                "example": 1
+                "example": 1,
+                "minimum": 0
             },
             "EventEntry": {
                 "description": "A submission made to a community event",
@@ -13211,8 +13253,8 @@
                     },
                     "notes": {
                         "type": "string",
-                        "maxLength": 1000,
-                        "nullable": true
+                        "nullable": true,
+                        "maxLength": 1000
                     }
                 },
                 "type": "object"
@@ -13233,8 +13275,8 @@
                     "title": {
                         "description": "Optional human-friendly title",
                         "type": "string",
-                        "maxLength": 255,
-                        "nullable": true
+                        "nullable": true,
+                        "maxLength": 255
                     },
                     "addTo": {
                         "description": "Only when creating: appearance to add the new tag to",
@@ -13266,8 +13308,8 @@
                 "properties": {
                     "id": {
                         "type": "integer",
-                        "minimum": 1,
-                        "example": 1
+                        "example": 1,
+                        "minimum": 1
                     },
                     "name": {
                         "type": "string",
@@ -13353,8 +13395,8 @@
                 "properties": {
                     "id": {
                         "type": "integer",
-                        "minimum": 1,
-                        "example": 1
+                        "example": 1,
+                        "minimum": 1
                     },
                     "name": {
                         "description": "Name of the token, either generated (from OS and browser version) or user-supplied if renamed",
@@ -13362,10 +13404,16 @@
                     },
                     "lastUsedAt": {
                         "description": "Null for a token that was never used",
-                        "nullable": true,
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/IsoStandardDate"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ]
                     },
@@ -13487,17 +13535,29 @@
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/PostUser"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "reservedBy": {
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/PostReserver"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "reservedAt": {
                         "type": "string",
@@ -13529,9 +13589,15 @@
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/PostUser"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "Who approved the post, only given to staff"
                     },
                     "broken": {
@@ -13700,9 +13766,9 @@
                     "opacity": {
                         "description": "How opaque the color is drawn in percent, for colors that are semi-transparent in the sprite. Null means fully opaque",
                         "type": "integer",
+                        "nullable": true,
                         "maximum": 99,
-                        "minimum": 1,
-                        "nullable": true
+                        "minimum": 1
                     },
                     "blendMode": {
                         "description": "How a semi-transparent color combines with what is under it. Null when neither opacity nor blend mode is set, otherwise normal unless said otherwise",
@@ -13747,12 +13813,12 @@
                     "facing": {
                         "description": "The direction the character is facing when this cutie mark should be used. `null` means the image is symmetrical.",
                         "type": "string",
+                        "nullable": true,
                         "enum": [
                             "left",
                             "right",
                             null
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "favMe": {
                         "description": "Optional ID of a deviation on DeviantArt that is the original source of this cutie mark vector.",
@@ -13856,9 +13922,15 @@
                                 "oneOf": [
                                     {
                                         "$ref": "#/components/schemas/AppearanceToken"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "enum": [
+                                            null
+                                        ]
                                     }
                                 ],
-                                "nullable": true,
                                 "description": "The share token of a private appearance (the `token` query parameter that opens it for anybody), only for those who may edit it; null otherwise"
                             },
                             "cutieMarks": {
@@ -13948,10 +14020,16 @@
                     },
                     "initiator": {
                         "description": "Null when the web server itself made the change",
-                        "nullable": true,
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/PostUser"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ]
                     },
@@ -13990,10 +14068,16 @@
                     },
                     "user": {
                         "description": "Who made the change; only sent to staff",
-                        "nullable": true,
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/User"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ]
                     },
@@ -14142,9 +14226,9 @@
                     },
                     "opacity": {
                         "type": "integer",
+                        "nullable": true,
                         "maximum": 99,
-                        "minimum": 1,
-                        "nullable": true
+                        "minimum": 1
                     },
                     "blendMode": {
                         "nullable": true,
@@ -14326,12 +14410,12 @@
                     "guide": {
                         "description": "The official guide the appearance belongs to; null for personal guide appearances (see ownerId)",
                         "type": "string",
+                        "nullable": true,
                         "enum": [
                             "pony",
                             "eqg",
                             null
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "ownerId": {
                         "description": "ID of the user whose personal guide the appearance belongs to; null for the official guides",
@@ -14369,10 +14453,16 @@
                     },
                     "sprite": {
                         "description": "The sprite that belongs to this appearance, or null if there is none",
-                        "nullable": true,
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/Sprite"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ]
                     },
@@ -14441,13 +14531,14 @@
                     "name": {
                         "description": "Tag name (all lowercase)",
                         "type": "string",
+                        "example": "mane six",
                         "maxLength": 255,
-                        "minLength": 1,
-                        "example": "mane six"
+                        "minLength": 1
                     },
                     "type": {
                         "description": "Category this tag belongs to, or null if uncategorized",
                         "type": "string",
+                        "nullable": true,
                         "enum": [
                             "app",
                             "cat",
@@ -14456,16 +14547,21 @@
                             "char",
                             "warn",
                             null
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "synonymOf": {
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/OneBasedId"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ],
-                        "nullable": true,
                         "description": "The tag this one is a synonym of, null for regular tags. Staff see synonyms next to the tags of an appearance, the guide shows them faded"
                     }
                 },
@@ -14540,10 +14636,16 @@
                     },
                     "synonymOf": {
                         "description": "ID of the tag this one is a synonym of, if any",
-                        "nullable": true,
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/OneBasedId"
+                            },
+                            {
+                                "type": "object",
+                                "nullable": true,
+                                "enum": [
+                                    null
+                                ]
                             }
                         ]
                     }
@@ -14569,6 +14671,7 @@
                     },
                     "type": {
                         "type": "string",
+                        "nullable": true,
                         "enum": [
                             "app",
                             "cat",
@@ -14577,8 +14680,7 @@
                             "char",
                             "warn",
                             null
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "title": {
                         "description": "Optional description of the tag",
@@ -14766,12 +14868,12 @@
                     "cg_defaultguide": {
                         "description": "Preferred color guide [null]",
                         "type": "string",
+                        "nullable": true,
                         "enum": [
                             "pony",
                             "eqg",
                             null
-                        ],
-                        "nullable": true
+                        ]
                     },
                     "pcg_slots": {
                         "description": "Personal guide slots granted by staff [null]",
@@ -15133,13 +15235,13 @@
                 "items": {
                     "type": "string"
                 },
-                "maxItems": 4,
-                "minItems": 1,
                 "example": [
                     "#FF0000",
                     "#00FF00",
                     "#0000FF"
-                ]
+                ],
+                "maxItems": 4,
+                "minItems": 1
             },
             "AutocompleteAppearance": {
                 "description": "The barest of properties for an appearance intended for use in autocompletion results",
@@ -15301,23 +15403,23 @@
                         "properties": {
                             "currentPage": {
                                 "type": "integer",
-                                "minimum": 1,
-                                "example": 1
+                                "example": 1,
+                                "minimum": 1
                             },
                             "totalPages": {
                                 "type": "integer",
-                                "minimum": 1,
-                                "example": 20
+                                "example": 20,
+                                "minimum": 1
                             },
                             "totalItems": {
                                 "type": "integer",
-                                "minimum": 0,
-                                "example": 200
+                                "example": 200,
+                                "minimum": 0
                             },
                             "itemsPerPage": {
                                 "type": "integer",
-                                "minimum": 1,
-                                "example": 10
+                                "example": 10,
+                                "minimum": 1
                             }
                         },
                         "type": "object",
