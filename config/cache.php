@@ -111,6 +111,9 @@ return [
     |
     */
 
-    'serializable_classes' => false,
+    // qcod/laravel-settings caches `pluck()`, a plain Collection. Everything else the app caches is scalars and arrays.
+    'serializable_classes' => [
+        \Illuminate\Support\Collection::class,
+    ],
 
 ];
