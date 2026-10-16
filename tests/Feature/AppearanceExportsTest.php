@@ -9,6 +9,7 @@ use App\Models\Color;
 use App\Models\ColorGroup;
 use App\Models\CutieMark;
 use App\Models\DeviantartUser;
+use App\Models\PinnedAppearance;
 use App\Models\Tag;
 use App\Models\TagChange;
 use App\Models\User;
@@ -203,6 +204,42 @@ class AppearanceExportsTest extends TestCase
         $this->assertSame(['listed', 'near', 'unknown', 'listed'], array_column($result['colors'], 'kind'));
         $this->assertSame(['Coat | Outline'], $result['colors'][0]['labels']);
         $this->assertSame('#112233', $result['colors'][1]['nearest']['hex']);
+    }
+
+    public function testSpriteColorsOfPinnedAppearancesAndTheUniversalColorsAreKnownByName(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->user(Role::Staff), 'sanctum');
+        $appearance = $this->appearance();
+        $pinned = Appearance::create(['label' => 'Pinned Pony', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 2]);
+        $group = ColorGroup::create(['appearance_id' => $pinned->id, 'label' => 'Eyes', 'order' => 0]);
+        Color::create(['group_id' => $group->id, 'label' => 'Iris', 'order' => 0, 'hex' => '#FF00FF']);
+        PinnedAppearance::create(['guide' => GuideName::FriendshipIsMagic, 'appearance_id' => $pinned->id]);
+        Appearance::unguarded(fn() => Appearance::create(['id' => 0, 'label' => 'Universal Colors', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 0]));
+        $universal = ColorGroup::create(['appearance_id' => 0, 'label' => 'Tears', 'order' => 0]);
+        Color::create(['group_id' => $universal->id, 'label' => 'Fill', 'order' => 0, 'hex' => '#00FFFF']);
+        $unpinned = Appearance::create(['label' => 'Unpinned Pony', 'guide' => GuideName::FriendshipIsMagic, 'notes_src' => null, 'order' => 3]);
+        $other = ColorGroup::create(['appearance_id' => $unpinned->id, 'label' => 'Coat', 'order' => 0]);
+        Color::create(['group_id' => $other->id, 'label' => 'Fill', 'order' => 0, 'hex' => '#FFFF00']);
+
+        $png = imagecreatetruecolor(300, 300);
+        imagesavealpha($png, true);
+        imagealphablending($png, false);
+        imagefill($png, 0, 0, imagecolorallocatealpha($png, 0, 0, 0, 127));
+        foreach ([[0, 0x11, 0x22, 0x33], [40, 0xFF, 0x00, 0xFF], [80, 0x00, 0xFF, 0xFF], [120, 0xFF, 0xFF, 0x00], [160, 0xD8, 0xD8, 0xD8]] as [$top, $r, $g, $b]) {
+            imagefilledrectangle($png, 0, $top, 299, $top + 29, imagecolorallocate($png, $r, $g, $b));
+        }
+        ob_start();
+        imagepng($png);
+        $this->postJson("/appearances/{$appearance->id}/sprite", ['sprite' => UploadedFile::fake()->createWithContent('sprite.png', ob_get_clean())])->assertOk();
+
+        $colors = array_column($this->getJson("/appearances/{$appearance->id}/sprite/colors")->assertOk()->json('colors'), null, 'hex');
+
+        $this->assertSame(['listed', ['Pinned Pony | Eyes | Iris']], [$colors['#FF00FF']['kind'], $colors['#FF00FF']['labels']]);
+        $this->assertSame(['listed', ['Universal Colors | Tears | Fill']], [$colors['#00FFFF']['kind'], $colors['#00FFFF']['labels']]);
+        $this->assertSame(['listed', ['Mannequin | Outline']], [$colors['#D8D8D8']['kind'], $colors['#D8D8D8']['labels']]);
+        // An appearance that is not pinned does not lend its colors
+        $this->assertSame('unknown', $colors['#FFFF00']['kind']);
     }
 
     public function testCutieMarkDownload(): void

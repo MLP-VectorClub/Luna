@@ -135,9 +135,17 @@ class AppearanceExportsController extends Controller
                 $palette[] = ['group' => $group->label, 'label' => $color->label, 'hex' => $color->hex, 'opacity' => $color->opacity, 'blendMode' => $color->opacity !== null || $color->blend_mode !== null ? $color->blendMode()->value : null];
             }
         }
-        $shared = DB::table('colors as c')->join('color_groups as cg', 'cg.id', '=', 'c.group_id')
-            ->where('cg.appearance_id', 0)->whereNotNull('c.hex')->pluck('c.hex')->map(fn($hex) => strtoupper($hex))->all();
-        $result = SpriteColorCheck::check(SpriteImage::fromFile($sprite->getPath())->colorCounts(), $palette, array_merge(SpriteColorCheck::SHARED_HEXES, $shared));
+        // The universal colors (appearance 0) and the colors of every pinned appearance may be used by any sprite, named by where they are listed
+        $shared_ids = DB::table('pinned_appearances')->pluck('appearance_id')->push(0)->unique()->reject(fn($shared_id) => (int) $shared_id === $appearance->id)->values();
+        $shared = DB::table('colors as c')
+            ->join('color_groups as cg', 'cg.id', '=', 'c.group_id')
+            ->leftJoin('appearances as a', 'a.id', '=', 'cg.appearance_id')
+            ->whereIn('cg.appearance_id', $shared_ids)->whereNotNull('c.hex')
+            ->orderBy('cg.appearance_id')->orderBy('cg.order')->orderBy('c.order')
+            ->get(['a.label as appearance', 'cg.label as cglabel', 'c.label as clabel', 'c.hex'])
+            ->map(fn($row) => ['hex' => strtoupper($row->hex), 'label' => ($row->appearance ?? 'Universal Colors').' | '.$row->cglabel.' | '.$row->clabel])
+            ->all();
+        $result = SpriteColorCheck::check(SpriteImage::fromFile($sprite->getPath())->colorCounts(), $palette, array_merge(SpriteColorCheck::SHARED, $shared));
 
         return response()->camelJson($result, 200, $appearance->private ? ['Cache-Control' => 'private, no-cache'] : ['Cache-Control' => 'public, max-age=60']);
     }

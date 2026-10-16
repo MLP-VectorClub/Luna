@@ -22,28 +22,37 @@ class SpriteColorCheck
     /** Unlisted colors on fewer pixels than this are stray specks (soft edges, editor noise), reported separately from real mistakes */
     private const SPECK = 5;
 
-    /** Colors listed on every guide appearance, e.g. the mannequin ones, which sprites may use without the appearance repeating them */
-    public const SHARED_HEXES = ['#D8D8D8', '#E6E6E6', '#BFBFBF', '#CCCCCC'];
+    /** Colors every sprite may use without the appearance repeating them: the mannequin's */
+    public const SHARED = [
+        ['hex' => '#D8D8D8', 'label' => 'Mannequin | Outline'],
+        ['hex' => '#E6E6E6', 'label' => 'Mannequin | Fill'],
+        ['hex' => '#BFBFBF', 'label' => 'Mannequin | Shadow Outline'],
+        ['hex' => '#CCCCCC', 'label' => 'Mannequin | Shadow Fill'],
+    ];
 
     /**
      * @param  array<string, array<int, int>>  $counts  {@see SpriteImage::colorCounts()}
      * @param  array<int, array{group: string, label: string, hex: string, opacity?: ?int, blendMode?: ?string}>  $palette  colors of the appearance
-     * @param  string[]  $shared  hex values that are fine to use without being listed
+     * @param  array<int, array{hex: string, label: string}|string>  $shared  colors that are fine to use without being listed (the universal colors, those of pinned appearances), with the name to show for them (a plain hex is shown as "(shared)")
      * @return array{
      *   palette: array<int, array{group: string, label: string, hex: string, opacity: ?int, blendMode: ?string, status: string, optional: bool, pixels: int}>,
      *   colors: array<int, array{hex: string, pixels: int, translucentPixels: int, kind: string, labels: string[], nearest: ?array{hex: string, label: string, distance: float}, blendOf: ?string[], blendMode: ?string, blendOpacity: ?int}>,
      *   summary: array{missing: int, translucentOnly: int, near: int, unknown: int, specks: int, ok: bool}
      * }
      */
-    public static function check(array $counts, array $palette, array $shared = self::SHARED_HEXES): array
+    public static function check(array $counts, array $palette, array $shared = self::SHARED): array
     {
         $listed = [];
         foreach ($palette as $color) {
             $listed[strtoupper($color['hex'])][] = $color['group'].' | '.$color['label'];
         }
         $known = $listed;
-        foreach ($shared as $hex) {
-            $known[strtoupper($hex)] ??= ['(shared)'];
+        foreach ($shared as $entry) {
+            [$hex, $label] = is_string($entry) ? [$entry, '(shared)'] : [$entry['hex'], $entry['label']];
+            $hex = strtoupper($hex);
+            if (!in_array($label, $known[$hex] ?? [], true)) {
+                $known[$hex][] = $label;
+            }
         }
         $rgb = array_map(self::rgb(...), array_combine(array_keys($known), array_keys($known)));
         $used = array_filter($counts, fn($alphas) => array_sum($alphas) > 0);
