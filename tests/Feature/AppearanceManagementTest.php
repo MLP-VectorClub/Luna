@@ -243,6 +243,12 @@ class AppearanceManagementTest extends TestCase
         $this->postJson("/appearances/{$appearance->id}/sprite", ['sprite' => $png(300, 300)])->assertOk()->assertJsonStructure(['path']);
         $this->assertTrue($appearance->fresh()->hasSprite());
 
+        // The sprite object is what the OpenAPI document describes: a cache busting hash that follows the media record, where to fetch it, its proportions
+        $this->getJson("/appearances/{$appearance->id}")->assertOk()
+            ->assertJsonPath('sprite.hash', md5($appearance->fresh()->spriteFile()->uuid))
+            ->assertJsonPath('sprite.aspectRatio', [1, 1])
+            ->assertJsonStructure(['sprite' => ['hash', 'path', 'aspectRatio']]);
+
         // The double size file is an exact pixel doubling of the upload, not a smoothed enlargement
         $media = $appearance->fresh()->spriteFile();
         $double = $media->getPath(Appearance::DOUBLE_SIZE_CONVERSION);

@@ -13524,10 +13524,14 @@
                         "nullable": true
                     },
                     "previewUrl": {
-                        "type": "string"
+                        "description": "Null for posts that have no image",
+                        "type": "string",
+                        "nullable": true
                     },
                     "fullsizeUrl": {
-                        "type": "string"
+                        "description": "Null for posts that have no image",
+                        "type": "string",
+                        "nullable": true
                     },
                     "postedAt": {
                         "type": "string",
@@ -14573,11 +14577,32 @@
             "Sprite": {
                 "description": "Data related to an appearance's sprite file. The image itself is `GET /appearances/{id}/sprite?size=300|600&hash={hash}` (the hash is only there for cache busting); `preview`, when sent, is a tiny data URI with the same proportions for laying the page out before the image loads.",
                 "required": [
-                    "hash"
+                    "hash",
+                    "path",
+                    "aspectRatio"
                 ],
                 "properties": {
                     "hash": {
                         "$ref": "#/components/schemas/SpriteHash"
+                    },
+                    "path": {
+                        "description": "Where the sprite image can be fetched from: the CDN address of the file, or `GET /appearances/{id}/sprite` for private appearances",
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "aspectRatio": {
+                        "description": "Width and height of the sprite, reduced to the smallest whole numbers",
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": [
+                            1,
+                            1
+                        ],
+                        "maxItems": 2,
+                        "minItems": 2
                     },
                     "preview": {
                         "description": "Data URI for a small preview image with matching proportions to the actual image, suitable for displaying as a preview while the full image loads. May not be sent based on the request parameters.",

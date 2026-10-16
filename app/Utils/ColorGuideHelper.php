@@ -286,7 +286,7 @@ class ColorGuideHelper
             'id' => $a->id,
             'label' => $a->label,
             'guide' => $a->guide,
-            'owner_id' => $a->owner_id,
+            'ownerId' => $a->owner_id,
             'previewData' => $a->preview_data,
             'nutshellNames' => NutshellNames::for($a),
         ];
@@ -343,6 +343,8 @@ class ColorGuideHelper
             ? route('appearance_sprite', ['appearance' => $a])
             : $sprite_file->getFullUrl($double_size ? Appearance::DOUBLE_SIZE_CONVERSION : '');
         return [
+            // Only there to bust caches of GET /appearances/{id}/sprite: a replaced sprite is a new media record
+            'hash' => md5($sprite_file->uuid),
             'path' => $path,
             'aspect_ratio' => $sprite_file->getCustomProperty('aspect_ratio', [1, 1]),
         ];

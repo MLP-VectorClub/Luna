@@ -609,10 +609,25 @@ use OpenApi\Attributes as OA;
     schema: 'Sprite',
     type: 'object',
     description: 'Data related to an appearance\'s sprite file. The image itself is `GET /appearances/{id}/sprite?size=300|600&hash={hash}` (the hash is only there for cache busting); `preview`, when sent, is a tiny data URI with the same proportions for laying the page out before the image loads.',
-    required: ['hash'],
+    required: ['hash', 'path', 'aspectRatio'],
     additionalProperties: false,
     properties: [
         new OA\Property(property: 'hash', ref: '#/components/schemas/SpriteHash'),
+        new OA\Property(
+            property: 'path',
+            type: 'string',
+            format: 'uri',
+            description: 'Where the sprite image can be fetched from: the CDN address of the file, or `GET /appearances/{id}/sprite` for private appearances',
+        ),
+        new OA\Property(
+            property: 'aspectRatio',
+            type: 'array',
+            description: 'Width and height of the sprite, reduced to the smallest whole numbers',
+            items: new OA\Items(type: 'integer', minimum: 1),
+            minItems: 2,
+            maxItems: 2,
+            example: [1, 1],
+        ),
         new OA\Property(
             property: 'preview',
             type: 'string',
