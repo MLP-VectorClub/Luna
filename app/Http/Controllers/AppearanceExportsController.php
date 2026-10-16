@@ -6,6 +6,8 @@ use App\Enums\Role;
 use App\Models\Appearance;
 use App\Models\CutieMark;
 use App\Utils\AppearanceImages;
+use App\Utils\SpriteColorCheck;
+use App\Utils\SpriteImage;
 use App\Utils\ColorGuideHelper;
 use App\Utils\PaletteImage;
 use Illuminate\Support\Facades\Cache;
@@ -71,6 +73,73 @@ class AppearanceExportsController extends Controller
     }
 
     /**
+     * @OA\Schema(
+     *   schema="SpriteColorCheck",
+     *   required={"palette", "colors", "summary"},
+     *   @OA\Property(property="palette", description="Every color of the appearance and whether the sprite uses it", type="array", @OA\Items(
+     *     required={"group", "label", "hex", "status", "optional", "pixels"},
+     *     @OA\Property(property="group", type="string"),
+     *     @OA\Property(property="label", type="string"),
+     *     @OA\Property(property="hex", type="string", example="#D8D8D8"),
+     *     @OA\Property(property="status", description="`translucent` means the color only appears semi-transparent", type="string", enum={"present", "translucent", "missing"}),
+     *     @OA\Property(property="optional", description="The color is for another form or use (its name has a qualifier in parentheses), so it is not expected in every sprite", type="boolean"),
+     *     @OA\Property(property="pixels", type="integer")
+     *   )),
+     *   @OA\Property(property="colors", description="Every color in the sprite, most used first", type="array", @OA\Items(
+     *     required={"hex", "pixels", "translucentPixels", "kind", "labels"},
+     *     @OA\Property(property="hex", type="string", example="#D8D8D8"),
+     *     @OA\Property(property="pixels", description="Fully opaque pixels", type="integer"),
+     *     @OA\Property(property="translucentPixels", description="Semi-transparent pixels", type="integer"),
+     *     @OA\Property(property="kind", description="`listed` is a color of the appearance, `blend` is explained as a mix of two listed colors, `near` is almost a listed color (probably a mistake), `unknown` is neither; the `Speck` variants cover fewer than 5 pixels; `translucent` colors are only drawn semi-transparent and are not judged", type="string", enum={"listed", "blend", "near", "unknown", "nearSpeck", "unknownSpeck", "translucent"}),
+     *     @OA\Property(property="labels", description="Names of the appearance colors with this value", type="array", @OA\Items(type="string")),
+     *     @OA\Property(property="nearest", description="The closest listed color, for `near` and `unknown` colors", type="object", nullable=true,
+     *       @OA\Property(property="hex", type="string"), @OA\Property(property="label", type="string"), @OA\Property(property="distance", type="number")),
+     *     @OA\Property(property="blendOf", description="The two listed colors a `blend` color is made from", type="array", nullable=true, @OA\Items(type="string")),
+     *     @OA\Property(property="blendMode", type="string", nullable=true, enum={"mix", "multiply", "screen"})
+     *   )),
+     *   @OA\Property(property="summary", required={"missing", "translucentOnly", "near", "unknown", "specks", "ok"},
+     *     @OA\Property(property="missing", description="Required colors (not optional) that the sprite does not use at all", type="integer"),
+     *     @OA\Property(property="translucentOnly", type="integer"),
+     *     @OA\Property(property="near", type="integer"),
+     *     @OA\Property(property="unknown", type="integer"),
+     *     @OA\Property(property="specks", type="integer"),
+     *     @OA\Property(property="ok", description="Nothing missing, nearly matching or unknown", type="boolean"))
+     * )
+     * @OA\Get(
+     *   path="/appearances/{id}/sprite/colors",
+     *   operationId="GetAppearancesIdSpriteColors",
+     *   description="Checks the colors of the appearance's sprite against the colors listed for the appearance. Soft edges and glows that are blends of listed colors (normal, multiply, screen) are recognised, and colors only drawn semi-transparent are not judged.",
+     *   tags={"appearances"},
+     *   security={},
+     *   @OA\Parameter(in="path", name="id", required=true, @OA\Schema(ref="#/components/schemas/OneBasedId")),
+     *   @OA\Parameter(in="query", name="token", required=false, @OA\Schema(ref="#/components/schemas/AppearanceToken")),
+     *   @OA\Response(response="200", description="The comparison", @OA\JsonContent(ref="#/components/schemas/SpriteColorCheck")),
+     *   @OA\Response(response="403", description="The appearance is private", @OA\JsonContent(ref="#/components/schemas/ErrorResponse")),
+     *   @OA\Response(response="404", description="Appearance not found, or it has no sprite", @OA\JsonContent(ref="#/components/schemas/ErrorResponse"))
+     * )
+     */
+    public function spriteColors(Request $request, int $id)
+    {
+        $appearance = $this->visible($request, $id);
+        $sprite = $appearance->spriteFile();
+        if ($sprite === null) {
+            abort(404, "There's no sprite image for appearance #{$appearance->id}");
+        }
+
+        $palette = [];
+        foreach ($appearance->colorGroups()->with(['colors' => fn($query) => $query->whereNotNull('hex')->orderBy('order')])->get() as $group) {
+            foreach ($group->colors as $color) {
+                $palette[] = ['group' => $group->label, 'label' => $color->label, 'hex' => $color->hex];
+            }
+        }
+        $shared = DB::table('colors as c')->join('color_groups as cg', 'cg.id', '=', 'c.group_id')
+            ->where('cg.appearance_id', 0)->whereNotNull('c.hex')->pluck('c.hex')->map(fn($hex) => strtoupper($hex))->all();
+        $result = SpriteColorCheck::check(SpriteImage::fromFile($sprite->getPath())->colorCounts(), $palette, array_merge(SpriteColorCheck::SHARED_HEXES, $shared));
+
+        return response()->camelJson($result, 200, $appearance->private ? ['Cache-Control' => 'private, no-cache'] : ['Cache-Control' => 'public, max-age=60']);
+    }
+
+    /**
      * @OA\Get(
      *   path="/appearances/{id}/image",
      *   operationId="GetAppearancesIdImage",
@@ -129,7 +198,7 @@ class AppearanceExportsController extends Controller
                     : redirect(ColorGuideHelper::mapSprite($appearance, false, $sprite)['path']);
 
             case 'sprite.svg':
-                $svg = Cache::remember('sprite_svg:'.sha1_file($sprite->getPath()), now()->addDay(), fn() => AppearanceImages::spriteSvg(AppearanceImages::traceSprite($sprite->getPath())));
+                $svg = Cache::remember('sprite_svg:2:'.sha1_file($sprite->getPath()), now()->addDay(), fn() => SpriteImage::fromFile($sprite->getPath())->toSvg());
 
                 return response($svg, 200, $headers + ['Content-Type' => 'image/svg+xml']);
 

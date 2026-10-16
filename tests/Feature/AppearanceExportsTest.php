@@ -177,6 +177,34 @@ class AppearanceExportsTest extends TestCase
         $this->get("/appearances/{$appearance->id}/image?type=palette&format=png")->assertOk();
     }
 
+    public function testSpriteColorCheck(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->user(Role::Staff), 'sanctum');
+        $appearance = $this->appearance();
+        $this->getJson("/appearances/{$appearance->id}/sprite/colors")->assertNotFound();
+
+        $png = imagecreatetruecolor(300, 300);
+        imagesavealpha($png, true);
+        imagealphablending($png, false);
+        imagefill($png, 0, 0, imagecolorallocatealpha($png, 0, 0, 0, 127));
+        imagefilledrectangle($png, 0, 0, 299, 39, imagecolorallocate($png, 0x11, 0x22, 0x33)); // listed
+        imagefilledrectangle($png, 0, 40, 299, 69, imagecolorallocate($png, 0x11, 0x22, 0x35)); // almost listed
+        imagefilledrectangle($png, 0, 70, 299, 89, imagecolorallocate($png, 0xFF, 0x00, 0xFF)); // unrelated
+        imagefilledrectangle($png, 0, 299, 9, 299, imagecolorallocatealpha($png, 0x44, 0x55, 0x66, 64)); // listed, only semi-transparent
+        ob_start();
+        imagepng($png);
+        $this->postJson("/appearances/{$appearance->id}/sprite", ['sprite' => UploadedFile::fake()->createWithContent('sprite.png', ob_get_clean())])->assertOk();
+
+        $result = $this->getJson("/appearances/{$appearance->id}/sprite/colors")->assertOk()->json();
+
+        $this->assertSame(['missing' => 0, 'translucentOnly' => 1, 'near' => 1, 'unknown' => 1, 'specks' => 0, 'ok' => false], $result['summary']);
+        $this->assertSame(['present', 'translucent'], array_column($result['palette'], 'status'));
+        $this->assertSame(['listed', 'near', 'unknown', 'listed'], array_column($result['colors'], 'kind'));
+        $this->assertSame(['Coat | Outline'], $result['colors'][0]['labels']);
+        $this->assertSame('#112233', $result['colors'][1]['nearest']['hex']);
+    }
+
     public function testCutieMarkDownload(): void
     {
         Storage::fake('public');
