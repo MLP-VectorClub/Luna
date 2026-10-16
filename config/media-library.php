@@ -2,6 +2,7 @@
 
 use App\Utils\Media\ConversionFileNamer;
 use App\Utils\Media\PathGenerator;
+use App\Utils\Media\ProjectSvgo;
 use Spatie\ImageOptimizer\Optimizers;
 use Spatie\MediaLibrary\Conversions\ImageGenerators;
 use Spatie\MediaLibrary\Conversions\Jobs\PerformConversionsJob;
@@ -126,8 +127,8 @@ return [
             '-o2', // this set the optimization level to two (multiple IDAT compression trials)
             '-quiet', // required parameter for this package
         ],
-        Optimizers\Svgo::class => [
-            '--disable=cleanupIDs', // disabling because it is known to cause troubles
+        ProjectSvgo::class => [
+            '--config='.__DIR__.'/../svgo.config.mjs', // plugin settings, svgo 2+ has no --disable flag (cleanupIds is turned off there)
         ],
         Optimizers\Gifsicle::class => [
             '-b', // required parameter for this package
