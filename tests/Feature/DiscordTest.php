@@ -48,7 +48,7 @@ class DiscordTest extends TestCase
         $driver->shouldReceive('redirectUrl')->andReturnSelf();
         $driver->shouldReceive('user')->andReturn($discord);
         Socialite::shouldReceive('driver')->with('discord')->andReturn($driver);
-        config(['services.discord.guild_id' => '42']);
+        config(['services.discord.guild_id' => '42', 'services.discord.bot_token' => 'bot']);
         Http::fake(['discord.com/api/v10/guilds/42/members/*' => Http::response(['nick' => 'Nicky', 'joined_at' => '2020-01-01T00:00:00+00:00'])]);
     }
 
@@ -113,7 +113,7 @@ class DiscordTest extends TestCase
 
     public function testSyncAndCooldown(): void
     {
-        config(['services.discord.guild_id' => '42']);
+        config(['services.discord.guild_id' => '42', 'services.discord.bot_token' => 'bot']);
         $user = User::factory()->create(['role' => Role::User]);
         $member = $this->member($user);
         $this->actingAs($user, 'sanctum');
@@ -132,6 +132,72 @@ class DiscordTest extends TestCase
         $this->postJson("/users/{$user->id}/discord/sync")->assertStatus(429)->assertJsonPath('message', fn($m) => str_contains($m, '5 minutes'));
         $this->actingAs(User::factory()->create(['role' => Role::Staff]), 'sanctum');
         $this->postJson("/users/{$user->id}/discord/sync")->assertStatus(429);
+    }
+
+    private function syncWith(array $guildResponse, ?string $guildId = '42'): array
+    {
+        config(['services.discord.guild_id' => $guildId, 'services.discord.bot_token' => 'bot']);
+        $user = User::factory()->create(['role' => Role::User]);
+        $member = $this->member($user, ['nick' => 'Nicky', 'joined_at' => '2020-01-01T00:00:00+00:00']);
+        $this->actingAs($user, 'sanctum');
+        Http::fake([
+            'discord.com/api/v10/users/@me' => Http::response(['username' => 'new', 'global_name' => 'New Name', 'discriminator' => '0', 'avatar' => 'abc']),
+            'discord.com/api/v10/guilds/*' => Http::response(...$guildResponse),
+        ]);
+
+        return [$user, $member];
+    }
+
+    public function testNotBeingInTheServerIsOnlyBelievedWhenDiscordSaysTheMemberIsUnknown(): void
+    {
+        [$user, $member] = $this->syncWith([['message' => 'Unknown Member', 'code' => 10007], 404]);
+
+        $this->postJson("/users/{$user->id}/discord/sync")->assertNoContent();
+
+        $member->refresh();
+        $this->assertNull($member->joined_at);
+        $this->assertNull($member->nick);
+    }
+
+    public function testAServerDiscordDoesNotKnowIsNotTakenForTheMemberLeaving(): void
+    {
+        [$user, $member] = $this->syncWith([['message' => 'Unknown Guild', 'code' => 10004], 404]);
+
+        $this->postJson("/users/{$user->id}/discord/sync")->assertStatus(502)->assertJsonPath('message', fn($m) => str_contains($m, 'site staff'));
+
+        $this->assertNotNull($member->fresh()->joined_at);
+        $this->assertSame('Nicky', $member->fresh()->nick);
+    }
+
+    public function testAMissingServerIdLeavesTheMembershipAlone(): void
+    {
+        [$user, $member] = $this->syncWith([['message' => '404: Not Found', 'code' => 0], 404], null);
+
+        $this->postJson("/users/{$user->id}/discord/sync")->assertStatus(502);
+
+        $this->assertNotNull($member->fresh()->joined_at);
+        Http::assertNotSent(fn($request) => str_contains($request->url(), '/guilds/'));
+    }
+
+    public function testAnUnusableBotTokenIsNotTakenForTheMemberLeaving(): void
+    {
+        [$user, $member] = $this->syncWith([['message' => '401: Unauthorized', 'code' => 0], 401]);
+
+        $this->postJson("/users/{$user->id}/discord/sync")->assertStatus(502);
+
+        $this->assertNotNull($member->fresh()->joined_at);
+    }
+
+    public function testLinkingStillWorksWhenTheServerCannotBeAsked(): void
+    {
+        $user = User::factory()->create(['role' => Role::User]);
+        $this->actingAs($user, 'sanctum');
+        $this->discordCode();
+        config(['services.discord.guild_id' => null]);
+
+        $this->postJson("/users/{$user->id}/discord", ['code' => 'abc'])->assertNoContent();
+
+        $this->assertNull(DiscordMember::find('777000111222333444')->joined_at);
     }
 
     public function testSyncOfRevokedAccountRemovesTheLink(): void

@@ -111,7 +111,11 @@ class DiscordController extends Controller
             foreach (AccountHelper::tokenResponseToModelData($data) as $k => $v) {
                 $member->setAttribute($k, $v);
             }
-            $this->checkServerMembership($member);
+            try {
+                $this->checkServerMembership($member);
+            } catch (HttpException) {
+                // Linking works without knowing about the server, a later sync finds out
+            }
             $member->save();
         });
 
@@ -197,19 +201,46 @@ class DiscordController extends Controller
         $member->scope = $response->json('scope');
     }
 
+    /**
+     * Whether the member is in the club's Discord server, asked of Discord with the bot. Only Discord saying "Unknown Member" (10007) or
+     * "Unknown User" (10013) means they are not: a 404 for the server itself ("Unknown Guild", 10004: wrong server ID, or the bot was removed)
+     * or any other failure (a bad bot token, a missing permission) says nothing about the member, so it is logged and leaves what is stored alone
+     *
+     * @throws HttpException 502 when the answer could not be had
+     */
     private function checkServerMembership(DiscordMember $member): void
     {
         $guild = config('services.discord.guild_id');
-        $response = Http::withHeaders(['Authorization' => 'Bot '.config('services.discord.bot_token')])
-            ->get(self::API."/guilds/$guild/members/{$member->id}");
-        if ($response->status() === 404) {
-            $member->nick = null;
-            $member->joined_at = null;
-        } elseif ($response->successful()) {
+        $token = config('services.discord.bot_token');
+        if (empty($guild) || empty($token)) {
+            Log::error('Discord server membership cannot be checked: '.(empty($guild) ? 'DISCORD_SERVER_ID' : 'DISCORD_BOT_TOKEN').' is not set');
+            throw new HttpException(502, 'The Discord server membership could not be checked, please let the site staff know.');
+        }
+
+        $response = Http::withHeaders(['Authorization' => 'Bot '.$token])->get(self::API."/guilds/$guild/members/{$member->id}");
+        if ($response->successful()) {
             $member->nick = $response->json('nick');
             $member->joined_at = $response->json('joined_at');
-        } else {
+
+            return;
+        }
+        if ($response->status() === 404 && in_array($response->json('code'), [10007, 10013], true)) {
+            $member->nick = null;
+            $member->joined_at = null;
+
+            return;
+        }
+
+        Log::error('Discord server membership could not be checked', [
+            'status' => $response->status(),
+            'code' => $response->json('code'),
+            'message' => $response->json('message'),
+            'guild' => $guild,
+        ]);
+        if ($response->serverError() || $response->status() === 429) {
             throw new HttpException(502, 'Discord could not be reached, please try again later.');
         }
+
+        throw new HttpException(502, 'The Discord server membership could not be checked, please let the site staff know.');
     }
 }
