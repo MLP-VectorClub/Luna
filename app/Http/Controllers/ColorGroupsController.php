@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appearance;
+use App\Enums\BlendMode;
 use App\Models\Color;
 use App\Models\CutieMark;
 use App\Models\ColorGroup;
@@ -31,7 +32,9 @@ class ColorGroupsController extends Controller
      *     @OA\Items(type="object", required={"label"},
      *       @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
      *       @OA\Property(property="label", type="string", minLength=3, maxLength=30),
-     *       @OA\Property(property="hex", type="string", nullable=true)
+     *       @OA\Property(property="hex", type="string", nullable=true),
+     *       @OA\Property(property="opacity", type="integer", minimum=1, maximum=99, nullable=true, description="How opaque the color is drawn, in percent. Null means fully opaque. Left unchanged when omitted"),
+     *       @OA\Property(property="blendMode", ref="#/components/schemas/BlendMode", nullable=true, description="How the color combines with what is under it. Null means normal. Left unchanged when omitted")
      *     )
      *   ),
      *   @OA\Property(property="major", type="boolean", description="Record as a major change (official guide only)"),
@@ -63,6 +66,8 @@ class ColorGroupsController extends Controller
                 'order' => $color->order,
                 'label' => $color->label,
                 'hex' => $color->hex,
+                'opacity' => $color->opacity,
+                'blendMode' => $color->opacity !== null || $color->blend_mode !== null ? $color->blendMode()->value : null,
             ])->all(),
         ]);
     }
@@ -260,6 +265,26 @@ class ColorGroupsController extends Controller
                     $this->fail('colors', 'Hex color '.trim((string) $input['hex'])." is invalid, please leave empty or fix $where");
                 }
                 $color->hex = $official ? HexColor::round($hex) : $hex;
+            }
+            if (array_key_exists('opacity', $input)) {
+                $opacity = $input['opacity'];
+                if ($opacity === null || $opacity === '') {
+                    $color->opacity = null;
+                } elseif (filter_var($opacity, FILTER_VALIDATE_INT) === false || (int) $opacity < 1 || (int) $opacity > 99) {
+                    $this->fail('colors', "The opacity must be a whole number between 1 and 99 percent, leave it empty for fully opaque $where");
+                } else {
+                    $color->opacity = (int) $opacity;
+                }
+            }
+            if (array_key_exists('blendMode', $input)) {
+                $mode = $input['blendMode'];
+                if ($mode === null || $mode === '' || $mode === BlendMode::Normal->value) {
+                    $color->blend_mode = null;
+                } elseif (!is_string($mode) || BlendMode::tryFrom($mode) === null) {
+                    $this->fail('colors', 'The blend mode must be one of '.implode(', ', BlendMode::values())." $where");
+                } else {
+                    $color->blend_mode = $mode;
+                }
             }
             $prepared[] = $color;
         }

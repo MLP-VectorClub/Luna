@@ -2,6 +2,8 @@
 
 namespace App\Utils;
 
+use App\Enums\BlendMode;
+
 /**
  * Compares the colors used by a sprite with the colors listed for its appearance
  *
@@ -25,11 +27,11 @@ class SpriteColorCheck
 
     /**
      * @param  array<string, array<int, int>>  $counts  {@see SpriteImage::colorCounts()}
-     * @param  array<int, array{group: string, label: string, hex: string}>  $palette  colors of the appearance
+     * @param  array<int, array{group: string, label: string, hex: string, opacity?: ?int, blendMode?: ?string}>  $palette  colors of the appearance
      * @param  string[]  $shared  hex values that are fine to use without being listed
      * @return array{
-     *   palette: array<int, array{group: string, label: string, hex: string, status: string, optional: bool, pixels: int}>,
-     *   colors: array<int, array{hex: string, pixels: int, translucentPixels: int, kind: string, labels: string[], nearest: ?array{hex: string, label: string, distance: float}, blendOf: ?string[], blendMode: ?string}>,
+     *   palette: array<int, array{group: string, label: string, hex: string, opacity: ?int, blendMode: ?string, status: string, optional: bool, pixels: int}>,
+     *   colors: array<int, array{hex: string, pixels: int, translucentPixels: int, kind: string, labels: string[], nearest: ?array{hex: string, label: string, distance: float}, blendOf: ?string[], blendMode: ?string, blendOpacity: ?int}>,
      *   summary: array{missing: int, translucentOnly: int, near: int, unknown: int, specks: int, ok: bool}
      * }
      */
@@ -60,6 +62,7 @@ class SpriteColorCheck
                 'nearest' => null,
                 'blendOf' => null,
                 'blendMode' => null,
+                'blendOpacity' => null,
             ];
             if (isset($known[$hex])) {
                 $entry['kind'] = 'listed';
@@ -76,9 +79,14 @@ class SpriteColorCheck
                         $nearest = ['hex' => $other, 'label' => $known[$other][0], 'distance' => round($distance, 1)];
                     }
                 }
+                $declared = self::explainDeclared($point, $palette, $opaqueParents);
                 $blend = self::explainBlend($point, $opaqueParents);
                 $entry['nearest'] = $nearest;
-                if ($nearest !== null && $nearest['distance'] <= self::NEAR) {
+                if ($declared !== null) {
+                    $entry['kind'] = 'blend';
+                    [$entry['blendOf'], $entry['blendMode'], $entry['blendOpacity']] = $declared;
+                    $entry['nearest'] = null;
+                } elseif ($nearest !== null && $nearest['distance'] <= self::NEAR) {
                     $entry['kind'] = 'near';
                 } elseif ($blend !== null) {
                     $entry['kind'] = 'blend';
@@ -99,10 +107,11 @@ class SpriteColorCheck
             $hex = strtoupper($color['hex']);
             $opaque = $counts[$hex][0] ?? 0;
             $translucent = isset($counts[$hex]) ? array_sum($counts[$hex]) - $opaque : 0;
-            $status = $opaque > 0 ? 'present' : ($translucent > 0 ? 'translucent' : 'missing');
+            // A color that is meant to be semi-transparent is expected to show up that way
+            $status = $opaque > 0 ? 'present' : ($translucent > 0 ? (($color['opacity'] ?? null) !== null ? 'present' : 'translucent') : 'missing');
             // Colors for other forms of the character ("(Younger)", "(if used)") are not expected in every sprite
             $optional = (bool) preg_match('/\(.*\)/', $color['group'].' '.$color['label']);
-            $rows[] = ['group' => $color['group'], 'label' => $color['label'], 'hex' => $hex, 'status' => $status, 'optional' => $optional, 'pixels' => $opaque + $translucent];
+            $rows[] = ['group' => $color['group'], 'label' => $color['label'], 'hex' => $hex, 'opacity' => $color['opacity'] ?? null, 'blendMode' => self::declaredMode($color)?->value, 'status' => $status, 'optional' => $optional, 'pixels' => $opaque + $translucent];
             if ($status === 'missing' && !$optional) {
                 $summary['missing']++;
             }
@@ -120,6 +129,48 @@ class SpriteColorCheck
         $summary['ok'] = $summary['missing'] + $summary['near'] + $summary['unknown'] === 0;
 
         return ['palette' => $rows, 'colors' => $colors, 'summary' => $summary];
+    }
+
+    private static function declaredMode(array $color): ?BlendMode
+    {
+        if (($color['opacity'] ?? null) === null && ($color['blendMode'] ?? null) === null) {
+            return null;
+        }
+
+        // Normal unless it says otherwise
+        return BlendMode::tryFrom((string) ($color['blendMode'] ?? '')) ?? BlendMode::Normal;
+    }
+
+    /**
+     * Colors with an opacity or blend mode are drawn over something, so an opaque color of the sprite can be that color over another one
+     *
+     * @param  float[]  $point
+     * @param  array<int, array<string, mixed>>  $palette
+     * @param  array<string, float[]>  $bases  opaque colors of the sprite
+     * @return array{0: string[], 1: string, 2: ?int}|null the layer and the base it is over, the blend mode and the opacity
+     */
+    private static function explainDeclared(array $point, array $palette, array $bases): ?array
+    {
+        foreach ($palette as $color) {
+            $mode = self::declaredMode($color);
+            if ($mode === null) {
+                continue;
+            }
+            $layer = self::rgb(strtoupper($color['hex']));
+            $opacity = ($color['opacity'] ?? 100) / 100;
+            foreach ($bases as $baseHex => $base) {
+                $result = [
+                    $mode->channel($base[0], $layer[0], $opacity),
+                    $mode->channel($base[1], $layer[1], $opacity),
+                    $mode->channel($base[2], $layer[2], $opacity),
+                ];
+                if (self::distance($point, $result) <= self::BLEND_TOLERANCE) {
+                    return [[strtoupper($color['hex']), $baseHex], $mode->value, $color['opacity'] ?? null];
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

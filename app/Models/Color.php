@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Appearance;
+use App\Enums\BlendMode;
 use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\EloquentSortable\Sortable;
@@ -22,8 +22,21 @@ class Color extends Model implements Sortable
         'group_id',
         'order',
         'label',
-        'hex'
+        'hex',
+        'opacity',
+        'blend_mode',
     ];
+
+    protected function casts(): array
+    {
+        return ['opacity' => 'integer'];
+    }
+
+    /** Blend mode of the color when it is semi-transparent, normal unless something says otherwise */
+    public function blendMode(): BlendMode
+    {
+        return BlendMode::tryFrom((string) $this->blend_mode) ?? BlendMode::Normal;
+    }
 
     public function colorGroup()
     {

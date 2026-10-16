@@ -6,6 +6,7 @@ use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Enums\UserPrefKey;
 use App\Models\Appearance;
+use App\Models\ColorGroup;
 use App\Models\PinnedAppearance;
 use App\Models\Show;
 use App\Models\Tag;
@@ -147,6 +148,37 @@ class AppearanceManagementTest extends TestCase
 
         $this->putJson('/appearances/order', ['guide' => 'pony', 'list' => [$other->id, $appearance->id]])->assertOk();
         $this->assertSame(1, $other->fresh()->order);
+    }
+
+    public function testColorsCarryAnOpacityAndABlendMode(): void
+    {
+        $appearance = $this->official('Main');
+        $this->as(Role::Staff);
+
+        $this->postJson('/color-groups', ['appearanceId' => $appearance->id, 'label' => 'Glasses', 'colors' => [
+            ['label' => 'Lens', 'hex' => '#112233', 'opacity' => 40],
+            ['label' => 'Shine', 'hex' => '#FFFFFF', 'opacity' => '50', 'blendMode' => 'overlay'],
+            ['label' => 'Frame', 'hex' => '#000000', 'blendMode' => 'normal'],
+        ]])->assertCreated();
+        $id = ColorGroup::where('appearance_id', $appearance->id)->value('id');
+
+        $colors = $this->getJson("/color-groups/$id")->assertOk()->json('colors');
+        $this->assertSame([[40, 'normal'], [50, 'overlay'], [null, null]], array_map(fn($c) => [$c['opacity'], $c['blendMode']], $colors));
+        // The same on the appearance's own color list
+        $listed = $this->getJson("/appearances/{$appearance->id}/color-groups")->assertOk()->json('colorGroups.0.colors');
+        $this->assertSame([[40, 'normal'], [50, 'overlay'], [null, null]], array_map(fn($c) => [$c['opacity'], $c['blendMode']], $listed));
+
+        // Left out means unchanged, null means cleared
+        $this->putJson("/color-groups/$id", ['label' => 'Glasses', 'colors' => [
+            ['id' => $colors[0]['id'], 'label' => 'Lens', 'hex' => '#112233'],
+            ['id' => $colors[1]['id'], 'label' => 'Shine', 'hex' => '#FFFFFF', 'opacity' => null, 'blendMode' => null],
+        ]])->assertOk();
+        $colors = $this->getJson("/color-groups/$id")->json('colors');
+        $this->assertSame([[40, 'normal'], [null, null]], array_map(fn($c) => [$c['opacity'], $c['blendMode']], $colors));
+
+        foreach ([['opacity' => 0], ['opacity' => 100], ['opacity' => 'half'], ['blendMode' => 'glow']] as $bad) {
+            $this->putJson("/color-groups/$id", ['label' => 'Glasses', 'colors' => [['id' => $colors[0]['id'], 'label' => 'Lens'] + $bad]])->assertStatus(422);
+        }
     }
 
     public function testPersonalAppearancesHaveNoTagsOrRelations(): void

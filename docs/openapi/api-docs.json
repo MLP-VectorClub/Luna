@@ -12215,6 +12215,20 @@
                                     "type": "string",
                                     "example": "#D8D8D8"
                                 },
+                                "opacity": {
+                                    "description": "The opacity the color is listed with, in percent",
+                                    "type": "integer",
+                                    "nullable": true
+                                },
+                                "blendMode": {
+                                    "description": "The blend mode the color is listed with, normal when only an opacity is set",
+                                    "nullable": true,
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BlendMode"
+                                        }
+                                    ]
+                                },
                                 "status": {
                                     "description": "`translucent` means the color only appears semi-transparent",
                                     "type": "string",
@@ -12304,12 +12318,28 @@
                                     "nullable": true
                                 },
                                 "blendMode": {
+                                    "description": "How a `blend` color is made from its two colors: `mix` is any mix of the two. Colors listed with an opacity or blend mode are tried first, as that layer over a color of the sprite",
                                     "type": "string",
                                     "enum": [
                                         "mix",
+                                        "normal",
                                         "multiply",
-                                        "screen"
+                                        "screen",
+                                        "overlay",
+                                        "darken",
+                                        "lighten",
+                                        "color-dodge",
+                                        "color-burn",
+                                        "hard-light",
+                                        "soft-light",
+                                        "difference",
+                                        "exclusion"
                                     ],
+                                    "nullable": true
+                                },
+                                "blendOpacity": {
+                                    "description": "The opacity of the layer in a blend made from a listed color",
+                                    "type": "integer",
                                     "nullable": true
                                 }
                             },
@@ -12545,6 +12575,22 @@
                                 "hex": {
                                     "type": "string",
                                     "nullable": true
+                                },
+                                "opacity": {
+                                    "description": "How opaque the color is drawn, in percent. Null means fully opaque. Left unchanged when omitted",
+                                    "type": "integer",
+                                    "maximum": 99,
+                                    "minimum": 1,
+                                    "nullable": true
+                                },
+                                "blendMode": {
+                                    "oneOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BlendMode"
+                                        }
+                                    ],
+                                    "nullable": true,
+                                    "description": "How the color combines with what is under it. Null means normal. Left unchanged when omitted"
                                 }
                             },
                             "type": "object"
@@ -13606,6 +13652,24 @@
                     "gravatar"
                 ]
             },
+            "BlendMode": {
+                "description": "How a color layer combines with what is under it",
+                "type": "string",
+                "enum": [
+                    "normal",
+                    "multiply",
+                    "screen",
+                    "overlay",
+                    "darken",
+                    "lighten",
+                    "color-dodge",
+                    "color-burn",
+                    "hard-light",
+                    "soft-light",
+                    "difference",
+                    "exclusion"
+                ]
+            },
             "Color": {
                 "description": "A color entry. Colors may link to other colors, in which case `linkedTo` will be set to the link target, but `hex` will always point to the value that should be displayed.",
                 "required": [
@@ -13632,6 +13696,22 @@
                         "format": "#RRGGBB",
                         "example": "#6181B6",
                         "nullable": true
+                    },
+                    "opacity": {
+                        "description": "How opaque the color is drawn in percent, for colors that are semi-transparent in the sprite. Null means fully opaque",
+                        "type": "integer",
+                        "maximum": 99,
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "blendMode": {
+                        "description": "How a semi-transparent color combines with what is under it. Null when neither opacity nor blend mode is set, otherwise normal unless said otherwise",
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/BlendMode"
+                            }
+                        ]
                     },
                     "linkedTo": {
                         "description": "This field used to indicate if this color was linked to another color, however, this feature was removed and this field now only ever returns null",
@@ -14059,6 +14139,20 @@
                         "description": "Hex color code, e.g. #FF0000",
                         "type": "string",
                         "nullable": true
+                    },
+                    "opacity": {
+                        "type": "integer",
+                        "maximum": 99,
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "blendMode": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/BlendMode"
+                            }
+                        ]
                     }
                 },
                 "type": "object",

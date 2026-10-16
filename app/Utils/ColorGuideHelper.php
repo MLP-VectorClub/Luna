@@ -535,6 +535,8 @@ class ColorGuideHelper
             'label' => $c->label,
             'order' => $c->order,
             'hex' => $c->hex,
+            'opacity' => $c->opacity,
+            'blendMode' => $c->opacity !== null || $c->blend_mode !== null ? $c->blendMode()->value : null,
         ];
     }
 

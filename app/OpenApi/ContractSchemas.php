@@ -39,6 +39,13 @@ use OpenApi\Annotations as OA;
  * )
  *
  * @OA\Schema(
+ *   schema="BlendMode",
+ *   type="string",
+ *   description="How a color layer combines with what is under it",
+ *   enum={"normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion"}
+ * )
+ *
+ * @OA\Schema(
  *   schema="Color",
  *   type="object",
  *   description="A color entry. Colors may link to other colors, in which case `linkedTo` will be set to the link target, but `hex` will always point to the value that should be displayed.",
@@ -52,6 +59,8 @@ use OpenApi\Annotations as OA;
  *   description="The color value in uppercase hexadecimal form, including a # prefix",
  *   nullable=true,
  *   example="#6181B6"),
+ *   @OA\Property(property="opacity", type="integer", minimum=1, maximum=99, nullable=true, description="How opaque the color is drawn in percent, for colors that are semi-transparent in the sprite. Null means fully opaque"),
+ *   @OA\Property(property="blendMode", nullable=true, description="How a semi-transparent color combines with what is under it. Null when neither opacity nor blend mode is set, otherwise normal unless said otherwise", allOf={@OA\Schema(ref="#/components/schemas/BlendMode")}),
  *   @OA\Property(property="linkedTo", description="This field used to indicate if this color was linked to another color, however, this feature was removed and this field now only ever returns null",
  *   nullable=true,
  *   deprecated=true,
@@ -236,7 +245,9 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="id", ref="#/components/schemas/OneBasedId"),
  *   @OA\Property(property="order", type="integer", minimum=1),
  *   @OA\Property(property="label", type="string", minLength=3, maxLength=30),
- *   @OA\Property(property="hex", type="string", description="Hex color code, e.g. #FF0000", nullable=true)
+ *   @OA\Property(property="hex", type="string", description="Hex color code, e.g. #FF0000", nullable=true),
+ *   @OA\Property(property="opacity", type="integer", minimum=1, maximum=99, nullable=true),
+ *   @OA\Property(property="blendMode", nullable=true, allOf={@OA\Schema(ref="#/components/schemas/BlendMode")})
  * )
  *
  * @OA\Schema(
