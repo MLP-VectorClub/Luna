@@ -303,7 +303,7 @@ class UsersController extends Controller
     #[OA\Post(
         path: '/users/me/password',
         operationId: 'PostUsersMePassword',
-        description: 'Sets a new password for the currently signed in user. Requires staff permission. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.',
+        description: 'Sets a new password for the currently signed in user. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.',
         tags: ['users'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -339,11 +339,6 @@ class UsersController extends Controller
             new OA\Response(
                 response: '401',
                 description: 'Not signed in',
-                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
-            ),
-            new OA\Response(
-                response: '403',
-                description: 'Insufficient permission (staff required)',
                 content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
             ),
             new OA\Response(

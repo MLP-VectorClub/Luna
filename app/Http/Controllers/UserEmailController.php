@@ -29,7 +29,7 @@ class UserEmailController extends Controller
     #[OA\Post(
         path: '/users/{id}/email-changes',
         operationId: 'PostUsersIdEmailChanges',
-        description: 'Requests an e-mail address change (or resend of a pending verification e-mail) for the specified user. Requires staff permission. When changing the address of the requester\'s own account, the current password must be set and verified first.',
+        description: 'Requests an e-mail address change (or resend of a pending verification e-mail) for the specified user. Every signed in user may do this for their own account, changing another user\'s requires developer permission. When changing the address of the requester\'s own account, the current password must be set and verified first.',
         tags: ['users'],
         parameters: [
             new OA\Parameter(
@@ -81,7 +81,7 @@ class UserEmailController extends Controller
             ),
             new OA\Response(
                 response: '403',
-                description: 'Insufficient permission (staff required)',
+                description: 'Developer permission is required to change the address of another user',
                 content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
             ),
             new OA\Response(
@@ -115,6 +115,10 @@ class UserEmailController extends Controller
     {
         $user = User::findOrFail($id);
         $same_user = $request->user()->id === $user->id;
+        // Other people's addresses are for developers only, they are the ones who get to see them too
+        if (!$same_user && !perm(Role::Developer, $request->user()->role)) {
+            abort(403, 'Only developers can change the e-mail address of another user');
+        }
         $resend = filter_var($request->input('resend', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         if ($resend === null) {
             $this->fail('resend', 'The resend value is invalid');
@@ -129,9 +133,7 @@ class UserEmailController extends Controller
             if (mb_strlen($new_email) < 3 || mb_strlen($new_email) > 128) {
                 $this->fail('newEmail', 'The new e-mail must be between 3 and 128 characters long');
             }
-            // Whether an address is the one somebody has set is not for staff to find out by trying (developers see it anyway)
-            $may_compare = $same_user || perm(Role::Developer, $request->user()->role);
-            if ($may_compare && $user->email !== null && strcasecmp($new_email, $user->email) === 0) {
+            if ($user->email !== null && strcasecmp($new_email, $user->email) === 0) {
                 $this->fail('newEmail', 'You are trying to use same e-mail address '.($same_user ? 'you' : 'this user').' already '.($same_user ? 'have' : 'has').' set');
             }
             if (!(new StrictEmail())->passes('newEmail', $new_email)) {

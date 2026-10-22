@@ -10427,7 +10427,7 @@
                 "tags": [
                     "users"
                 ],
-                "description": "Requests an e-mail address change (or resend of a pending verification e-mail) for the specified user. Requires staff permission. When changing the address of the requester's own account, the current password must be set and verified first.",
+                "description": "Requests an e-mail address change (or resend of a pending verification e-mail) for the specified user. Every signed in user may do this for their own account, changing another user's requires developer permission. When changing the address of the requester's own account, the current password must be set and verified first.",
                 "operationId": "PostUsersIdEmailChanges",
                 "parameters": [
                     {
@@ -10495,7 +10495,7 @@
                         }
                     },
                     "403": {
-                        "description": "Insufficient permission (staff required)",
+                        "description": "Developer permission is required to change the address of another user",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -11370,7 +11370,7 @@
                 "tags": [
                     "users"
                 ],
-                "description": "Sets a new password for the currently signed in user. Requires staff permission. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.",
+                "description": "Sets a new password for the currently signed in user. If a password is already set, the current password must be provided for verification. On success, all existing sessions (access tokens) of the user are deleted.",
                 "operationId": "PostUsersMePassword",
                 "requestBody": {
                     "required": true,
@@ -11418,16 +11418,6 @@
                     },
                     "401": {
                         "description": "Not signed in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Insufficient permission (staff required)",
                         "content": {
                             "application/json": {
                                 "schema": {

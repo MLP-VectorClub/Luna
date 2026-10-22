@@ -36,6 +36,7 @@ class EmailChangeTest extends TestCase
         $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => 'new@example.com'])->assertUnauthorized();
         $this->postJson('/users/email/verify', [])->assertUnauthorized();
 
+        // Another user's address is for developers only, a member may change their own (see testMemberCanChangeTheirOwnAddress)
         $this->actingAs(User::factory()->create(['role' => Role::Member]), 'sanctum');
         $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => 'new@example.com'])->assertForbidden();
         // Verifying is open to every signed in user, but only for their own verifications (see testVerifyingSomeoneElsesAddressIsRefused)
@@ -66,6 +67,17 @@ class EmailChangeTest extends TestCase
         $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => 'new@example.com', 'currentPassword' => 'old-password-1'])->assertStatus(429);
     }
 
+    public function testMemberCanChangeTheirOwnAddress(): void
+    {
+        Mail::fake();
+        $member = User::factory()->create(['role' => Role::Member]);
+        $member->forceFill(['password' => Hash::make('old-password-1')])->save();
+        $this->actingAs($member, 'sanctum');
+
+        $this->postJson("/users/{$member->id}/email-changes", ['newEmail' => 'member@example.com', 'currentPassword' => 'old-password-1'])->assertOk();
+        Mail::assertSent(VerifyEmailAddress::class, fn($mail) => $mail->hasTo('member@example.com'));
+    }
+
     public function testNeedsAPasswordFirstAndAddressesMustBeFree(): void
     {
         Mail::fake();
@@ -83,11 +95,11 @@ class EmailChangeTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    public function testStaffCanRequestAChangeForAnotherUserWithoutThePassword(): void
+    public function testDevelopersCanRequestAChangeForAnotherUserWithoutThePassword(): void
     {
         Mail::fake();
         $target = User::factory()->create(['role' => Role::User]);
-        $this->actingAs($this->staff(), 'sanctum');
+        $this->actingAs(User::factory()->create(['role' => Role::Developer]), 'sanctum');
 
         $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'target@example.com'])->assertOk();
         Mail::assertSent(VerifyEmailAddress::class, fn($mail) => $mail->hasTo('target@example.com'));
@@ -97,18 +109,16 @@ class EmailChangeTest extends TestCase
         Mail::assertSent(VerifyEmailAddress::class, fn($mail) => $mail->hasTo($target->email));
     }
 
-    public function testStaffCannotFindOutAnotherUsersAddressByTryingIt(): void
+    public function testStaffCannotTouchAnotherUsersAddress(): void
     {
         Mail::fake();
         $target = User::factory()->create(['role' => Role::User, 'email' => 'secret@example.com']);
-
-        // A developer sees the address anyway, and the owner is told it is unchanged
-        $this->actingAs(User::factory()->create(['role' => Role::Developer]), 'sanctum');
-        $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'secret@example.com'])->assertJsonValidationErrors('newEmail');
-
-        // Staff are not told that the address they typed is the one on the account, that is not an error for them
         $this->actingAs($this->staff(), 'sanctum');
-        $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'secret@example.com'])->assertOk();
+
+        $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'secret@example.com'])->assertForbidden();
+        $this->postJson("/users/{$target->id}/email-changes", ['newEmail' => 'other@example.com'])->assertForbidden();
+        $this->postJson("/users/{$target->id}/email-changes", ['resend' => true])->assertForbidden();
+        Mail::assertNothingSent();
     }
 
     public function testFailedDeliveryRemovesTheVerification(): void

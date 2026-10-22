@@ -25,8 +25,9 @@ class PasswordChangeTest extends TestCase
     public function testPermissions(): void
     {
         $this->postJson('/users/me/password', ['newPassword' => 'brand-new-password'])->assertUnauthorized();
+        // Every signed in user may set their own password, not only staff
         $this->actingAs($this->userWithPassword(Role::Member), 'sanctum');
-        $this->postJson('/users/me/password', ['currentPassword' => 'old-password-1', 'newPassword' => 'brand-new-password'])->assertForbidden();
+        $this->postJson('/users/me/password', ['currentPassword' => 'old-password-1', 'newPassword' => 'brand-new-password'])->assertOk();
     }
 
     public function testCurrentPasswordIsChecked(): void

@@ -122,9 +122,9 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::get('{id}/preferences/{key}', [UserPrefsController::class, 'show'])->where('id', RoutePatterns::ID);
             Route::put('{id}/preferences/{key}', [UserPrefsController::class, 'update'])->where('id', RoutePatterns::ID);
             Route::get('me', [UsersController::class, 'me']);
-            Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->where('id', RoutePatterns::ID)->middleware('role:staff');
+            Route::post('{id}/email-changes', [UserEmailController::class, 'request'])->where('id', RoutePatterns::ID);
             Route::post('email/verify', [UserEmailController::class, 'verify']);
-            Route::post('me/password', [UsersController::class, 'setPassword'])->middleware('role:staff');
+            Route::post('me/password', [UsersController::class, 'setPassword']);
             Route::post('me/socket-token', [WebsocketController::class, 'token']);
             Route::get('me/two-factor', [TwoFactorController::class, 'show']);
             Route::post('me/two-factor', [TwoFactorController::class, 'start']);
