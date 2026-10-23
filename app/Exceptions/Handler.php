@@ -111,4 +111,13 @@ class Handler extends ExceptionHandler
 
         return parent::render($request, $exception);
     }
+
+    /**
+     * There is no sign-in page to redirect to, so a request without `Accept: application/json` (an MCP client that forgot it, say)
+     * gets the same 401 as everyone else instead of an error about a missing route.
+     */
+    protected function unauthenticated($request, \Illuminate\Auth\AuthenticationException $exception)
+    {
+        return response()->json(['message' => $exception->getMessage()], 401);
+    }
 }
