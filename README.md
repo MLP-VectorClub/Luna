@@ -1,4 +1,4 @@
-# Nightmare
+# Luna
 
 Laravel API behind the [MLP Vector Club](https://github.com/MLP-VectorClub)'s website (see `CLAUDE.md` for working notes)
 
