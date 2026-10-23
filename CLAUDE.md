@@ -133,6 +133,22 @@ Tests: `WebsocketServerTest`.
 - The MCP endpoint is `POST /mcp` (`routes/ai.php`, `laravel/mcp`), key-only (`mcp.key`). Tools in `app/Mcp/Tools` extend `ApiTool`, are listed per key scope, and call the REST API in-process (`InternalApi`) so validation, permissions and privacy gating are not reimplemented. Add a tool to `VectorClubServer::$tools`.
 - The key UI is `ApiKeysSection` on Celestia's account page.
 
+### Releasing the MCP server to the MCP Registry
+
+`server.json` is what [registry.modelcontextprotocol.io](https://registry.modelcontextprotocol.io/) lists as `io.github.MLP-VectorClub/vectorclub`: the endpoint `https://api.mlpvector.club/mcp` and that it wants the API key as a bearer token. The registry only stores metadata, there is no package. `.github/workflows/publish-mcp.yml` publishes it with the OIDC token of GitHub Actions, so no secret is stored anywhere.
+
+A release is a version bump and a tag, from **this repository**:
+
+1. Raise the version in `server.json` and in `#[Version(...)]` of `app/Mcp/Servers/VectorClubServer.php`, to the same plain `major.minor.patch` (`tests/Unit/ServerJsonTest.php` fails when they differ).
+2. Merge to `main`, then `git tag mcp-v<version> && git push origin mcp-v<version>`. The workflow refuses a tag that is not `mcp-v` plus the version in `server.json`.
+3. Check the run, afterwards the version shows up in `https://registry.modelcontextprotocol.io/v0.1/servers?search=vectorclub`.
+
+- **A version can be published once**, a typo in the title or description is a new version too. A failed run that got as far as publishing can not be re-run, bump the version.
+- **The name is permanent** and has to start with `io.github.MLP-VectorClub/`, because that is what the OIDC login proves.
+- Only the endpoint, the header or the description need a new registry version. The tools come from the running server, so adding one needs no release.
+- `mcp-publisher` is pinned together with the SHA-256 of its archive; to update, take both from the release's `registry_<version>_checksums.txt`.
+- The first tag only works once the endpoint is live on production (deploy Luna first).
+
 ## Read-only mode
 
 `READ_ONLY=true` in `.env` turns the API into a viewer (`config('app.read_only')`): `ReadOnlyMode` (first in the `api` group) answers 503 `{message, readOnly: true}` (the flag tells it apart from the other 503s, deploying or maintenance) to everything that is not GET/HEAD/OPTIONS, signing in included, except `internal/websocket/validate`, which only reads. Sessions switch to the `array` driver (`config/session.php`), `App\Models\PersonalAccessToken` skips the `last_used_at` write, the scheduler only keeps `cloudflare:reload` and `horizon:snapshot`, and `GET /config` reports `readOnly` so Celestia shows its notice. With `DB_READ_USERNAME` / `DB_READ_PASSWORD` set, web requests (not artisan, so `migrate` on deploy keeps working) connect with that role, which should only have `SELECT`: a write that slips through then fails instead of changing data. Run `php artisan config:clear` (then `config:cache`) after changing any of these. Test: `tests/Feature/ReadOnlyModeTest.php`.

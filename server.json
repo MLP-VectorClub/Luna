@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.MLP-VectorClub/vectorclub",
+  "title": "MLP Vector Club",
+  "description": "Search and edit the MLP Vector Club color guide: appearances, tags, shows and reservations.",
+  "version": "0.1.0",
+  "websiteUrl": "https://mlpvector.club",
+  "repository": {
+    "url": "https://github.com/MLP-VectorClub/Luna",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.mlpvector.club/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Your MLP Vector Club API key, created in the API keys section of your account page",
+          "value": "Bearer {api_key}",
+          "isRequired": true,
+          "variables": {
+            "api_key": {
+              "description": "An API key from your MLP Vector Club account",
+              "isRequired": true,
+              "isSecret": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
