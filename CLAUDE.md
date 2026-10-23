@@ -126,6 +126,13 @@ two minutes in the cache, spent once); Muffins checks it with `POST /internal/we
 `POST /notifications/{id}/read` tell Muffins (`POST {WS_SERVER_URL}/notify`, 2 second timeout, a down server is only logged) to push the user's count, so open tabs fetch the list again.
 Tests: `WebsocketServerTest`.
 
+## API keys and the MCP server
+
+- API keys are Sanctum tokens in `personal_access_tokens` with `is_api_key = true` (secret prefix `vck_`, hashed at rest, shown once). Sign-in tokens have `is_api_key = false`; `/users/tokens` only lists those. Managed through `ApiKeysController` / `App\Services\ApiKeys\ApiKeyService` (`/users/me/api-keys`), which need the password (`IdentityCheck`) and refuse key authentication.
+- Scopes (`App\Enums\ApiKeyScope`) only narrow what the owner's role allows; `EnforceApiKeyScopes` (in the `api` group) applies them: authenticated GETs need `read:own`, other GETs `read`, writes the scope of their first path segment (`appearances`/`color-groups` → `appearances:write`, `posts` → `posts:write`, `users/*/preferences/*` → `user:write`). Account, session, token and e-mail routes are session-only. A new write area needs an entry in `WRITE_SCOPES`.
+- The MCP endpoint is `POST /mcp` (`routes/ai.php`, `laravel/mcp`), key-only (`mcp.key`). Tools in `app/Mcp/Tools` extend `ApiTool`, are listed per key scope, and call the REST API in-process (`InternalApi`) so validation, permissions and privacy gating are not reimplemented. Add a tool to `VectorClubServer::$tools`.
+- The key UI is `ApiKeysSection` on Celestia's account page.
+
 ## Read-only mode
 
 `READ_ONLY=true` in `.env` turns the API into a viewer (`config('app.read_only')`): `ReadOnlyMode` (first in the `api` group) answers 503 `{message, readOnly: true}` (the flag tells it apart from the other 503s, deploying or maintenance) to everything that is not GET/HEAD/OPTIONS, signing in included, except `internal/websocket/validate`, which only reads. Sessions switch to the `array` driver (`config/session.php`), `App\Models\PersonalAccessToken` skips the `last_used_at` write, the scheduler only keeps `cloudflare:reload` and `horizon:snapshot`, and `GET /config` reports `readOnly` so Celestia shows its notice. With `DB_READ_USERNAME` / `DB_READ_PASSWORD` set, web requests (not artisan, so `migrate` on deploy keeps working) connect with that role, which should only have `SELECT`: a write that slips through then fails instead of changing data. Run `php artisan config:clear` (then `config:cache`) after changing any of these. Test: `tests/Feature/ReadOnlyModeTest.php`.

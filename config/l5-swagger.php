@@ -163,7 +163,7 @@ return [
 
                 'BearerAuth' => [
                     'type' => 'http',
-                    'description' => 'Can be used to authenticate using a token sent via HTTP headers',
+                    'description' => 'Can be used to authenticate using a token sent via HTTP headers. Either a sign-in token, or an API key (`vck_` prefix) created on the account page, which is limited to the scopes it was created with (`read`, `read:own`, `appearances:write`, `posts:write`, `user:write`)',
                     'scheme' => 'bearer',
                 ],
                 'CookieAuth' => [

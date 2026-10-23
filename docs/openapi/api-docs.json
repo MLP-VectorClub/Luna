@@ -775,6 +775,262 @@
                 "security": []
             }
         },
+        "/users/me/api-keys": {
+            "get": {
+                "tags": [
+                    "account"
+                ],
+                "description": "The API keys of the account, oldest first. Secrets are never listed",
+                "operationId": "GetUsersMeApiKeys",
+                "responses": {
+                    "200": {
+                        "description": "API keys",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ApiKey"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Creates an API key. The secret is in the response and cannot be shown again",
+                "operationId": "PostUsersMeApiKeys",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "scopes"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 60
+                                    },
+                                    "scopes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "read",
+                                                "read:own",
+                                                "appearances:write",
+                                                "posts:write",
+                                                "user:write"
+                                            ]
+                                        },
+                                        "minItems": 1
+                                    },
+                                    "expiresInDays": {
+                                        "description": "Omit for a key that does not expire",
+                                        "type": "integer",
+                                        "nullable": true,
+                                        "enum": [
+                                            30,
+                                            90,
+                                            365
+                                        ]
+                                    },
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The new key and its secret",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "key",
+                                        "secret"
+                                    ],
+                                    "properties": {
+                                        "key": {
+                                            "$ref": "#/components/schemas/ApiKey"
+                                        },
+                                        "secret": {
+                                            "type": "string",
+                                            "example": "vck_1|abcdef"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not available to API keys",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid input, or the password (or code) is wrong, or the account has too many keys",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/api-keys/{id}/rotate": {
+            "post": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Replaces a key with a new secret that keeps its name, scopes and lifespan. The old secret stops working",
+                "operationId": "PostUsersMeApiKeysIdRotate",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The new key and its secret",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "key",
+                                        "secret"
+                                    ],
+                                    "properties": {
+                                        "key": {
+                                            "$ref": "#/components/schemas/ApiKey"
+                                        },
+                                        "secret": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Key not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The password (or code) is missing or wrong",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/api-keys/{id}": {
+            "delete": {
+                "tags": [
+                    "account"
+                ],
+                "description": "Revokes a key, which stops working immediately",
+                "operationId": "DeleteUsersMeApiKeysId",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Success"
+                    },
+                    "404": {
+                        "description": "Key not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/appearances/{id}/palette": {
             "get": {
                 "tags": [
@@ -12211,6 +12467,54 @@
                 "type": "object",
                 "additionalProperties": false
             },
+            "ApiKey": {
+                "required": [
+                    "id",
+                    "name",
+                    "scopes",
+                    "createdAt",
+                    "lastUsedAt",
+                    "expiresAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "scopes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "read",
+                                "read:own",
+                                "appearances:write",
+                                "posts:write",
+                                "user:write"
+                            ]
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "lastUsedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
             "SpriteColorCheck": {
                 "required": [
                     "palette",
@@ -15485,7 +15789,7 @@
         "securitySchemes": {
             "BearerAuth": {
                 "type": "http",
-                "description": "Can be used to authenticate using a token sent via HTTP headers",
+                "description": "Can be used to authenticate using a token sent via HTTP headers. Either a sign-in token, or an API key (`vck_` prefix) created on the account page, which is limited to the scopes it was created with (`read`, `read:own`, `appearances:write`, `posts:write`, `user:write`)",
                 "scheme": "bearer"
             },
             "CookieAuth": {
@@ -15526,6 +15830,10 @@
             "description": "color guide"
         },
         {
+            "name": "account",
+            "description": "account"
+        },
+        {
             "name": "color groups",
             "description": "color groups"
         },
@@ -15544,10 +15852,6 @@
         {
             "name": "notices",
             "description": "notices"
-        },
-        {
-            "name": "account",
-            "description": "account"
         },
         {
             "name": "personal guide",

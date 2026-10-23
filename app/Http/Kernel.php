@@ -47,6 +47,7 @@ class Kernel extends HttpKernel
             EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\RejectFlaggedSession::class,
             'bindings',
+            \App\Http\Middleware\EnforceApiKeyScopes::class,
         ],
     ];
 
@@ -68,6 +69,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RequireRole::class,
+        'mcp.key' => \App\Http\Middleware\RequireApiKey::class,
         'optional.auth' => \App\Http\Middleware\OptionalAuth::class,
     ];
 

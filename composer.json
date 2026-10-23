@@ -16,6 +16,7 @@
         "hisorange/browser-detect": "^5.0",
         "laravel/framework": "^13.0",
         "laravel/horizon": "^5.50",
+        "laravel/mcp": "^1.1",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^3.0",

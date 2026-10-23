@@ -666,7 +666,7 @@ class UsersController extends Controller
 
         return response()->camelJson([
             'current_token_id' => $current_token->id ?? null,
-            'tokens' => $user->tokens->map(function (PersonalAccessToken $t) {
+            'tokens' => $user->tokens()->deviceTokens()->get()->map(function (PersonalAccessToken $t) {
                 return [
                     'id' => $t->id,
                     'name' => $t->name,
@@ -827,7 +827,7 @@ class UsersController extends Controller
         $user = $request->user();
 
         /** @var PersonalAccessToken $token */
-        $token = $user->tokens->where('id', $token_id)->first();
+        $token = $user->tokens()->deviceTokens()->where('id', $token_id)->first();
         if ($token === null) {
             abort(404);
         }

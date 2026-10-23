@@ -21,6 +21,7 @@ use App\Http\Controllers\Testing\TestLoginController;
 use App\Http\Controllers\NoticesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\EventsController;
+use App\Http\Controllers\ApiKeysController;
 use App\Http\Controllers\PasskeysController;
 use App\Http\Controllers\PersonalGuideController;
 use App\Http\Controllers\PostManagementController;
@@ -143,6 +144,10 @@ Route::middleware([App::environment('testing') ? 'throttle:100000,1' : 'throttle
             Route::delete('{id}/sessions', [UsersController::class, 'deleteSessionsOf'])->where('id', RoutePatterns::ID);
             Route::delete('sessions/{id}', [UsersController::class, 'deleteSession'])->where('id', '[0-9a-f]{64}');
             Route::get('tokens', [UsersController::class, 'tokens']);
+            Route::get('me/api-keys', [ApiKeysController::class, 'index']);
+            Route::post('me/api-keys', [ApiKeysController::class, 'store']);
+            Route::post('me/api-keys/{id}/rotate', [ApiKeysController::class, 'rotate'])->where('id', RoutePatterns::ID);
+            Route::delete('me/api-keys/{id}', [ApiKeysController::class, 'destroy'])->where('id', RoutePatterns::ID);
             Route::delete('tokens/{token_id}', [UsersController::class, 'deleteToken']);
 
             Route::get('/', [UsersController::class, 'list'])->middleware('role:staff');
