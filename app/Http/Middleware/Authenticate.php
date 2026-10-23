@@ -7,15 +7,13 @@ use Illuminate\Auth\Middleware\Authenticate as Middleware;
 class Authenticate extends Middleware
 {
     /**
-     * Get the path the user should be redirected to when they are not authenticated.
+     * Nothing to redirect to: this is an API, so a missing sign-in is always a 401 (there is no `signin` route to send anyone to).
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return string
+     * @return string|null
      */
     protected function redirectTo($request)
     {
-        if (! $request->expectsJson()) {
-            return route('signin');
-        }
+        return null;
     }
 }
