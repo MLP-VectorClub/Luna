@@ -4,7 +4,15 @@ namespace App\Utils;
 
 use OpenSearch\Client;
 use OpenSearch\ClientBuilder;
+use OpenSearch\Common\Exceptions\BadRequest400Exception;
+use OpenSearch\Common\Exceptions\Conflict409Exception;
+use OpenSearch\Common\Exceptions\Forbidden403Exception;
+use OpenSearch\Common\Exceptions\Missing404Exception;
+use OpenSearch\Common\Exceptions\RequestTimeout408Exception;
+use OpenSearch\Common\Exceptions\ScriptLangNotSupportedException;
+use OpenSearch\Common\Exceptions\ServerErrorResponseException;
 use OpenSearch\Common\Exceptions\TransportException;
+use OpenSearch\Common\Exceptions\Unauthorized401Exception;
 use OpenSearch\Exception\HttpExceptionInterface;
 use Throwable;
 
@@ -56,7 +64,21 @@ class Search
     /** The HTTP status of a failed request, null when there was no response */
     public static function status(Throwable $e): ?int
     {
-        return $e instanceof HttpExceptionInterface ? $e->getStatusCode() : null;
+        if ($e instanceof HttpExceptionInterface) {
+            return $e->getStatusCode();
+        }
+
+        // The legacy exceptions thrown by the client's connection carry no status, only their class
+        return match (true) {
+            $e instanceof BadRequest400Exception, $e instanceof ScriptLangNotSupportedException => 400,
+            $e instanceof Unauthorized401Exception => 401,
+            $e instanceof Forbidden403Exception => 403,
+            $e instanceof Missing404Exception => 404,
+            $e instanceof RequestTimeout408Exception => 408,
+            $e instanceof Conflict409Exception => 409,
+            $e instanceof ServerErrorResponseException => 500,
+            default => null,
+        };
     }
 
     /** The decoded JSON error body of a failed request */

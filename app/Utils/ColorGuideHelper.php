@@ -83,6 +83,12 @@ class ColorGuideHelper
             '_source' => false,
         ];
 
+        // OpenSearch refuses to page past its result window (10000 by default), and a page number
+        // beyond the int range cannot even be parsed: neither has results, so don't ask
+        if (($page - 1) * $per_page + $per_page > 10000) {
+            return $paginator;
+        }
+
         try {
             $search_results = self::searchElastic($search_query, $paginator);
         } catch (OpenSearchException $e) {
