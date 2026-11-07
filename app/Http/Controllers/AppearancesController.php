@@ -80,7 +80,7 @@ class AppearancesController extends Controller
                 name: 'q',
                 required: false,
                 description: 'Search query',
-                schema: new OA\Schema(ref: '#/components/schemas/QueryString'),
+                schema: new OA\Schema(ref: '#/components/schemas/AppearancesQueryString'),
             ),
         ],
         responses: [
@@ -110,7 +110,7 @@ class AppearancesController extends Controller
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new Enum(GuideName::class)],
             'size' => 'sometimes|numeric|between:7,20',
-            'q' => 'sometimes|string|nullable',
+            'q' => 'sometimes|string|nullable|max:255',
             'page' => 'sometimes|required|int|min:1',
         ])->validate();
 
@@ -522,7 +522,7 @@ class AppearancesController extends Controller
                 name: 'q',
                 required: true,
                 description: 'Search query',
-                schema: new OA\Schema(ref: '#/components/schemas/QueryString'),
+                schema: new OA\Schema(ref: '#/components/schemas/AppearancesQueryString'),
             ),
         ],
         responses: [
@@ -547,7 +547,7 @@ class AppearancesController extends Controller
     {
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new Enum(GuideName::class)],
-            'q' => 'sometimes|string|nullable',
+            'q' => 'sometimes|string|nullable|max:255',
         ])->validate();
 
         $guide_name = GuideName::from($valid['guide']);

@@ -1552,7 +1552,7 @@
                         "description": "Search query",
                         "required": false,
                         "schema": {
-                            "$ref": "#/components/schemas/QueryString"
+                            "$ref": "#/components/schemas/AppearancesQueryString"
                         }
                     }
                 ],
@@ -3278,7 +3278,7 @@
                         "description": "Search query",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/QueryString"
+                            "$ref": "#/components/schemas/AppearancesQueryString"
                         }
                     }
                 ],
@@ -12983,9 +12983,10 @@
                 "type": "string",
                 "format": "svg"
             },
-            "QueryString": {
+            "AppearancesQueryString": {
                 "type": "string",
-                "default": ""
+                "default": "",
+                "maxLength": 255
             },
             "OneBasedId": {
                 "type": "integer",

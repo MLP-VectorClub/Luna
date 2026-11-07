@@ -47,7 +47,7 @@ use OpenApi\Attributes as OA;
     description: 'A query parameter used for specifying which page is currently being displayed',
 )]
 #[OA\Schema(schema: 'SVGFile', type: 'string', format: 'svg')]
-#[OA\Schema(schema: 'QueryString', type: 'string', default: '')]
+#[OA\Schema(schema: 'AppearancesQueryString', type: 'string', default: '', maxLength: 255)]
 #[OA\Schema(schema: 'OneBasedId', type: 'integer', minimum: 1, example: 1)]
 #[OA\Schema(schema: 'ZeroBasedId', type: 'integer', minimum: 0, example: 1)]
 class Controller extends BaseController
