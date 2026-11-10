@@ -19,4 +19,29 @@ enum VectorApp: string
     case Inkscape = 'inkscape';
     case Ponyscape = 'ponyscape';
     case AffinityDesigner = 'affinity-designer';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Illustrator => 'Adobe Illustrator',
+            self::Inkscape => 'Inkscape',
+            self::Ponyscape => 'Ponyscape',
+            self::AffinityDesigner => 'Affinity',
+        };
+    }
+
+    /**
+     * Choices for the `p_vectorapp` preference, key to label; the empty key means none.
+     *
+     * @return array<string, string>
+     */
+    public static function labels(): array
+    {
+        $labels = ['' => "(don't show)"];
+        foreach (self::cases() as $case) {
+            $labels[$case->value] = $case->label();
+        }
+
+        return $labels;
+    }
 }

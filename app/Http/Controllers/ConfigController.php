@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Role;
 use App\Enums\ShowType;
+use App\Enums\VectorApp;
 use App\Enums\TagType;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
@@ -27,14 +28,6 @@ class ConfigController extends Controller
         TagType::Species->value => 'Species',
         TagType::Character->value => 'Character',
         TagType::Warning->value => 'Warning',
-    ];
-
-    public const VECTOR_APP_LABELS = [
-        '' => "(don't show)",
-        'illustrator' => 'Adobe Illustrator',
-        'inkscape' => 'Inkscape',
-        'ponyscape' => 'Ponyscape',
-        'affinity-designer' => 'Affinity Designer',
     ];
 
     public const SHOW_TYPE_LABELS = [
@@ -129,7 +122,7 @@ class ConfigController extends Controller
             'tag_types' => self::TAG_TYPE_LABELS,
             'roles' => self::ROLE_LABELS,
             'show_types' => self::SHOW_TYPE_LABELS,
-            'vector_apps' => self::VECTOR_APP_LABELS,
+            'vector_apps' => VectorApp::labels(),
             'max_upload_size' => $this->maxUploadSize(),
             'patterns' => [
                 'printable_ascii' => ['source' => '^[ -~\n]+$', 'flags' => ''],
