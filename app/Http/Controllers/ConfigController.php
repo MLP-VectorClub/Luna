@@ -34,6 +34,7 @@ class ConfigController extends Controller
         'illustrator' => 'Adobe Illustrator',
         'inkscape' => 'Inkscape',
         'ponyscape' => 'Ponyscape',
+        'affinity-designer' => 'Affinity Designer',
     ];
 
     public const SHOW_TYPE_LABELS = [

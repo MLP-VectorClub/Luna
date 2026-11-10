@@ -12407,7 +12407,8 @@
                 "enum": [
                     "illustrator",
                     "inkscape",
-                    "ponyscape"
+                    "ponyscape",
+                    "affinity-designer"
                 ]
             },
             "GuideEntryCounts": {
