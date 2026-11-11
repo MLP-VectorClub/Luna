@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.claude
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+storage/logs/*
+storage/app/*
+storage/media-library
+storage/framework/*/*
+bootstrap/cache/*.php
+tests
