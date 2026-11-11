@@ -50,6 +50,8 @@ return [
         // Proxy for the public requests to DeviantArt (short link redirects, oEmbed, club gallery check, their image hosts), e.g. socks5h://127.0.0.1:40000 for
         // Cloudflare WARP; empty for none. OEMBED_PROXY_URL is Winterchilla's name for it. Sign-in and token requests do not use it
         'proxy' => env('DEVIANTART_PROXY_URL') ?: env('OEMBED_PROXY_URL') ?: null,
+        // Read submission details from the official API (UUID found once on the submission's page) instead of fav.me + oEmbed, which datacenter addresses cannot reach
+        'use_api' => env('DEVIANTART_USE_API', false),
         // Sent with every request to DeviantArt; DEVIANTART_USER_AGENT replaces it whole, otherwise DEVIANTART_CONTACT (an address or URL) is appended so they can reach us about misbehaving traffic
         'user_agent' => env('DEVIANTART_USER_AGENT') ?: trim('MLP-VectorClub-Luna/1.0 (+https://mlpvector.club'.(env('DEVIANTART_CONTACT') ? '; contact: '.env('DEVIANTART_CONTACT') : '').')'),
         'redirect' => sprintf("%s/oauth/%s", config('app.frontend_url'), SocialProvider::Discord->value)

@@ -6,6 +6,7 @@ use App\Exceptions\ImageProviderException;
 use App\Jobs\RefreshDeviation;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -63,12 +64,14 @@ class DeviantArt
 
     private const BLOCKED_KEY = 'deviantart:blocked-until';
     private const BLOCK_LEVEL_KEY = 'deviantart:block-level';
+    /** The longest pause on our own account (a longer Retry-After is obeyed in full): the pauses go 15 minutes, 1 hour, 4 hours, 12 hours */
+    private const MAX_PAUSE = 43200;
     private const DENIALS_KEY = 'deviantart:denials';
-    /** Distinct denials within a couple of minutes that mean DeviantArt is refusing us in general, not just that one submission */
-    private const DENIALS_BEFORE_BLOCK = 3;
+    /** Denials (403 or 5xx) within ten minutes that mean DeviantArt is refusing us in general, not just that one submission */
+    private const DENIALS_BEFORE_BLOCK = 2;
 
     /**
-     * Seconds until DeviantArt may be asked again. After it refused us (403/429/5xx) we stay quiet with a growing pause (5 minutes, doubling up to 2 hours,
+     * Seconds until DeviantArt may be asked again. After it refused us (403/429/5xx) we stay quiet with a growing pause (15 minutes, quadrupling up to 12 hours,
      * or whatever Retry-After said) instead of sending every visitor's request into the same wall
      */
     public static function blockedFor(): int
@@ -82,15 +85,15 @@ class DeviantArt
             return;
         }
         $level = (int) Cache::get(self::BLOCK_LEVEL_KEY, 0);
-        $seconds = max($retry_after ?? 0, min(7200, 300 * 2 ** $level));
-        Cache::put(self::BLOCK_LEVEL_KEY, $level + 1, now()->addHours(6));
+        $seconds = max($retry_after ?? 0, min(self::MAX_PAUSE, 900 * 4 ** $level));
+        Cache::put(self::BLOCK_LEVEL_KEY, $level + 1, now()->addDays(2));
         Cache::put(self::BLOCKED_KEY, time() + $seconds, $seconds);
         Log::warning("DeviantArt is refusing requests, not asking again for $seconds seconds");
     }
 
     private static function countDenial(): void
     {
-        Cache::add(self::DENIALS_KEY, 0, 120);
+        Cache::add(self::DENIALS_KEY, 0, 600);
         if (Cache::increment(self::DENIALS_KEY) >= self::DENIALS_BEFORE_BLOCK) {
             Cache::forget(self::DENIALS_KEY);
             self::block();
@@ -175,6 +178,14 @@ class DeviantArt
             throw new ImageProviderException('Image could not be retrieved; DeviantArt is busy, try again later');
         }
 
+        if ($provider === 'fav.me' && config('services.deviantart.use_api')) {
+            $image = self::submissionFromApi($id, $provider);
+            if ($image !== false) {
+                return $image;
+            }
+            // false: the API cannot tell us (no API id on the page, no token, a kind of submission without a file), oEmbed can
+        }
+
         // oEmbed does not accept fav.me short links (it answers 404 "not a deviation URL"), they are resolved to the full address first, and only
         // http://fav.me redirects at all, https://fav.me answers with nothing
         $url = $provider === 'sta.sh' ? "http://sta.sh/$id" : self::resolveFavMe($id, $provider);
@@ -213,11 +224,167 @@ class DeviantArt
         // Without a separate full size version the preview is the best we have
         $image->fullsize ??= $image->preview;
 
-        Cache::put($cache_key, get_object_vars($image), now()->addDays(30));
-        Cache::put("deviation-fresh:$provider:$id", true, now()->addDays(7));
+        return self::remember($image);
+    }
+
+    private static function remember(ResolvedImage $image): ResolvedImage
+    {
+        Cache::put("deviation:$image->provider:$image->id", get_object_vars($image), now()->addDays(30));
+        Cache::put("deviation-fresh:$image->provider:$image->id", true, now()->addDays(7));
         Cache::forget(self::BLOCK_LEVEL_KEY);
 
         return $image;
+    }
+
+    private const API_URL = 'https://www.deviantart.com/api/v1/oauth2';
+    private const APP_TOKEN_KEY = 'deviantart:app-token';
+
+    /**
+     * The details of a submission from DeviantArt's official API, which unlike oEmbed and the www pages answers to datacenter addresses. The API knows
+     * submissions by a UUID, found once on the submission's page (see {@see apiId()}) and kept, so every later refresh is a single API request.
+     *
+     * @return ResolvedImage|null|false null when the submission does not exist, false when this route cannot answer and oEmbed should be tried
+     * @throws ImageProviderException
+     */
+    private static function submissionFromApi(string $id, string $provider): ResolvedImage|null|false
+    {
+        $uuid = self::apiId($id, $provider);
+        if ($uuid === null) {
+            Cache::put("deviation-missing:$provider:$id", true, now()->addDay());
+
+            return null;
+        }
+        if ($uuid === false || ($token = self::appToken()) === null) {
+            return false;
+        }
+
+        try {
+            $response = Http::withToken($token)->withUserAgent(config('services.deviantart.user_agent'))->timeout(10)->get(self::API_URL."/deviation/$uuid");
+        } catch (ConnectionException $e) {
+            throw new ImageProviderException('Image could not be retrieved; '.$e->getMessage());
+        }
+
+        if ($response->status() === 401) {
+            // The app token went stale early: ask for a new one next time, oEmbed answers this time
+            Cache::forget(self::APP_TOKEN_KEY);
+
+            return false;
+        }
+        if ($response->status() === 404) {
+            Cache::forget("deviation-api-id:$id");
+            Cache::put("deviation-missing:$provider:$id", true, now()->addDay());
+
+            return null;
+        }
+        self::checkRefusal($response, $provider, $id);
+        if (!$response->successful()) {
+            throw new ImageProviderException('Image could not be retrieved; the server answered '.$response->status());
+        }
+
+        $json = $response->json();
+        if (($json['is_deleted'] ?? false) === true) {
+            Cache::put("deviation-missing:$provider:$id", true, now()->addDay());
+
+            return null;
+        }
+        $fullsize = $json['content']['src'] ?? null;
+        if ($fullsize === null) {
+            // Literature and other submissions without a file
+            return false;
+        }
+
+        $https = fn (?string $link) => $link === null ? null : preg_replace('~^http://~', 'https://', $link);
+        // oEmbed's thumbnail is the one about 300 pixels wide, so that is the one picked from the API's list
+        $preview = null;
+        foreach ($json['thumbs'] ?? [] as $thumb) {
+            if (isset($thumb['src'], $thumb['width']) && ($preview === null || abs($thumb['width'] - 300) < abs($preview['width'] - 300))) {
+                $preview = $thumb;
+            }
+        }
+        $path = (string) parse_url($fullsize, PHP_URL_PATH);
+        $path = strstr($path, '/v1/', true) ?: $path;
+
+        $image = new ResolvedImage(
+            provider: $provider,
+            id: $id,
+            preview: $https($preview['src'] ?? $json['preview']['src'] ?? null),
+            fullsize: $https($fullsize),
+            title: $json['title'] ?? '',
+            author: $json['author']['username'] ?? null,
+            type: strtolower(pathinfo($path, PATHINFO_EXTENSION)) ?: null,
+        );
+        $image->preview ??= $image->fullsize;
+
+        return self::remember($image);
+    }
+
+    /**
+     * The API's UUID of a fav.me submission, kept for a year. It is read from the submission's own page (www.deviantart.com/deviation/<number> leads there),
+     * the one request that is not an API call, and only needed once per submission.
+     *
+     * @return string|null|false null when the submission does not exist, false when the page did not say
+     * @throws ImageProviderException
+     */
+    private static function apiId(string $id, string $provider): string|null|false
+    {
+        $cache_key = "deviation-api-id:$id";
+        if (($cached = Cache::get($cache_key)) !== null) {
+            return $cached;
+        }
+
+        try {
+            $response = self::http()->get('https://www.deviantart.com/deviation/'.intval(substr($id, 1), 36));
+        } catch (ConnectionException $e) {
+            throw new ImageProviderException('Image could not be retrieved; '.$e->getMessage());
+        }
+        if ($response->status() === 404) {
+            return null;
+        }
+        self::checkRefusal($response, $provider, $id);
+        if (!$response->successful()) {
+            throw new ImageProviderException('Image could not be retrieved; the server answered '.$response->status());
+        }
+        if (!preg_match('~content="DeviantArt://deviation/([0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})"~i', $response->body(), $match)) {
+            return false;
+        }
+        Cache::put($cache_key, $match[1], now()->addYear());
+
+        return $match[1];
+    }
+
+    /** An app-only token (client credentials) for the API, kept until shortly before it expires; null when DeviantArt does not hand one out */
+    private static function appToken(): ?string
+    {
+        if (($token = Cache::get(self::APP_TOKEN_KEY)) !== null) {
+            return $token;
+        }
+
+        try {
+            return Cache::lock(self::APP_TOKEN_KEY.'-lock', 15)->block(10, function () {
+                if (($token = Cache::get(self::APP_TOKEN_KEY)) !== null) {
+                    return $token;
+                }
+                $response = Http::asForm()->withUserAgent(config('services.deviantart.user_agent'))->timeout(15)->post(DeviantArtTokens::TOKEN_URL, [
+                    'grant_type' => 'client_credentials',
+                    'client_id' => config('services.deviantart.client_id'),
+                    'client_secret' => config('services.deviantart.client_secret'),
+                ]);
+                if ($response->status() === 429) {
+                    self::block((int) $response->header('Retry-After'));
+                }
+                $token = $response->successful() ? $response->json('access_token') : null;
+                if ($token === null) {
+                    Log::warning('DeviantArt did not give an app token', ['status' => $response->status()]);
+
+                    return null;
+                }
+                Cache::put(self::APP_TOKEN_KEY, $token, max(60, (int) $response->json('expires_in', 3600) - 120));
+
+                return $token;
+            });
+        } catch (ConnectionException|LockTimeoutException) {
+            return null;
+        }
     }
 
     /**
@@ -263,7 +430,9 @@ class DeviantArt
             throw new ImageProviderException('Image could not be retrieved; DeviantArt asked us to slow down');
         }
         if ($response->status() === 403) {
-            Cache::put("deviation-failed:$provider:$id", true, now()->addMinutes(30));
+            // A 403 means DeviantArt dislikes the address we ask from (the home connection behind the proxy): back off hard, the next
+            // denial inside ten minutes starts a long pause, and this submission is left alone for hours
+            Cache::put("deviation-failed:$provider:$id", true, now()->addHours(6));
             self::countDenial();
             throw new ImageProviderException('Got access denied while loading image');
         }
