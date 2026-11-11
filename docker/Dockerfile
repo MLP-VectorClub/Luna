@@ -34,7 +34,10 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # dummy env only so artisan can boot while building; real env is injected at runtime. No config:cache/optimize here.
 RUN APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= APP_ENV=production DB_CONNECTION=sqlite DB_DATABASE=:memory: CACHE_DRIVER=array \
     sh -c 'php artisan package:discover --ansi && mkdir -p storage/api-docs && php artisan l5-swagger:generate'
-RUN rm -rf tests packages docs/contract .git .env
+# config/l5-swagger.php reads packages/api-types/package.json for the API version, keep only that file
+RUN rm -rf tests docs/contract .git .env \
+ && find packages -mindepth 1 -not -path packages/api-types -not -path packages/api-types/package.json -delete 2>/dev/null; \
+    find packages/api-types -mindepth 1 -not -name package.json -delete
 
 # ---------------------------------------------------------------------------------------------------------
 FROM php-base AS fpm
