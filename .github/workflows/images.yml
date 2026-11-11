@@ -34,7 +34,6 @@ jobs:
 
   build:
     name: 'Build ${{ matrix.arch }}'
-    needs: commitlint
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
