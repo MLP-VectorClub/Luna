@@ -43,7 +43,7 @@ class DeviantArtTokens
         }
 
         try {
-            $response = Http::asForm()->timeout(15)->post(self::TOKEN_URL, [
+            $response = Http::asForm()->withUserAgent(config('services.deviantart.user_agent'))->timeout(15)->post(self::TOKEN_URL, [
                 'grant_type' => 'refresh_token',
                 'refresh_token' => $record->refresh,
                 'client_id' => config('services.deviantart.client_id'),

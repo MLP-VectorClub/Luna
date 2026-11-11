@@ -25,7 +25,7 @@ class DeviantArt
     {
         $proxy = config('services.deviantart.proxy');
 
-        return Http::timeout(10)->when($proxy, fn (PendingRequest $request) => $request->withOptions(['proxy' => $proxy]));
+        return Http::timeout(10)->withUserAgent(config('services.deviantart.user_agent'))->when($proxy, fn (PendingRequest $request) => $request->withOptions(['proxy' => $proxy]));
     }
 
     /** The client for any address: proxied when it is on one of DeviantArt's own hosts, direct for other image hosts */
