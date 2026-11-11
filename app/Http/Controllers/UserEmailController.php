@@ -172,6 +172,11 @@ class UserEmailController extends Controller
             throw new HttpException(429, 'A confirmation email was sent to this address recently, please wait a bit before requesting another one');
         }
 
+        $sent_this_hour = EmailVerification::where('user_id', $user->id)->where('created_at', '>', now()->subHour())->count();
+        if ($sent_this_hour >= EmailVerification::MAX_PER_USER_PER_HOUR) {
+            throw new HttpException(429, 'Too many confirmation emails were requested for this account recently, please try again in an hour');
+        }
+
         $verification = EmailVerification::create(['user_id' => $user->id, 'email' => $recipient, 'hash' => bin2hex(random_bytes(64))]);
         try {
             Mail::to($recipient)->send(new VerifyEmailAddress($verification));

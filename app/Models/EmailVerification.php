@@ -13,6 +13,8 @@ class EmailVerification extends Model
 {
     public const VALID_HOURS = 2;
     public const RESEND_MINUTES = 10;
+    /** Confirmation e-mails one account may trigger per hour, to any addresses (the per-address cooldown alone lets a signed in user fan out) */
+    public const MAX_PER_USER_PER_HOUR = 5;
 
     protected $fillable = ['user_id', 'email', 'hash'];
 

@@ -192,4 +192,22 @@ class EmailChangeTest extends TestCase
         $this->assertStringContainsString('https://front.example/users/verify?hash='.str_repeat('a', 128).'&amp;action=verify', $html);
         $this->assertStringContainsString('action=block', $html);
     }
+
+    public function testAccountCannotFanOutConfirmationMails(): void
+    {
+        Mail::fake();
+        $user = $this->staff();
+        $this->actingAs($user, 'sanctum');
+
+        for ($i = 1; $i <= EmailVerification::MAX_PER_USER_PER_HOUR; $i++) {
+            $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => "fan-out-$i@example.com", 'currentPassword' => 'old-password-1'])->assertOk();
+        }
+        // Different address each time, so the per-address cooldown does not apply: the per-account limit does
+        $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => 'one-more@example.com', 'currentPassword' => 'old-password-1'])->assertStatus(429);
+        Mail::assertSentCount(EmailVerification::MAX_PER_USER_PER_HOUR);
+
+        // An hour later the account may ask again
+        $this->travel(61)->minutes();
+        $this->postJson("/users/{$user->id}/email-changes", ['newEmail' => 'one-more@example.com', 'currentPassword' => 'old-password-1'])->assertOk();
+    }
 }
