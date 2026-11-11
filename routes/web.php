@@ -23,3 +23,17 @@ Route::get('internal/session-status', fn() => response()->noContent());
 // The front end passes the paths it lists as disallowed in robots.txt and nobody has a reason to ask for (`/.env`, `/wp-admin`, `/admin.php`) on to
 // these, every method; the name only goes to the log, which front end paths lead here is decided over there
 Route::any('honeypot/{trap}', [HoneypotController::class, 'trap'])->where('trap', '[a-z0-9._-]{1,40}');
+
+// Readiness/liveness probe for the container platform: 200 only while PostgreSQL and Valkey answer
+Route::get('health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::select('select 1');
+        \Illuminate\Support\Facades\Redis::connection()->ping();
+    } catch (\Throwable $e) {
+        report($e);
+
+        return response()->json(['status' => 'unavailable'], 503);
+    }
+
+    return response()->json(['status' => 'ok']);
+});

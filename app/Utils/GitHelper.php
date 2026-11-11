@@ -15,6 +15,13 @@ class GitHelper
 
     protected static function getCommitDataString(): string
     {
+        // container images carry neither .git nor the toolkit's file; the image build stamps the commit into the environment
+        $hash = getenv('GIT_COMMIT_HASH');
+        $timestamp = getenv('GIT_COMMIT_TIMESTAMP');
+        if (is_string($hash) && preg_match('/^[0-9a-f]{7,40}$/', $hash) === 1 && is_string($timestamp) && ctype_digit($timestamp)) {
+            return substr($hash, 0, 7).';'.$timestamp;
+        }
+
         // git-deploy-toolkit leaves the deployed commit in this file on every deploy (sha, then the commit date),
         // since the deployed tree has no .git of its own that would know which commit is running.
         $file = base_path('.git-deploy-commit');
