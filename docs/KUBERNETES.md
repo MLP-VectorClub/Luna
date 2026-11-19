@@ -1,6 +1,6 @@
 # Running Luna in the cluster
 
-Images (`.github/workflows/images.yml`, every push to `main`, tags `sha-<sha7>` only): `ghcr.io/mlp-vectorclub/luna-fpm`
+Images (`.github/workflows/images.yml`, every push to `main`, tags `sha-<sha7>` only): `ghcr.io/mlp-vectorclub/luna-fpm` Rebuild now (e.g. to pick up a new base image such as a PHP security release): Actions > Publish container images > Run workflow on `main` (`gh workflow run images.yml --ref main`).
 (php-fpm 8.5, www-data uid/gid 33, with node + svgo and the media optimizers; also used for Horizon, scheduler and migrations
 with another command) and `ghcr.io/mlp-vectorclub/luna-web` (nginx, static `public/` only; nginx config lives in the cluster repo).
 
