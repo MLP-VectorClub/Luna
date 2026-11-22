@@ -48,6 +48,21 @@ class WebsocketController extends Controller
     }
 
     /**
+     * For the websocket server only (not part of the public API): who the session cookie of a browser belongs to. The server forwards the cookie it got
+     * with the socket's handshake, so the cookie never has to be readable by scripts (Winterchilla's pages have no way to ask for a token)
+     */
+    public function session(Request $request): JsonResponse
+    {
+        $key = config('services.websocket.key');
+        abort_if($key === null || !hash_equals($key, (string) $request->bearerToken()), 403);
+
+        $user = $request->user('web');
+        abort_if($user === null, 404, 'Nobody is signed in with that session');
+
+        return response()->json(['id' => $user->id, 'name' => $user->name, 'role' => $user->role->value]);
+    }
+
+    /**
      * For the websocket server only (not part of the public API): who a browser's token belongs to. Spends the token
      */
     public function validateToken(Request $request): JsonResponse

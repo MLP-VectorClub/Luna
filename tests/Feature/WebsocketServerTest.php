@@ -48,6 +48,23 @@ class WebsocketServerTest extends TestCase
         $this->withToken('shared-secret')->postJson('/internal/websocket/validate', [])->assertNotFound();
     }
 
+    public function testTheServerCanAskWhoASessionBelongs(): void
+    {
+        $user = User::factory()->create(['role' => Role::Developer]);
+
+        $this->getJson('/internal/websocket/session')->assertForbidden();
+        $this->actingAs($user, 'web');
+        $this->getJson('/internal/websocket/session')->assertForbidden();
+        $this->withToken('wrong')->getJson('/internal/websocket/session')->assertForbidden();
+        $this->withToken('shared-secret')->getJson('/internal/websocket/session')->assertOk()
+            ->assertExactJson(['id' => $user->id, 'name' => $user->name, 'role' => 'developer']);
+    }
+
+    public function testASessionWithoutAUserIsUnknown(): void
+    {
+        $this->withToken('shared-secret')->getJson('/internal/websocket/session')->assertNotFound();
+    }
+
     public function testThereIsNoTokenWithoutAServer(): void
     {
         config(['services.websocket' => ['host' => null, 'url' => null, 'key' => null]]);

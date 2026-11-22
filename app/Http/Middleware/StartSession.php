@@ -18,7 +18,7 @@ use Illuminate\Session\Middleware\StartSession as Middleware;
 class StartSession extends Middleware
 {
     /** Paths of requests that are reads and still need their session: the CSRF handshake, the traps (they flag it), the OAuth redirects and the test sign in */
-    private const NEEDS_SESSION = ['sanctum/csrf-cookie', 'honeypot/*', 'users/oauth/*', 'test/*', 'internal/session-status'];
+    private const NEEDS_SESSION = ['sanctum/csrf-cookie', 'honeypot/*', 'users/oauth/*', 'test/*', 'internal/session-status', 'internal/websocket/session'];
 
     public function handle($request, Closure $next)
     {
