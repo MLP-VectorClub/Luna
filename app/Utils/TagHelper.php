@@ -3,7 +3,6 @@
 namespace App\Utils;
 
 use App\Models\Tag;
-use App\UserPrefs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\JoinClause;

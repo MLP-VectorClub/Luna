@@ -1,0 +1,103 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Console\\Commands\\ClearCommitCache\:\:handle\(\) should return int but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: app/Console/Commands/ClearCommitCache.php
+
+		-
+			message: '#^Result of static method Illuminate\\Support\\Facades\\File\:\:replace\(\) \(void\) is used\.$#'
+			identifier: staticMethod.void
+			count: 2
+			path: app/Console/Commands/GenerateEnumDocblocks.php
+
+		-
+			message: '#^Relation ''actor'' is not found in App\\Models\\Log model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Relation ''colorGroups'' is not found in App\\Models\\Appearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Relation ''cutiemarks'' is not found in App\\Models\\Appearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Relation ''owner'' is not found in App\\Models\\Appearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Relation ''relatedAppearances'' is not found in App\\Models\\Appearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Relation ''tags'' is not found in App\\Models\\Appearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AdminController.php
+
+		-
+			message: '#^Relation ''appearance'' is not found in App\\Models\\PinnedAppearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AppearancesController.php
+
+		-
+			message: '#^Relation ''tags'' is not found in App\\Models\\Appearance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AppearancesController.php
+
+		-
+			message: '#^Relation ''appearance'' is not found in App\\Models\\ColorGroup model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/ColorGroupsController.php
+
+		-
+			message: '#^Relation ''creator'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventsController.php
+
+		-
+			message: '#^Relation ''entries'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventsController.php
+
+		-
+			message: '#^Relation ''passkeys'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/PasskeysController.php
+
+		-
+			message: '#^Relation ''synonymTarget'' is not found in App\\Models\\Tag model\.$#'
+			identifier: larastan.relationExistence
+			count: 4
+			path: app/Http/Controllers/TagsController.php
+
+		-
+			message: '#^Relation ''daUser'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/UserProfileController.php
+
+		-
+			message: '#^Relation ''discordMember'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/UserProfileController.php

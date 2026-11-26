@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Utils\DeviantArtTokens;
 use App\Utils\Core;
 use App\Utils\SettingsHelper;
-use App\Utils\UserPrefHelper;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;

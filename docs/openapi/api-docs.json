@@ -636,7 +636,7 @@
                 "tags": [
                     "admin"
                 ],
-                "description": "State of the OpenSearch server behind the color guide search. Requires developer permission",
+                "description": "State of the color guide search table (Postgres). Requires developer permission",
                 "operationId": "GetAdminSearchStatus",
                 "responses": {
                     "200": {
@@ -732,16 +732,6 @@
                     },
                     "403": {
                         "description": "Insufficient permissions",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "503": {
-                        "description": "OpenSearch is down",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1568,20 +1558,6 @@
                                         },
                                         {
                                             "$ref": "#/components/schemas/PageData"
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "503": {
-                        "description": "Temporarily Unavailable",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "allOf": [
-                                        {
-                                            "$ref": "#/components/schemas/ErrorResponse"
                                         }
                                     ]
                                 }

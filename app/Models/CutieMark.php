@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\Sorted;
 use App\Utils\SvgHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

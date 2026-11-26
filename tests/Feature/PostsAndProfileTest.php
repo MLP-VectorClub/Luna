@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Enums\GuideName;
 use App\Enums\Role;
 use App\Models\Appearance;
-use App\Models\CutieMark;
 use App\Models\DeviantartUser;
 use App\Models\Event;
 use App\Models\EventEntry;

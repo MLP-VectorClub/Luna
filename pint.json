@@ -1,0 +1,6 @@
+{
+    "preset": "empty",
+    "rules": {
+        "no_unused_imports": true
+    }
+}

@@ -5,124 +5,74 @@ namespace App\Utils;
 use App\Models\Appearance;
 use App\Models\PinnedAppearance;
 use App\Models\Tag;
-use OpenSearch\Common\Exceptions\OpenSearchException;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 /**
- * Keeps the `appearances` OpenSearch index (shared with Winterchilla) in sync. Only official guide appearances are indexed,
- * personal guide ones are never searched. Does nothing in the testing environment, which has no OpenSearch.
+ * Keeps the color guide search table (`appearance_search`, shared with Winterchilla) in sync: one `tsvector` per official
+ * appearance, made of its label, its tags and their synonyms. Personal guide appearances are never searched.
+ *
+ * Words are split on everything that is not a letter or a digit and compared lowercase (the `simple` configuration, no stemming),
+ * a search term matches every word that starts with it, and all terms have to match
  */
 class AppearanceIndex
 {
-    private const INDEX = 'appearances';
-
     public static function update(Appearance $appearance): void
     {
-        if (App::environment('testing') || $appearance->owner_id !== null) {
+        if ($appearance->owner_id !== null) {
             return;
         }
 
-        $body = self::body($appearance);
-        try {
-            Search::client()->update([
-                'index' => self::INDEX,
-                'id' => $appearance->id,
-                'body' => ['doc' => $body, 'upsert' => $body],
-            ]);
-        } catch (OpenSearchException $e) {
-            if (!Search::isDown($e)) {
-                throw $e;
-            }
-            Log::error("OpenSearch server was down when attempting to index appearance {$appearance->id}");
-        }
+        DB::statement(
+            /** @lang PostgreSQL */ "INSERT INTO appearance_search (appearance_id, doc) VALUES (?, to_tsvector('simple', ?))
+                ON CONFLICT (appearance_id) DO UPDATE SET doc = EXCLUDED.doc",
+            [$appearance->id, self::text($appearance)],
+        );
     }
 
     public static function remove(Appearance $appearance): void
     {
-        if (App::environment('testing') || $appearance->owner_id !== null) {
-            return;
-        }
-
-        try {
-            Search::client()->delete(['index' => self::INDEX, 'id' => $appearance->id]);
-        } catch (OpenSearchException $e) {
-            if (Search::isDown($e)) {
-                Log::error("OpenSearch server was down when attempting to remove appearance {$appearance->id}");
-            } elseif (Search::status($e) !== 404) {
-                // (A 404 means it was not indexed, nothing to remove)
-                throw $e;
-            }
-        }
+        DB::table('appearance_search')->where('appearance_id', $appearance->id)->delete();
     }
 
     /**
-     * Drops and rebuilds the whole index (same mapping and analyzer as Winterchilla's) from every official, unpinned appearance
+     * Empties and refills the whole table from every official, unpinned appearance
      *
      * @return int Number of indexed appearances
      */
     public static function rebuild(): int
     {
-        $client = Search::client();
-        try {
-            $client->indices()->delete(['index' => self::INDEX]);
-        } catch (OpenSearchException $e) {
-            // The index does not exist yet
-            if (Search::status($e) !== 404) {
-                throw $e;
-            }
-        }
+        return DB::transaction(function () {
+            DB::table('appearance_search')->delete();
 
-        $client->indices()->create([
-            'index' => self::INDEX,
-            'body' => [
-                'mappings' => ['properties' => [
-                    'label' => ['type' => 'text', 'analyzer' => 'overkill'],
-                    'order' => ['type' => 'integer'],
-                    'guide' => ['type' => 'keyword'],
-                    'private' => ['type' => 'boolean'],
-                    'tags' => ['type' => 'text', 'analyzer' => 'overkill'],
-                ]],
-                'settings' => [
-                    // Single-node setup, replicas could never be allocated
-                    'number_of_replicas' => 0,
-                    'analysis' => [
-                        'analyzer' => ['overkill' => ['type' => 'custom', 'tokenizer' => 'overkill', 'filter' => ['lowercase']]],
-                        'tokenizer' => ['overkill' => ['type' => 'edge_ngram', 'min_gram' => 2, 'max_gram' => 30, 'token_chars' => ['letter', 'digit']]],
-                    ],
-                ],
-            ],
-        ]);
+            $count = 0;
+            $pinned = PinnedAppearance::pluck('appearance_id');
+            Appearance::whereNull('owner_id')->whereNotIn('id', $pinned)->chunkById(100, function ($appearances) use (&$count) {
+                $rows = [];
+                $bindings = [];
+                foreach ($appearances as $appearance) {
+                    $rows[] = "(?, to_tsvector('simple', ?))";
+                    array_push($bindings, $appearance->id, self::text($appearance));
+                }
+                DB::statement(/** @lang PostgreSQL */ 'INSERT INTO appearance_search (appearance_id, doc) VALUES '.implode(', ', $rows), $bindings);
+                $count += count($appearances);
+            });
 
-        $count = 0;
-        $pinned = PinnedAppearance::pluck('appearance_id');
-        Appearance::whereNull('owner_id')->whereNotIn('id', $pinned)->chunkById(100, function ($appearances) use ($client, &$count) {
-            $body = [];
-            foreach ($appearances as $appearance) {
-                $body[] = ['index' => ['_index' => self::INDEX, '_id' => $appearance->id]];
-                $body[] = self::body($appearance);
-            }
-            $response = $client->bulk(['body' => $body]);
-            if (!empty($response['errors'])) {
-                throw new \RuntimeException('Bulk indexing reported errors: '.json_encode($response['items']));
-            }
-            $count += count($appearances);
+            return $count;
         });
-
-        return $count;
     }
 
-    public static function body(Appearance $appearance): array
+    /** What an appearance is found by: its label, its tags and their synonyms */
+    public static function text(Appearance $appearance): string
     {
         $tags = $appearance->tags()->whereNull('synonym_of')->get();
         $synonyms = Tag::whereIn('synonym_of', $tags->pluck('id'))->get();
 
-        return [
-            'label' => $appearance->label,
-            'order' => $appearance->order,
-            'private' => (bool) $appearance->private,
-            'guide' => $appearance->guide?->value,
-            'tags' => $tags->pluck('name')->merge($synonyms->pluck('name'))->values()->all(),
-        ];
+        return implode(' ', self::words($tags->pluck('name')->merge($synonyms->pluck('name'))->prepend($appearance->label)->implode(' ')));
+    }
+
+    /** The words of a text, lowercase, as the search table holds them */
+    public static function words(string $text): array
+    {
+        return preg_split('~[^\p{L}\p{N}]+~u', mb_strtolower($text), -1, PREG_SPLIT_NO_EMPTY) ?: [];
     }
 }

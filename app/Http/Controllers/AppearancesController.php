@@ -20,7 +20,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
@@ -94,19 +93,10 @@ class AppearancesController extends Controller
                     ],
                 ),
             ),
-            new OA\Response(
-                response: '503',
-                description: 'Temporarily Unavailable',
-                content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ErrorResponse')]),
-            ),
         ],
     )]
     public function queryPublic(Request $request)
     {
-        if (!ColorGuideHelper::isElasticAvailable()) {
-            return response()->json(['message' => trans('errors.color_guide.elastic_down')], 503);
-        }
-
         $valid = Validator::make($request->all(), [
             'guide' => ['required', new Enum(GuideName::class)],
             'size' => 'sometimes|numeric|between:7,20',

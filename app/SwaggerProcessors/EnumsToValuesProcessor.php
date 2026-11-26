@@ -5,8 +5,6 @@ namespace App\SwaggerProcessors;
 use OpenApi\Analysis;
 use OpenApi\Annotations\Schema as AnnotationSchema;
 use OpenApi\Attributes\Schema as AttributeSchema;
-use OpenApi\Generator;
-use OpenApi\Util;
 
 class EnumsToValuesProcessor
 {

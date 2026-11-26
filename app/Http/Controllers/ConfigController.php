@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Enums\ShowType;
 use App\Enums\VectorApp;
 use App\Enums\TagType;

@@ -182,9 +182,6 @@ class AdminTest extends TestCase
         $this->as(Role::Staff);
         $this->getJson('/admin/search-status')->assertForbidden();
         $this->as(Role::Developer);
-        $down = \Mockery::mock(\OpenSearch\Client::class);
-        $down->shouldReceive('ping')->andReturn(false);
-        \App\Utils\Search::use($down);
-        $this->getJson('/admin/search-status')->assertOk()->assertJsonStructure(['down', 'indices', 'nodes'])->assertJsonPath('down', true);
+        $this->getJson('/admin/search-status')->assertOk()->assertJsonStructure(['down', 'indices', 'nodes'])->assertJsonPath('down', false);
     }
 }

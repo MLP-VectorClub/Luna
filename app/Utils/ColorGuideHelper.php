@@ -2,16 +2,11 @@
 
 namespace App\Utils;
 
-use App\Appearances;
-use App\CoreUtils;
-use App\DB;
 use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
 use App\Http\Controllers\ShowController;
 use App\Models\Show;
 use App\Enums\Role;
-use App\Enums\TagType;
-use App\Enums\UserPrefKey;
 use App\Models\Appearance;
 use App\Models\Color;
 use App\Models\ColorGroup;
@@ -20,36 +15,23 @@ use App\Models\DeviantartUser;
 use App\Models\MajorChange;
 use Illuminate\Support\Carbon;
 use App\Models\Tag;
-use App\Pagination;
-use App\ShowHelper;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
-use OpenSearch\Common\Exceptions\OpenSearchException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use function is_array;
 
 class ColorGuideHelper
 {
-    public static function isElasticAvailable(): bool
-    {
-        try {
-            return Search::client()->ping();
-        } catch (OpenSearchException $e) {
-            return false;
-        }
-    }
-
-
     /**
+     * The official appearances of a guide in guide order, only those matching every term of the search (each term is the start of
+     * a word of the label or of a tag, see {@see AppearanceIndex}). Without a search, the whole guide
+     *
      * @param  int  $page
      * @param  int  $per_page
      * @param  GuideName  $guide
      * @param  string|null  $search_for
      * @return LengthAwarePaginator
-     * @throws OpenSearchException
      */
     public static function searchGuide(
         int $page,
@@ -57,101 +39,35 @@ class ColorGuideHelper
         GuideName $guide,
         ?string $search_for = null
     ): LengthAwarePaginator {
-        $paginator = new LengthAwarePaginator([], 0, $per_page, $page);
-        $must = [
-            ['term' => ['guide' => $guide->value]],
-        ];
-
-        // Search query exists
-        if ($search_for !== null) {
-            $search_for_sanitized = preg_replace("~[^\w\s*?'-]~", '', $search_for);
-            if ($search_for_sanitized !== '') {
-                array_unshift($must, [
-                    'multi_match' => [
-                        'query' => $search_for_sanitized,
-                        'fields' => ['label', 'tags'],
-                        'type' => 'cross_fields',
-                        'minimum_should_match' => '100%',
-                    ],
-                ]);
-            }
+        // A page number this far out cannot have results (and its offset would not fit a database integer): don't ask
+        if ($page > 1_000_000) {
+            return new LengthAwarePaginator([], 0, $per_page, $page);
         }
 
-        $search_query = [
-            'query' => ['bool' => ['must' => $must]],
-            'sort' => [['order' => ['order' => 'asc']]],
-            '_source' => false,
-        ];
-
-        // OpenSearch refuses to page past its result window (10000 by default), and a page number
-        // beyond the int range cannot even be parsed: neither has results, so don't ask
-        if (($page - 1) * $per_page + $per_page > 10000) {
-            return $paginator;
+        $words = $search_for === null ? [] : AppearanceIndex::words($search_for);
+        // Words of a single character are not searchable (as with the old index, which only knew words of two letters or more)
+        $terms = array_values(array_filter($words, fn (string $word) => mb_strlen($word) >= 2));
+        if ($words !== [] && $terms === []) {
+            return new LengthAwarePaginator([], 0, $per_page, $page);
         }
 
-        try {
-            $search_results = self::searchElastic($search_query, $paginator);
-        } catch (OpenSearchException $e) {
-            $status = Search::status($e);
-            $message = $e->getMessage();
-            $is_paging_error = ($status === 400 || $status >= 500)
-                && (Str::contains($message, 'Result window is too large, from + size must be less than or equal to')
-                    || Str::contains($message, 'Failed to parse int parameter [from] with value'));
-
-            // A missing index or an out-of-range page both just mean "no results"
-            if ($status !== 404 && !$is_paging_error) {
-                throw $e;
-            }
-
-            $search_results = [];
+        $indexed = \Illuminate\Support\Facades\DB::table('appearance_search')->select('appearance_id');
+        if ($terms !== []) {
+            // The words are only letters and digits, so they are safe in a tsquery
+            $indexed->whereRaw("doc @@ to_tsquery('simple', ?)", [implode(' & ', array_map(fn (string $term) => "$term:*", $terms))]);
         }
 
-        if (empty($search_results)) {
-            return $paginator;
+        $paginator = Appearance::ordered()
+            ->where('guide', $guide)
+            ->whereIn('id', $indexed)
+            ->paginate($per_page, ['*'], 'page', $page);
+
+        // A page past the end shows the last one
+        if ($paginator->isEmpty() && $paginator->total() > 0) {
+            return self::searchGuide($paginator->lastPage(), $per_page, $guide, $search_for);
         }
 
-        $total_hits = $search_results['hits']['total'];
-        if (is_array($total_hits) && isset($total_hits['value'])) {
-            $total_hits = $total_hits['value'];
-        }
-
-        $max_pages = ceil($total_hits / $per_page);
-        if ($page > $max_pages) {
-            return self::searchGuide($max_pages, $per_page, $guide, $search_for);
-        }
-
-        if (!empty($search_results['hits']['hits'])) {
-            $ids = (new Collection($search_results['hits']['hits']))->map(fn ($el) => $el['_id'])->unique();
-
-            /** @var Appearance[] $appearances */
-            $appearances = Appearance::ordered()
-                ->whereIn('id', $ids)
-                ->where('guide', $guide)
-                ->get();
-        } else {
-            $appearances = [];
-        }
-
-        return new LengthAwarePaginator($appearances, $total_hits, $per_page, $page);
-    }
-
-    /**
-     * Performs an OpenSearch search operation
-     *
-     * @param  array  $body
-     * @param  LengthAwarePaginator  $paginator
-     * @return array
-     */
-    public static function searchElastic(array $body, LengthAwarePaginator $paginator): array
-    {
-        $params = [
-            'index' => 'appearances',
-            'body' => $body,
-            'from' => ($paginator->currentPage() - 1) * $paginator->perPage(),
-            'size' => $paginator->perPage(),
-        ];
-
-        return Search::client()->search($params);
+        return $paginator;
     }
 
     /**

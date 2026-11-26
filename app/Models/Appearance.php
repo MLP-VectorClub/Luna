@@ -4,8 +4,6 @@ namespace App\Models;
 
 use App\Utils\AppearanceNotes;
 use App\Enums\GuideName;
-use App\Traits\HasEnumCasts;
-use App\Traits\Sorted;
 use DateInterval;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;

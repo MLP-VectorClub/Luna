@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\UserPrefKey;
-use App\Traits\HasEnumCasts;
 use Illuminate\Database\Eloquent\Model;
 
 class UserPref extends Model

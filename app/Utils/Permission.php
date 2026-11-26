@@ -7,8 +7,6 @@ namespace App\Utils;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use RuntimeException;
-use function array_key_exists;
 
 class Permission
 {

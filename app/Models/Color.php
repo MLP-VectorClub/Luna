@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\BlendMode;
-use App\Traits\Sorted;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;

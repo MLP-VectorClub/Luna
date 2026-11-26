@@ -2,22 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\GuideName;
 use App\Enums\UserPrefKey;
-use App\Models\DeviantartUser;
 use App\Models\User;
-use App\Utils\SettingsHelper;
 use App\Utils\UserPrefHelper;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Enum;
-use Laravel\Sanctum\PersonalAccessToken;
-use Laravel\Sanctum\TransientToken;
 use OpenApi\Attributes as OA;
 
 class UserPrefsController extends Controller

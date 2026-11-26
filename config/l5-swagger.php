@@ -1,21 +1,11 @@
 <?php
 
-use App\Enums\AvatarProvider;
-use App\Enums\CutieMarkFacing;
-use App\Enums\FullGuideSortField;
 use App\Enums\GuideName;
 use App\Enums\Role;
-use App\Enums\ShowOrdering;
-use App\Enums\ShowType;
-use App\Enums\SocialProvider;
-use App\Enums\SpriteSize;
-use App\Enums\TagType;
 use App\Enums\UserPrefKey;
-use App\Enums\VectorApp;
 use App\Utils\Core;
 use App\Utils\SettingsHelper;
 use Carbon\Carbon;
-use Illuminate\Support\Str;
 use OpenApi\Annotations\Operation;
 
 $database_roles = Role::values();

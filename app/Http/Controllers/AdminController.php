@@ -11,15 +11,13 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Utils\AppearanceIndex;
 use App\Utils\ColorGuideHelper;
-use App\Utils\Search;
+use Illuminate\Support\Facades\DB;
 use App\Utils\WebsocketServer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use OpenApi\Attributes as OA;
-use OpenSearch\Common\Exceptions\OpenSearchException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AdminController extends Controller
 {
@@ -511,7 +509,7 @@ class AdminController extends Controller
     #[OA\Get(
         path: '/admin/search-status',
         operationId: 'GetAdminSearchStatus',
-        description: 'State of the OpenSearch server behind the color guide search. Requires developer permission',
+        description: 'State of the color guide search table (Postgres). Requires developer permission',
         tags: ['admin'],
         responses: [
             new OA\Response(
@@ -541,31 +539,15 @@ class AdminController extends Controller
     )]
     public function searchStatus(): JsonResponse
     {
-        try {
-            $client = Search::client();
-            if (!$client->ping()) {
-                return response()->json(['down' => true, 'indices' => [], 'nodes' => []]);
-            }
-            $describe = fn(array $rows) => array_map(function (array $row, int $no) {
-                $line = "#$no ";
-                foreach ($row as $key => $value) {
-                    if ($value !== null && $value !== '') {
-                        $line .= "$key:$value ";
-                    }
-                }
+        // `down` and `nodes` keep the shape the admin page reads from the days of the OpenSearch server
+        $indexed = DB::table('appearance_search')->count();
+        $official = Appearance::whereNull('owner_id')->count();
 
-                return trim($line);
-            }, $rows, array_keys($rows));
-            $indices = array_values(array_filter($client->cat()->indices(['format' => 'json']), fn(array $index) => ($index['index'] ?? null) === 'appearances'));
-
-            return response()->json(['down' => false, 'indices' => $describe($indices), 'nodes' => $describe($client->cat()->nodes(['format' => 'json']))]);
-        } catch (OpenSearchException $e) {
-            if (!Search::isDown($e)) {
-                throw $e;
-            }
-
-            return response()->json(['down' => true, 'indices' => [], 'nodes' => []]);
-        }
+        return response()->json([
+            'down' => false,
+            'indices' => ["#0 table:appearance_search docs:$indexed official-appearances:$official"],
+            'nodes' => ['#0 engine:'.DB::selectOne('SHOW server_version')->server_version],
+        ]);
     }
 
     #[OA\Post(
@@ -593,23 +575,11 @@ class AdminController extends Controller
                 description: 'Insufficient permissions',
                 content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
             ),
-            new OA\Response(
-                response: '503',
-                description: 'OpenSearch is down',
-                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
-            ),
         ],
     )]
     public function reindex(): JsonResponse
     {
-        try {
-            $count = AppearanceIndex::rebuild();
-        } catch (OpenSearchException $e) {
-            if (!Search::isDown($e)) {
-                throw $e;
-            }
-            throw new HttpException(503, 'Re-index failed, the OpenSearch server is down!');
-        }
+        $count = AppearanceIndex::rebuild();
 
         return response()->json(['message' => "Re-index successful, $count ".($count === 1 ? 'appearance was' : 'appearances were').' indexed']);
     }

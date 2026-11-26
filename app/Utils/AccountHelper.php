@@ -14,8 +14,6 @@ use Illuminate\Validation\ValidationException;
 use App\Models\DiscordMember;
 use App\Models\PreviousUsername;
 use App\Models\User;
-use App\Rules\StrictEmail;
-use App\Rules\UniqueEmail;
 use App\Rules\Username;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,11 +23,9 @@ use Illuminate\Session\ArraySessionHandler;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Cookie;
-use Valorin\Pwned\Pwned;
 
 class AccountHelper
 {
